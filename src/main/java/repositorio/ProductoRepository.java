@@ -20,6 +20,13 @@ public class ProductoRepository {
         em.getTransaction().commit();
     }
 
+    // UPDATE: Actualiza un producto existente en la base de datos
+    public void actualizar(Producto producto) {
+        em.getTransaction().begin();
+        em.merge(producto); // merge reemplaza los datos viejos por los nuevos
+        em.getTransaction().commit();
+    }
+
     // READ: Busca un producto específico por su ID interno
     public Producto buscarPorId(Long id) {
         return em.find(Producto.class, id);

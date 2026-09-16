@@ -2,6 +2,7 @@ package modelo;
 
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityManager;
 import vista.AdminUI;
 import controlador.AdminController;
 
@@ -16,9 +17,10 @@ public class Admin extends Usuario {
     }
 
     @Override
-    public void mostrarInterfaz(jakarta.persistence.EntityManager em) {
-        AdminUI adminVista = new AdminUI();
-        new AdminController(adminVista, em);
-        adminVista.setVisible(true);
+    public void mostrarInterfaz(EntityManager em) {
+        // Aquí es donde se instancia la vista y el controlador del administrador
+        AdminUI ventanaAdmin = new AdminUI();
+        new AdminController(ventanaAdmin, em);
+        ventanaAdmin.setVisible(true);
     }
 }

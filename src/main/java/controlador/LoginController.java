@@ -9,13 +9,11 @@ import java.util.List;
 public class LoginController {
 
     private LoginUI vista;
-    private EntityManager em; // Agregamos el gestor de la base de datos
+    private EntityManager em;
 
-    // Actualizamos el constructor para recibir el EntityManager
     public LoginController(LoginUI vista, EntityManager em) {
         this.vista = vista;
         this.em = em;
-
         this.vista.getLoginButton().addActionListener(e -> autenticar());
     }
 
@@ -35,14 +33,12 @@ public class LoginController {
 
     private Usuario consultarBaseDeDatos(String user, String pass) {
         try {
-            // Hacemos una consulta real a la base de datos usando JPQL
             List<Usuario> resultados = em.createQuery(
-                    "SELECT u FROM Usuario u WHERE u.username = :user AND u.password = :pass", Usuario.class)
-                .setParameter("user", user)
-                .setParameter("pass", pass)
-                .getResultList();
+                            "SELECT u FROM Usuario u WHERE u.username = :user AND u.password = :pass", Usuario.class)
+                    .setParameter("user", user)
+                    .setParameter("pass", pass)
+                    .getResultList();
 
-            // Si la lista no está vacía, devolvemos el primer usuario encontrado
             if (!resultados.isEmpty()) {
                 return resultados.get(0);
             }

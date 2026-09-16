@@ -1,3 +1,4 @@
+import controlador.DatabaseSeeder;
 import controlador.LoginController;
 import vista.LoginUI;
 import jakarta.persistence.EntityManager;
@@ -12,7 +13,10 @@ public class Main {
         EntityManagerFactory emf = Persistence.createEntityManagerFactory("NexcellPU");
         EntityManager em = emf.createEntityManager();
 
-        // 2. Ejecutamos la interfaz gráfica en el hilo seguro de Swing
+        // 2. Llamamos al seeder
+        DatabaseSeeder.inicializarDatos(em);
+
+        // 3. Ejecutamos la interfaz gráfica en el hilo seguro de Swing
         SwingUtilities.invokeLater(() -> {
             LoginUI ventanaLogin = new LoginUI();
 

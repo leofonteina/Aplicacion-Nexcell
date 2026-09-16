@@ -1,19 +1,23 @@
 package controlador;
 
+import modelo.Producto;
+import modelo.Usuario;
+import modelo.Admin;
+import modelo.Gerente;
+import modelo.Vendedor;
+import repositorio.ProductoRepository;
+import repositorio.UsuarioRepository;
 import vista.AdminUI;
 import vista.RegistroProductoUI;
 import vista.RegistroUsuarioUI;
 import vista.LoginUI;
-import modelo.Admin;
-import modelo.Gerente;
-import modelo.Vendedor;
-import modelo.Usuario;
-import repositorio.UsuarioRepository;
-import jakarta.persistence.EntityManager;
 
+import jakarta.persistence.EntityManager;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+
+import java.time.LocalDateTime;
 import java.time.LocalDate;
 import java.time.DateTimeException;
 import java.time.format.DateTimeFormatter;
@@ -23,37 +27,28 @@ import java.util.List;
 public class AdminController {
 
     private AdminUI vistaPrincipal;
+    private ProductoRepository productoRepo;
     private EntityManager em;
 
+    // Modificamos el constructor para recibir el EntityManager
     public AdminController(AdminUI vistaPrincipal, EntityManager em) {
         this.vistaPrincipal = vistaPrincipal;
         this.em = em;
+        this.productoRepo = new ProductoRepository(em);
+
+        // 1. Cargar los datos reales en la tabla al abrir la ventana
+        cargarTablaProductos();
 
         // Escuchadores de Productos
-        this.vistaPrincipal.getBtnAbrirFormularioProducto().addActionListener(e -> abrirFormularioProducto());
-        this.vistaPrincipal.getBtnModificarProducto().addActionListener(e -> modificarProducto());
+        this.vistaPrincipal.getBtnAbrirFormularioProducto().addActionListener(e -> abrirFormularioNuevoProducto());
+        this.vistaPrincipal.getBtnModificarProducto().addActionListener(e -> abrirFormularioModificarProducto());
         this.vistaPrincipal.getBtnBajaProducto().addActionListener(e -> cambiarEstadoProducto(false));
         this.vistaPrincipal.getBtnAltaProducto().addActionListener(e -> cambiarEstadoProducto(true));
 
+        // Escuchador de selección de la tabla (para mostrar/ocultar botones)
         this.vistaPrincipal.getTablaProductos().getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
-                int filaSeleccionada = this.vistaPrincipal.getTablaProductos().getSelectedRow();
-                boolean haySeleccion = filaSeleccionada != -1;
-                this.vistaPrincipal.getBtnModificarProducto().setVisible(haySeleccion);
-
-                if (haySeleccion) {
-                    String estadoActual = this.vistaPrincipal.getTablaProductos().getValueAt(filaSeleccionada, 5).toString();
-                    if (estadoActual.equalsIgnoreCase("Activo")) {
-                        this.vistaPrincipal.getBtnBajaProducto().setVisible(true);
-                        this.vistaPrincipal.getBtnAltaProducto().setVisible(false);
-                    } else {
-                        this.vistaPrincipal.getBtnBajaProducto().setVisible(false);
-                        this.vistaPrincipal.getBtnAltaProducto().setVisible(true);
-                    }
-                } else {
-                    this.vistaPrincipal.getBtnBajaProducto().setVisible(false);
-                    this.vistaPrincipal.getBtnAltaProducto().setVisible(false);
-                }
+                gestionarBotonesProducto();
             }
         });
 
@@ -102,60 +97,146 @@ public class AdminController {
         cargarTablaUsuarios();
     }
 
-    // === GESTIÓN DE PRODUCTOS ===
+// --- MÉTODOS DE BASE DE DATOS PARA PRODUCTOS ---
 
-    private void abrirFormularioProducto() {
-        RegistroProductoUI ventanaRegistro = new RegistroProductoUI(this.vistaPrincipal);
-        ventanaRegistro.getBtnGuardarProducto().addActionListener(e -> {
-            String nombre = ventanaRegistro.getNombreField().getText();
-            if (nombre.isEmpty()) {
-                JOptionPane.showMessageDialog(ventanaRegistro, "Por favor, completá al menos el Nombre del Producto.", "Campos incompletos", JOptionPane.WARNING_MESSAGE);
-                return;
+    private void cargarTablaProductos() {
+        DefaultTableModel modelo = (DefaultTableModel) vistaPrincipal.getTablaProductos().getModel();
+        modelo.setRowCount(0); // Limpiamos los datos de ejemplo
+
+        List<Producto> listaProductos = productoRepo.listarTodos();
+
+        for (Producto p : listaProductos) {
+            String estadoStr = p.isEstado() ? "Activo" : "Inactivo";
+            // Las columnas son: {"ID", "Modelo", "Categoría", "Stock", "Precio", "Estado"}
+            modelo.addRow(new Object[]{
+                    p.getId(),
+                    p.getNombre(),
+                    p.getCategoria(),
+                    p.getStock(),
+                    "$" + p.getPrecio(),
+                    estadoStr
+            });
+        }
+    }
+
+    private void gestionarBotonesProducto() {
+        int fila = vistaPrincipal.getTablaProductos().getSelectedRow();
+        boolean haySeleccion = (fila != -1);
+
+        vistaPrincipal.getBtnModificarProducto().setVisible(haySeleccion);
+
+        if (haySeleccion) {
+            String estadoActual = vistaPrincipal.getTablaProductos().getValueAt(fila, 5).toString();
+            if (estadoActual.equalsIgnoreCase("Activo")) {
+                vistaPrincipal.getBtnBajaProducto().setVisible(true);
+                vistaPrincipal.getBtnAltaProducto().setVisible(false);
+            } else {
+                vistaPrincipal.getBtnBajaProducto().setVisible(false);
+                vistaPrincipal.getBtnAltaProducto().setVisible(true);
             }
-            JOptionPane.showMessageDialog(ventanaRegistro, "Producto '" + nombre + "' registrado con éxito.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-            ventanaRegistro.dispose();
+        } else {
+            vistaPrincipal.getBtnBajaProducto().setVisible(false);
+            vistaPrincipal.getBtnAltaProducto().setVisible(false);
+        }
+    }
+
+    private void abrirFormularioNuevoProducto() {
+        RegistroProductoUI ventanaRegistro = new RegistroProductoUI(vistaPrincipal);
+
+        ventanaRegistro.getBtnGuardarProducto().addActionListener(e -> {
+            try {
+                Producto nuevoProducto = new Producto();
+                nuevoProducto.setNombre(ventanaRegistro.getNombreField().getText());
+                nuevoProducto.setDescripcion(ventanaRegistro.getDescripcionArea().getText());
+                nuevoProducto.setPrecio(Double.parseDouble(ventanaRegistro.getPrecioField().getText()));
+                nuevoProducto.setDescuento(Double.parseDouble(ventanaRegistro.getDescuentoField().getText()));
+                nuevoProducto.setStock(Integer.parseInt(ventanaRegistro.getStockField().getText()));
+                nuevoProducto.setCategoria(ventanaRegistro.getCategoriaBox().getSelectedItem().toString());
+                nuevoProducto.setMarca(ventanaRegistro.getMarcaBox().getSelectedItem().toString());
+
+                nuevoProducto.setEstado(true);
+                nuevoProducto.setFechaCreacion(LocalDateTime.now());
+                nuevoProducto.setFechaModificacion(LocalDateTime.now());
+
+                productoRepo.guardar(nuevoProducto);
+
+                JOptionPane.showMessageDialog(ventanaRegistro, "Producto guardado en la base de datos.");
+                ventanaRegistro.dispose();
+                cargarTablaProductos(); // Refrescamos la tabla
+
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(ventanaRegistro, "Error: Revisa que el precio, stock y descuento sean números válidos.", "Error de formato", JOptionPane.ERROR_MESSAGE);
+            }
         });
+
         ventanaRegistro.setVisible(true);
     }
 
-    private void modificarProducto() {
+    private void abrirFormularioModificarProducto() {
         int fila = vistaPrincipal.getTablaProductos().getSelectedRow();
         if (fila == -1) return;
 
-        RegistroProductoUI ventanaModificacion = new RegistroProductoUI(this.vistaPrincipal);
-        ventanaModificacion.setTitle("Modificar Producto Existente");
-        ventanaModificacion.getBtnGuardarProducto().setText("Actualizar Datos");
+        Long idProducto = (Long) vistaPrincipal.getTablaProductos().getValueAt(fila, 0);
+        Producto productoActual = productoRepo.buscarPorId(idProducto);
 
-        String idSeleccionado = vistaPrincipal.getTablaProductos().getValueAt(fila, 0).toString();
-        String nombreActual = vistaPrincipal.getTablaProductos().getValueAt(fila, 1).toString();
-        ventanaModificacion.getNombreField().setText(nombreActual);
+        RegistroProductoUI ventana = new RegistroProductoUI(vistaPrincipal);
+        ventana.setTitle("Modificar Producto");
+        ventana.getBtnGuardarProducto().setText("Actualizar");
 
-        ventanaModificacion.getBtnGuardarProducto().addActionListener(e -> {
-            JOptionPane.showMessageDialog(ventanaModificacion, "El producto " + idSeleccionado + " fue actualizado correctamente.", "Actualización Exitosa", JOptionPane.INFORMATION_MESSAGE);
-            ventanaModificacion.dispose();
+        // Cargar los datos actuales en el formulario
+        ventana.getNombreField().setText(productoActual.getNombre());
+        ventana.getDescripcionArea().setText(productoActual.getDescripcion());
+        ventana.getPrecioField().setText(String.valueOf(productoActual.getPrecio()));
+        ventana.getDescuentoField().setText(String.valueOf(productoActual.getDescuento()));
+        ventana.getStockField().setText(String.valueOf(productoActual.getStock()));
+        ventana.getCategoriaBox().setSelectedItem(productoActual.getCategoria());
+        ventana.getMarcaBox().setSelectedItem(productoActual.getMarca());
+
+        ventana.getBtnGuardarProducto().addActionListener(e -> {
+            try {
+                productoActual.setNombre(ventana.getNombreField().getText());
+                productoActual.setDescripcion(ventana.getDescripcionArea().getText());
+                productoActual.setPrecio(Double.parseDouble(ventana.getPrecioField().getText()));
+                productoActual.setDescuento(Double.parseDouble(ventana.getDescuentoField().getText()));
+                productoActual.setStock(Integer.parseInt(ventana.getStockField().getText()));
+                productoActual.setCategoria(ventana.getCategoriaBox().getSelectedItem().toString());
+                productoActual.setMarca(ventana.getMarcaBox().getSelectedItem().toString());
+                productoActual.setFechaModificacion(LocalDateTime.now());
+
+                productoRepo.actualizar(productoActual);
+
+                JOptionPane.showMessageDialog(ventana, "Producto actualizado con éxito.");
+                ventana.dispose();
+                cargarTablaProductos();
+
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(ventana, "Revisa los valores numéricos.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
         });
-        ventanaModificacion.setVisible(true);
+
+        ventana.setVisible(true);
     }
 
     private void cambiarEstadoProducto(boolean activar) {
         int fila = vistaPrincipal.getTablaProductos().getSelectedRow();
         if (fila == -1) return;
 
-        String idSeleccionado = vistaPrincipal.getTablaProductos().getValueAt(fila, 0).toString();
-        String accion = activar ? "Reactivar (Dar de Alta)" : "Dar de Baja (Inactivar)";
+        Long idProducto = (Long) vistaPrincipal.getTablaProductos().getValueAt(fila, 0);
+        Producto p = productoRepo.buscarPorId(idProducto);
 
-        int confirmacion = JOptionPane.showConfirmDialog(vistaPrincipal,
-            "¿Estás seguro que querés " + accion.toLowerCase() + " el producto " + idSeleccionado + "?",
-            accion, JOptionPane.YES_NO_OPTION);
+        String accion = activar ? "reactivar" : "dar de baja";
+        int confirm = JOptionPane.showConfirmDialog(vistaPrincipal, "¿Seguro que deseas " + accion + " este producto?", "Confirmar", JOptionPane.YES_NO_OPTION);
 
-        if (confirmacion == JOptionPane.YES_OPTION) {
-            String nuevoEstado = activar ? "Activo" : "Inactivo";
-            vistaPrincipal.getTablaProductos().setValueAt(nuevoEstado, fila, 5);
-            vistaPrincipal.getTablaProductos().clearSelection();
-            vistaPrincipal.getTablaProductos().setRowSelectionInterval(fila, fila);
-            JOptionPane.showMessageDialog(vistaPrincipal, "El estado del producto se actualizó a: " + nuevoEstado, "Operación Exitosa", JOptionPane.INFORMATION_MESSAGE);
+        if (confirm == JOptionPane.YES_OPTION) {
+            p.setEstado(activar);
+            p.setFechaModificacion(LocalDateTime.now());
+            productoRepo.actualizar(p);
+
+            cargarTablaProductos();
+            gestionarBotonesProducto();
         }
     }
+
 
     // === GESTIÓN DE USUARIOS CON VALIDACIONES INLINE ===
 

@@ -62,14 +62,14 @@ public class RegistroProductoUI extends JDialog {
         // Fila 4: Categoría
         gbc.gridx = 0; gbc.gridy = 4; panel.add(new JLabel("Categoría:"), gbc);
         gbc.gridx = 1;
-        String[] categorias = {"Seleccionar...", "Celulares", "Accesorios", "Repuestos"};
+        String[] categorias = {"Seleccionar...", "Smartphone", "Accesorio", "SmartWatch", "Parlante", "Auricular"};
         categoriaBox = new JComboBox<>(categorias);
         panel.add(categoriaBox, gbc);
 
         // Fila 5: Marca
         gbc.gridx = 0; gbc.gridy = 5; panel.add(new JLabel("Marca:"), gbc);
         gbc.gridx = 1;
-        String[] marcas = {"Seleccionar...", "Motorola", "Samsung", "Apple", "Xiaomi"};
+        String[] marcas = {"Seleccionar...", "Samsung", "Motorola", "Apple", "Xiaomi", "JBL"};
         marcaBox = new JComboBox<>(marcas);
         panel.add(marcaBox, gbc);
 
