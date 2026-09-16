@@ -7,16 +7,9 @@
     <persistence-unit name="NexcellPU" transaction-type="RESOURCE_LOCAL">
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
 
-<<<<<<< Updated upstream
-        <class>modelo.Usuario</class>
-        <class>modelo.Admin</class>
-        <class>modelo.Gerente</class>
-        <class>modelo.Vendedor</class>
-=======
         <!-- Acá podés registrar tus clases del modelo más adelante -->
         <!-- <class>modelo.Usuario</class> -->
         <!-- <class>modelo.Producto</class> -->
->>>>>>> Stashed changes
 
         <properties>
             <!-- Conexión a MySQL -->
