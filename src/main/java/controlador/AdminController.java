@@ -279,12 +279,19 @@ public class AdminController {
         ventanaModificacion.setTitle("Modificar Usuario");
         ventanaModificacion.getBtnGuardarUsuario().setText("Actualizar Datos");
 
+        // Cargamos los datos
         ventanaModificacion.getTxtUsername().setText(usuario.getUsername());
-        ventanaModificacion.getTxtUsername().setEditable(false);
+        ventanaModificacion.getTxtUsername().setText(usuario.getUsername()); // Lo ideal es que el username tampoco se pueda cambiar
+
         ventanaModificacion.getTxtPassword().setText(usuario.getPassword());
         ventanaModificacion.getTxtNombre().setText(usuario.getNombre());
         ventanaModificacion.getTxtApellido().setText(usuario.getApellido());
-        ventanaModificacion.getTxtDni().setText(usuario.getDni());
+
+        // --- CAMBIO EN EL DNI ---
+        ventanaModificacion.getTxtDni().setText(usuario.getDni()); // Mostramos el DNI actual
+        ventanaModificacion.getTxtDni().setEditable(false);        // Bloqueamos para que no lo puedan editar
+        // ------------------------
+
         ventanaModificacion.getTxtEmail().setText(usuario.getEmail());
 
         if (usuario.getDireccion() != null) {
