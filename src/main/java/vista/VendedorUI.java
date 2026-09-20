@@ -39,7 +39,7 @@ public class VendedorUI extends JFrame {
         // El JFrame usa BorderLayout por defecto
         setLayout(new BorderLayout());
 
-        JTabbedPane sistemaPestanas = new JTabbedPane();
+        JTabbedPane sistemaPestanas = new JTabbedPane(JTabbedPane.LEFT);
         sistemaPestanas.addTab("Gestión de Clientes", crearPanelClientes());
         sistemaPestanas.addTab("Catálogo de Productos", crearPanelProductos());
         sistemaPestanas.addTab("Registro de Ventas", crearPanelVentas());

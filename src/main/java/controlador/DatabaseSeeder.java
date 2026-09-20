@@ -57,7 +57,7 @@ public class DatabaseSeeder {
                 registrarProducto(em, "SmartWatch Samsung", "SmartWatch Samsung", 50, 0, 8500.0, "Samsung", "SmartWatch", true, ahora, ahora);
 
                 em.getTransaction().commit();
-                System.out.println("✅ Seeder completado: 20 productos registrados exitosamente.");
+                System.out.println("Seeder completado: 20 productos registrados exitosamente.");
 
             } catch (Exception e) {
                 if (em.getTransaction().isActive()) {
@@ -66,7 +66,7 @@ public class DatabaseSeeder {
                 e.printStackTrace();
             }
         } else {
-            System.out.println("✅ La base de datos ya tiene productos. Seeder omitido.");
+            System.out.println("La base de datos ya tiene productos. Seeder omitido.");
         }
     }
 
@@ -109,7 +109,7 @@ public class DatabaseSeeder {
                 registrarUsuario(em, new Vendedor("elena", "123"), "Elena", "Ruiz", "10101010", "elena@mail.com", dir10, LocalDate.of(1999, 2, 22));
 
                 em.getTransaction().commit();
-                System.out.println("✅ Seeder completado: 10 usuarios registrados exitosamente.");
+                System.out.println("Seeder completado: 10 usuarios registrados exitosamente.");
 
             } catch (Exception e) {
                 if (em.getTransaction().isActive()) {
@@ -118,7 +118,7 @@ public class DatabaseSeeder {
                 e.printStackTrace();
             }
         } else {
-            System.out.println("✅ La base de datos ya tiene usuarios. Seeder omitido.");
+            System.out.println("La base de datos ya tiene usuarios. Seeder omitido.");
         }
     }
 

@@ -29,7 +29,7 @@ public class GerenteUI extends JFrame {
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
-        JTabbedPane sistemaPestanas = new JTabbedPane();
+        JTabbedPane sistemaPestanas = new JTabbedPane(JTabbedPane.LEFT);
         sistemaPestanas.addTab("Reportes de Ventas", crearPanelReportesVentas());
         sistemaPestanas.addTab("Rendimiento Vendedores", crearPanelRendimiento()); // NUEVA PESTAÑA
 

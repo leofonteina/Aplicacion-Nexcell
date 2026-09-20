@@ -38,10 +38,12 @@ public class AdminUI extends JFrame {
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
-        JTabbedPane sistemaPestanas = new JTabbedPane();
-        sistemaPestanas.addTab("Gestión de Productos", crearPanelProductos());
-        sistemaPestanas.addTab("Gestión de Usuarios", crearPanelUsuarios());
-        sistemaPestanas.addTab("Reportes", crearPanelReportes());
+        JTabbedPane sistemaPestanas = new JTabbedPane(JTabbedPane.LEFT);
+
+        // Agregamos: Título, Ícono, Panel
+        sistemaPestanas.addTab("Productos ", cargarIcono("/iconos/icono_productos.png"), crearPanelProductos());
+        sistemaPestanas.addTab("Usuarios ", cargarIcono("/iconos/icono_reportes.png"), crearPanelUsuarios());
+        sistemaPestanas.addTab("Reportes ", cargarIcono("/iconos/icono_usuarios.png"), crearPanelReportes());
 
         add(sistemaPestanas, BorderLayout.CENTER);
 
@@ -58,9 +60,14 @@ public class AdminUI extends JFrame {
 
         JPanel panelSuperior = new JPanel(new BorderLayout());
 
-        JPanel panelBusqueda = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+
+        JPanel panelBusqueda = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
+
         buscarProductoField = new JTextField(15);
+        buscarProductoField.setPreferredSize(new Dimension(200, 35));
         btnBuscarProducto = new JButton("Buscar");
+        btnBuscarProducto.setPreferredSize(new Dimension(100, 35));
+
         panelBusqueda.add(new JLabel("Filtrar: "));
         panelBusqueda.add(buscarProductoField);
         panelBusqueda.add(btnBuscarProducto);
@@ -216,4 +223,17 @@ public class AdminUI extends JFrame {
     public JButton getBtnLimpiarReporte() { return btnLimpiarReporte; }
     public JTable getTablaReportes() { return tablaReportes; }
     public JButton getBtnCerrarSesion() { return btnCerrarSesion; }
+
+    private ImageIcon cargarIcono(String ruta) {
+        java.net.URL imgURL = getClass().getResource(ruta);
+        if (imgURL != null) {
+            ImageIcon iconoOriginal = new ImageIcon(imgURL);
+            // Redimensionamos a 32x32 píxeles (puedes ajustar este número)
+            Image imgEscalada = iconoOriginal.getImage().getScaledInstance(32, 32, Image.SCALE_SMOOTH);
+            return new ImageIcon(imgEscalada);
+        } else {
+            System.err.println("No se encontró el ícono en: " + ruta);
+            return null;
+        }
+    }
 }

@@ -1,10 +1,10 @@
-import controlador.DatabaseSeeder;
-import controlador.LoginController;
-import vista.LoginUI;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.Persistence;
-import javax.swing.SwingUtilities;
+import controlador.DatabaseSeeder;
+import vista.LoginUI;
+import controlador.LoginController;
+import javax.swing.*;
 
 public class Main {
     public static void main(String[] args) {
@@ -18,8 +18,11 @@ public class Main {
 
         // 3. Ejecutamos la interfaz gráfica en el hilo seguro de Swing
         SwingUtilities.invokeLater(() -> {
-            LoginUI ventanaLogin = new LoginUI();
 
+            // Se aplica las configuraciones hechas al FlatLaf
+            vista.TemaNexcell.aplicarTema();
+
+            LoginUI ventanaLogin = new LoginUI();
             // Le inyectamos el EntityManager al controlador para que pueda hacer consultas
             LoginController controlador = new LoginController(ventanaLogin, em);
 
