@@ -5,6 +5,10 @@ import vista.LoginUI;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.time.DateTimeException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 public class GerenteController {
 
@@ -19,35 +23,115 @@ public class GerenteController {
         this.vistaPrincipal.getBtnLimpiarReporte().addActionListener(e -> limpiarReporte());
         this.vistaPrincipal.getBtnCerrarSesion().addActionListener(e -> cerrarSesion());
 
-        // Escuchador de botón (Rendimiento)
         this.vistaPrincipal.getBtnCalcularRendimiento().addActionListener(e -> calcularRendimiento());
     }
 
     private void generarReporteVentas() {
-        String filtroSeleccionado = vistaPrincipal.getComboFiltroVentas().getSelectedItem().toString();
+        // Pedimos las fechas al usuario
+        LocalDate[] fechas = pedirRangoFechas("Seleccionar Rango para Reporte de Ventas");
 
+        // Si devolvió null es porque el usuario canceló o hubo un error en la fecha
+        if (fechas == null) return;
+
+        LocalDate desde = fechas[0];
+        LocalDate hasta = fechas[1];
+
+        // Simulamos la búsqueda en la Base de Datos usando las fechas seleccionadas
         String[] columnas = {"ID Venta", "Fecha", "DNI Cliente", "Vendedor", "Producto", "Total"};
-        Object[][] datos;
-
-        // Simulamos consultas a la base de datos según el filtro
-        if (filtroSeleccionado.equals("Ventas del Día")) {
-            datos = new Object[][]{
-                {"V-1023", "31/08/2026", "35123456", "vendedor1", "Motorola Edge 60", "$850.000"}
-            };
-        } else if (filtroSeleccionado.equals("Ventas del Mes")) {
-            datos = new Object[][]{
-                {"V-1022", "15/08/2026", "40987654", "vendedor1", "Funda Silicona", "$15.000"},
-                {"V-1023", "31/08/2026", "35123456", "vendedor1", "Motorola Edge 60", "$850.000"}
-            };
-        } else {
-            datos = new Object[][]{
-                {"V-1001", "10/01/2026", "22333444", "vendedor_hist", "Samsung A56", "$700.000"},
-                {"V-1022", "15/08/2026", "40987654", "vendedor1", "Funda Silicona", "$15.000"},
-                {"V-1023", "31/08/2026", "35123456", "vendedor1", "Motorola Edge 60", "$850.000"}
-            };
-        }
+        Object[][] datos = {
+                {"V-9998", desde.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")), "11223344", "vendedor1", "Motorola Edge 60", "$850.000"},
+                {"V-9999", hasta.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")), "44556677", "vendedor2", "Funda Silicona", "$15.000"}
+        };
 
         vistaPrincipal.getTablaReportesVentas().setModel(new DefaultTableModel(datos, columnas));
+    }
+
+    private void calcularRendimiento() {
+        // Pedimos las fechas al usuario
+        LocalDate[] fechas = pedirRangoFechas("Seleccionar Rango para Evaluar Rendimiento");
+
+        // Si devolvió null es porque el usuario canceló
+        if (fechas == null) return;
+
+        // Simulamos la evaluación usando las fechas seleccionadas
+        String[] columnas = {"Usuario Vendedor", "Cant. Ventas", "Total Facturado", "Comisión Estimada (5%)"};
+        Object[][] datos = {
+                {"vendedor1", "45", "$3.500.000", "$175.000"},
+                {"vendedor2", "38", "$2.800.000", "$140.000"}
+        };
+
+        vistaPrincipal.getTablaRendimiento().setModel(new DefaultTableModel(datos, columnas));
+    }
+
+    // --- MÉTODO REUTILIZABLE PARA PEDIR FECHAS ---
+    private LocalDate[] pedirRangoFechas(String titulo) {
+        Integer[] dias = generarRango(1, 31);
+        String[] meses = {"01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"};
+        int anioActual = LocalDate.now().getYear();
+        Integer[] anios = generarRango(anioActual - 5, anioActual);
+
+        JComboBox<Integer> cbDiaDesde = new JComboBox<>(dias);
+        JComboBox<String> cbMesDesde = new JComboBox<>(meses);
+        JComboBox<Integer> cbAnioDesde = new JComboBox<>(anios);
+        cbAnioDesde.setSelectedItem(anioActual);
+
+        JComboBox<Integer> cbDiaHasta = new JComboBox<>(dias);
+        JComboBox<String> cbMesHasta = new JComboBox<>(meses);
+        JComboBox<Integer> cbAnioHasta = new JComboBox<>(anios);
+        cbAnioHasta.setSelectedItem(anioActual);
+
+        JPanel panelFechas = new JPanel(new GridLayout(2, 1, 5, 5));
+
+        JPanel panelDesde = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        panelDesde.add(new JLabel("Desde:"));
+        panelDesde.add(cbDiaDesde); panelDesde.add(new JLabel("/"));
+        panelDesde.add(cbMesDesde); panelDesde.add(new JLabel("/"));
+        panelDesde.add(cbAnioDesde);
+
+        JPanel panelHasta = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        panelHasta.add(new JLabel("Hasta: "));
+        panelHasta.add(cbDiaHasta); panelHasta.add(new JLabel("/"));
+        panelHasta.add(cbMesHasta); panelHasta.add(new JLabel("/"));
+        panelHasta.add(cbAnioHasta);
+
+        panelFechas.add(panelDesde);
+        panelFechas.add(panelHasta);
+
+        int result = JOptionPane.showConfirmDialog(vistaPrincipal, panelFechas,
+                titulo, JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+
+        if (result == JOptionPane.OK_OPTION) {
+            try {
+                int diaD = (int) cbDiaDesde.getSelectedItem();
+                int mesD = Integer.parseInt(cbMesDesde.getSelectedItem().toString());
+                int anioD = (int) cbAnioDesde.getSelectedItem();
+
+                int diaH = (int) cbDiaHasta.getSelectedItem();
+                int mesH = Integer.parseInt(cbMesHasta.getSelectedItem().toString());
+                int anioH = (int) cbAnioHasta.getSelectedItem();
+
+                LocalDate desde = LocalDate.of(anioD, mesD, diaD);
+                LocalDate hasta = LocalDate.of(anioH, mesH, diaH);
+
+                if (desde.isAfter(hasta)) {
+                    JOptionPane.showMessageDialog(vistaPrincipal, "La fecha 'Desde' no puede ser posterior a 'Hasta'.", "Rango Inválido", JOptionPane.WARNING_MESSAGE);
+                    return null;
+                }
+
+                return new LocalDate[]{desde, hasta}; // Devolvemos el arreglo de fechas
+
+            } catch (DateTimeException ex) {
+                JOptionPane.showMessageDialog(vistaPrincipal, "Combinación de fecha no válida (ej: 31 de febrero).", "Fecha Inexistente", JOptionPane.ERROR_MESSAGE);
+                return null;
+            }
+        }
+        return null; // Retorna null si el usuario hizo clic en "Cancelar" o cerró la ventana
+    }
+
+    private Integer[] generarRango(int inicio, int fin) {
+        Integer[] rango = new Integer[fin - inicio + 1];
+        for (int i = 0; i < rango.length; i++) rango[i] = inicio + i;
+        return rango;
     }
 
     private void limpiarReporte() {
@@ -56,8 +140,8 @@ public class GerenteController {
 
     private void cerrarSesion() {
         int confirmacion = JOptionPane.showConfirmDialog(vistaPrincipal,
-            "¿Estás seguro que querés salir del panel de gerencia?", "Cerrar Sesión",
-            JOptionPane.YES_NO_OPTION);
+                "¿Estás seguro que querés salir del panel de gerencia?", "Cerrar Sesión",
+                JOptionPane.YES_NO_OPTION);
 
         if (confirmacion == JOptionPane.YES_OPTION) {
             vistaPrincipal.dispose();
@@ -65,32 +149,5 @@ public class GerenteController {
             new LoginController(ventanaLogin, em);
             ventanaLogin.setVisible(true);
         }
-    }
-
-    private void calcularRendimiento() {
-        String periodo = vistaPrincipal.getComboFiltroRendimiento().getSelectedItem().toString();
-        String[] columnas = {"Usuario Vendedor", "Cant. Ventas", "Total Facturado", "Comisión Estimada (5%)"};
-        Object[][] datos;
-
-        // Simulamos la agrupación de ventas por vendedor según el período
-        if (periodo.equals("Este Mes")) {
-            datos = new Object[][]{
-                    {"vendedor1", "45", "$3.500.000", "$175.000"},
-                    {"vendedor2", "38", "$2.800.000", "$140.000"}
-            };
-        } else if (periodo.equals("Mes Anterior")) {
-            datos = new Object[][]{
-                    {"vendedor1", "60", "$4.200.000", "$210.000"},
-                    {"vendedor2", "55", "$3.900.000", "$195.000"}
-            };
-        } else {
-            // Año Actual
-            datos = new Object[][]{
-                    {"vendedor1", "320", "$25.500.000", "$1.275.000"},
-                    {"vendedor2", "290", "$21.800.000", "$1.090.000"}
-            };
-        }
-
-        vistaPrincipal.getTablaRendimiento().setModel(new DefaultTableModel(datos, columnas));
     }
 }

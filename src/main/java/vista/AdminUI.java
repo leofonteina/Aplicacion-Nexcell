@@ -42,8 +42,8 @@ public class AdminUI extends JFrame {
 
         // Agregamos: Título, Ícono, Panel
         sistemaPestanas.addTab("Productos ", cargarIcono("/iconos/icono_productos.png"), crearPanelProductos());
-        sistemaPestanas.addTab("Usuarios ", cargarIcono("/iconos/icono_reportes.png"), crearPanelUsuarios());
-        sistemaPestanas.addTab("Reportes ", cargarIcono("/iconos/icono_usuarios.png"), crearPanelReportes());
+        sistemaPestanas.addTab("Usuarios ", cargarIcono("/iconos/icono_usuarios.png"), crearPanelUsuarios());
+        sistemaPestanas.addTab("Reportes ", cargarIcono("/iconos/icono_reportes.png"), crearPanelReportes());
 
         add(sistemaPestanas, BorderLayout.CENTER);
 
@@ -60,7 +60,6 @@ public class AdminUI extends JFrame {
 
         JPanel panelSuperior = new JPanel(new BorderLayout());
 
-
         JPanel panelBusqueda = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
 
         buscarProductoField = new JTextField(15);
@@ -72,12 +71,19 @@ public class AdminUI extends JFrame {
         panelBusqueda.add(buscarProductoField);
         panelBusqueda.add(btnBuscarProducto);
 
-        // Agregamos los botones de ABM (Alta, Baja, Modificación)
-        JPanel panelAcciones = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
+        // Cambiamos el 0 a 10 para que se alinee con el panel de búsqueda
+        JPanel panelAcciones = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 10));
         btnAbrirFormularioProducto = new JButton("Nuevo");
+        btnAbrirFormularioProducto.setPreferredSize(new Dimension(100, 35));
+
         btnModificarProducto = new JButton("Modificar");
+        btnModificarProducto.setPreferredSize(new Dimension(100, 35));
+
         btnBajaProducto = new JButton("Baja Lógica");
+        btnBajaProducto.setPreferredSize(new Dimension(100, 35));
+
         btnAltaProducto = new JButton("Reactivar");
+        btnAltaProducto.setPreferredSize(new Dimension(100, 35));
 
         // OCULTAR BOTONES POR DEFECTO
         btnModificarProducto.setVisible(false);
@@ -95,15 +101,14 @@ public class AdminUI extends JFrame {
         // Agregamos la columna "Estado" para visualizar la baja lógica
         String[] columnas = {"ID", "Modelo", "Categoría", "Stock", "Precio", "Estado"};
         Object[][] datosEjemplo = {
-            {"CEL-001", "Motorola Edge 60 Pro", "Celulares", "15", "$850.000", "Activo"},
-            {"ACC-002", "Funda Silicona", "Accesorios", "30", "$15.000", "Inactivo"}
+                {"CEL-001", "Motorola Edge 60 Pro", "Celulares", "15", "$850.000", "Activo"},
+                {"ACC-002", "Funda Silicona", "Accesorios", "30", "$15.000", "Inactivo"}
         };
 
         // Creamos el modelo sobrescribiendo el metodo isCellEditable
         DefaultTableModel modeloTabla = new DefaultTableModel(datosEjemplo, columnas) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                // Al devolver false, bloqueamos la edición de todas las celdas
                 return false;
             }
         };
@@ -122,18 +127,29 @@ public class AdminUI extends JFrame {
 
         JPanel panelSuperior = new JPanel(new BorderLayout());
 
-        JPanel panelBusqueda = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        JPanel panelBusqueda = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
         buscarUsuarioField = new JTextField(15);
+        buscarUsuarioField.setPreferredSize(new Dimension(200, 35));
+
         btnBuscarUsuario = new JButton("Buscar");
+        btnBuscarUsuario.setPreferredSize(new Dimension(100, 35));
         panelBusqueda.add(new JLabel("Usuario: "));
         panelBusqueda.add(buscarUsuarioField);
         panelBusqueda.add(btnBuscarUsuario);
 
-        JPanel panelAcciones = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
+        // Cambiamos el 0 a 10 para que se alinee con el panel de búsqueda
+        JPanel panelAcciones = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 10));
         btnAbrirFormularioUsuario = new JButton("Nuevo");
+        btnAbrirFormularioUsuario.setPreferredSize(new Dimension(100, 35));
+
         btnModificarUsuario = new JButton("Modificar");
+        btnModificarUsuario.setPreferredSize(new Dimension(100, 35));
+
         btnBajaUsuario = new JButton("Baja Lógica");
+        btnBajaUsuario.setPreferredSize(new Dimension(100, 35));
+
         btnAltaUsuario = new JButton("Reactivar");
+        btnAltaUsuario.setPreferredSize(new Dimension(100, 35));
 
         // OCULTAR BOTONES POR DEFECTO
         btnModificarUsuario.setVisible(false);
@@ -150,15 +166,14 @@ public class AdminUI extends JFrame {
 
         String[] columnas = {"Username", "Rol del Sistema", "Estado"};
         Object[][] datosEjemplo = {
-            {"vendedor1", "Vendedor", "Activo"},
-            {"gerente_suc", "Gerente", "Activo"}
+                {"vendedor1", "Vendedor", "Activo"},
+                {"gerente_suc", "Gerente", "Activo"}
         };
 
         // Creamos el modelo sobrescribiendo el metodo isCellEditable
         DefaultTableModel modeloTabla = new DefaultTableModel(datosEjemplo, columnas) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                // Al devolver false, bloqueamos la edición de todas las celdas
                 return false;
             }
         };
@@ -175,11 +190,18 @@ public class AdminUI extends JFrame {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        JPanel panelSuperior = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        // Agregamos espaciado vertical de 10px para que mantenga el mismo margen que las otras pestañas
+        JPanel panelSuperior = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
         String[] opcionesReporte = {"Stock de productos", "Productos registrados", "Usuarios del sistema", "Movimientos"};
+
         comboReportes = new JComboBox<>(opcionesReporte);
+        comboReportes.setPreferredSize(new Dimension(200, 35)); // Hacemos el ComboBox más grande
+
         btnGenerarReporte = new JButton("Generar");
+        btnGenerarReporte.setPreferredSize(new Dimension(100, 35));
+
         btnLimpiarReporte = new JButton("Limpiar");
+        btnLimpiarReporte.setPreferredSize(new Dimension(100, 35));
 
         panelSuperior.add(new JLabel("Tipo de Reporte: "));
         panelSuperior.add(comboReportes);
@@ -190,7 +212,7 @@ public class AdminUI extends JFrame {
         tablaReportes = new JTable(new DefaultTableModel()) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return false; // Bloquea la edición en toda la tabla
+                return false;
             }
         };
         JScrollPane scrollTabla = new JScrollPane(tablaReportes);
@@ -228,7 +250,7 @@ public class AdminUI extends JFrame {
         java.net.URL imgURL = getClass().getResource(ruta);
         if (imgURL != null) {
             ImageIcon iconoOriginal = new ImageIcon(imgURL);
-            // Redimensionamos a 32x32 píxeles (puedes ajustar este número)
+            // Redimensionamos a 32x32 píxeles
             Image imgEscalada = iconoOriginal.getImage().getScaledInstance(32, 32, Image.SCALE_SMOOTH);
             return new ImageIcon(imgEscalada);
         } else {

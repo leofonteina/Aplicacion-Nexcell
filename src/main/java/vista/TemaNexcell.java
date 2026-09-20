@@ -15,6 +15,7 @@ public class TemaNexcell {
         Color fondoPrincipal = new Color(10, 25, 47);
         Color celesteHover = new Color(60, 138, 255);
         Color naranjaClick = new Color(200, 90, 20);
+        Color celesteClick = new Color(60, 138, 255);
         Color filaAlterna = new Color(18, 35, 60);
         Color grisBordes = new Color(35, 55, 80);
 
@@ -48,7 +49,7 @@ public class TemaNexcell {
         UIManager.put("TabbedPane.font", new Font("Segoe UI", Font.BOLD, 15));
 
         // Colores: Naranja para la pestaña activa y efecto al pasar el mouse
-        UIManager.put("TabbedPane.selectedBackground", naranjaNexcell);
+        UIManager.put("TabbedPane.selectedBackground", celesteClick);
         UIManager.put("TabbedPane.selectedForeground", Color.WHITE);
         UIManager.put("TabbedPane.hoverColor", celesteHover);
 
