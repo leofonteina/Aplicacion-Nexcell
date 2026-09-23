@@ -159,7 +159,7 @@ public class DatabaseSeeder {
         Long cantidadVentas = em.createQuery("SELECT COUNT(v) FROM Venta v", Long.class).getSingleResult();
 
         if (cantidadVentas == 0) {
-            System.out.println("Ejecutando Seeder de Ventas (Generando historial de 15 ventas)...");
+            System.out.println("Ejecutando Seeder de Ventas (Generando historial de 50 ventas para reportes)...");
             try {
                 em.getTransaction().begin();
 
@@ -173,7 +173,8 @@ public class DatabaseSeeder {
                 if (!clientes.isEmpty() && !productos.isEmpty() && !vendedores.isEmpty()) {
                     Random random = new Random();
 
-                    for (int i = 0; i < 15; i++) {
+                    // Generamos 50 ventas para nutrir bien las estadísticas
+                    for (int i = 0; i < 50; i++) {
                         Venta venta = new Venta();
 
                         // Seleccionamos un cliente al azar
@@ -184,17 +185,17 @@ public class DatabaseSeeder {
                         modelo.Usuario vendedorAzar = vendedores.get(random.nextInt(vendedores.size()));
                         venta.setVendedor(vendedorAzar);
 
-                        // Fecha al azar dentro de los últimos 30 días
-                        int diasAtras = random.nextInt(30);
+                        // Fecha al azar dentro de los últimos 6 meses (180 días)
+                        int diasAtras = random.nextInt(180);
                         int horasAtras = random.nextInt(24);
                         venta.setFecha(LocalDateTime.now().minusDays(diasAtras).minusHours(horasAtras));
 
                         double totalVenta = 0;
-                        int cantidadArticulosDiferentes = random.nextInt(3) + 1; // 1 a 3 productos distintos por venta
+                        int cantidadArticulosDiferentes = random.nextInt(4) + 1; // 1 a 4 productos distintos por venta
 
                         for (int j = 0; j < cantidadArticulosDiferentes; j++) {
                             Producto productoAzar = productos.get(random.nextInt(productos.size()));
-                            int cantidadComprada = random.nextInt(2) + 1;
+                            int cantidadComprada = random.nextInt(3) + 1; // 1 a 3 unidades
 
                             DetalleVenta detalle = new DetalleVenta();
                             detalle.setProducto(productoAzar);
@@ -211,7 +212,7 @@ public class DatabaseSeeder {
                 }
 
                 em.getTransaction().commit();
-                System.out.println("Seeder completado: 15 ventas de prueba generadas exitosamente.");
+                System.out.println("Seeder completado: 50 ventas de prueba generadas exitosamente para los reportes.");
             } catch (Exception e) {
                 if (em.getTransaction().isActive()) em.getTransaction().rollback();
                 e.printStackTrace();
