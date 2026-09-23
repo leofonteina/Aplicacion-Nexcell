@@ -23,12 +23,10 @@ public class LoginController {
         String user = vista.getUserField().getText();
         String pass = new String(vista.getPassField().getPassword());
 
-        // 1. Bloqueamos el botón para evitar múltiples clics y le damos feedback al usuario
         vista.getLoginButton().setEnabled(false);
         vista.getLoginButton().setText("Conectando...");
 
-        // 2. Usamos SwingWorker para aislar la consulta a la BD en un hilo secundario
-        // Esto evita el "congelamiento" (Deadlock) de la ventana principal
+
         SwingWorker<Usuario, Void> worker = new SwingWorker<Usuario, Void>() {
 
             @Override
@@ -57,7 +55,7 @@ public class LoginController {
             }
         };
 
-        worker.execute(); // ¡Disparamos el hilo secundario!
+        worker.execute();
     }
 
     private void restaurarBoton() {
@@ -84,7 +82,7 @@ public class LoginController {
             }
         } catch (Exception e) {
             System.err.println("Error al consultar la BD: " + e.getMessage());
-            throw e; // Lanzamos el error para que lo atrape el catch del SwingWorker
+            throw e;
         }
 
         return null;

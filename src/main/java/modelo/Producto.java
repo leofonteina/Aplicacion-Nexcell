@@ -14,7 +14,7 @@ public class Producto {
     @Column(nullable = false)
     private String nombre;
 
-    @Column(columnDefinition = "TEXT") // TEXT permite descripciones más largas
+    @Column(columnDefinition = "TEXT")
     private String descripcion;
 
     private String categoria;
@@ -23,7 +23,7 @@ public class Producto {
     private double precio;
     private double descuento;
 
-    private boolean estado; // true = activo, false = inactivo
+    private boolean estado;
 
     private String rutaImagen;
 

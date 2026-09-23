@@ -39,10 +39,6 @@ public class VendedorController {
         this.vistaPrincipal.getBtnBajaCliente().addActionListener(e -> cambiarEstadoCliente(false));
         this.vistaPrincipal.getBtnAltaCliente().addActionListener(e -> cambiarEstadoCliente(true));
 
-        // NUEVO: Evento del botón Reportes
-        this.vistaPrincipal.getBtnGenerarReporte().addActionListener(e -> generarReporte());
-
-        // Ordenadores y clics fuera de tabla
         this.vistaPrincipal.getTablaClientes().setAutoCreateRowSorter(true);
         this.vistaPrincipal.getTablaProductos().setAutoCreateRowSorter(true);
         this.vistaPrincipal.getTablaVentas().setAutoCreateRowSorter(true);

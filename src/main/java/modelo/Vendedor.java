@@ -22,7 +22,6 @@ public class Vendedor extends Usuario {
     public void mostrarInterfaz(EntityManager em) {
         VendedorUI vista = new VendedorUI();
 
-        // ACÁ ESTÁ EL CAMBIO: Le pasamos 'this' (este vendedor) como tercer parámetro
         new VendedorController(vista, em, this);
 
         vista.setVisible(true);

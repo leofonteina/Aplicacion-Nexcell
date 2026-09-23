@@ -43,7 +43,6 @@ public class AdminController {
         this.em = em;
         this.productoRepo = new ProductoRepository(em);
 
-        // 1. Cargar los datos reales en la tabla al abrir la ventana
         cargarTablaProductos();
 
         // Escuchadores de Productos
@@ -421,7 +420,6 @@ public class AdminController {
         // --- CAMBIO EN EL DNI ---
         ventanaModificacion.getTxtDni().setText(usuario.getDni()); // Mostramos el DNI actual
         ventanaModificacion.getTxtDni().setEditable(false);        // Bloqueamos para que no lo puedan editar
-        // ------------------------
 
         ventanaModificacion.getTxtEmail().setText(usuario.getEmail());
 
@@ -582,8 +580,6 @@ public class AdminController {
 
     // === REPORTES CON MENÚS DESPLEGABLES ===
 
-    // === REPORTES REESTRUCTURADOS ===
-
     private void generarReporte() {
         String reporte = vistaPrincipal.getComboReportes().getSelectedItem().toString();
 
@@ -620,7 +616,7 @@ public class AdminController {
 
     // 2. Reporte de Valorización (Cálculo financiero agrupado)
     private void reporteValorizacion() {
-        // Lógica futura: SELECT categoria, SUM(stock), SUM(stock * precio) FROM productos GROUP BY categoria
+
         String[] columnas = {"Categoría", "Cantidad Total de Ítems", "Valor Total Invertido"};
         Object[][] datos = {
                 {"Celulares", 145, "$45.500.000"},
@@ -641,7 +637,7 @@ public class AdminController {
         LocalDate[] fechas = pedirRangoFechas("Rango para Movimientos de Inventario");
         if (fechas == null) return;
 
-        // Lógica futura: Consultar tabla 'movimientos' por rango de fecha
+
         String[] columnas = {"Fecha", "Usuario", "Acción", "Producto", "Cant."};
         Object[][] datos = {
                 {fechas[0].format(DateTimeFormatter.ofPattern("dd/MM/yyyy")), "admin_juan", "Entrada (+)", "Samsung S23", "20"},
@@ -655,7 +651,6 @@ public class AdminController {
         LocalDate[] fechas = pedirRangoFechas("Rango para Auditoría de Usuarios");
         if (fechas == null) return;
 
-        // Lógica futura: Consultar tabla 'usuarios' filtrando por fechaCreacion o fechaModificacion
         String[] columnas = {"Fecha", "Username", "Rol", "Acción Registrada"};
         Object[][] datos = {
                 {fechas[0].format(DateTimeFormatter.ofPattern("dd/MM/yyyy")), "vendedor_nuevo", "Vendedor", "Alta de Usuario"},

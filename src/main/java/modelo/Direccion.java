@@ -6,7 +6,7 @@ import jakarta.persistence.Embeddable;
 public class Direccion {
 
     private String calle;
-    private String altura; // Usamos String por si la casa es "S/N" o "Mz A"
+    private String altura;
     private String ciudad;
     private String provincia;
 
