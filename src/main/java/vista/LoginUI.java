@@ -11,32 +11,35 @@ public class LoginUI extends JFrame {
 
     public LoginUI() {
         setTitle("Iniciar Sesión - Nexcell");
-        setSize(350, 300); // Un poco más alto para el nuevo diseño
+        setSize(450, 380); // Tamaño ideal para un login (ni muy chico, ni pantalla completa)
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
-        setResizable(false);
+        setResizable(false); // Evitamos que el usuario lo deforme
+        setLocationRelativeTo(null); // Lo centra perfectamente en el medio del monitor
 
-        // Panel principal con BorderLayout para separar el logo del formulario
         JPanel panelPrincipal = new JPanel(new BorderLayout());
-        panelPrincipal.setBorder(BorderFactory.createEmptyBorder(20, 40, 20, 40));
+        panelPrincipal.setBorder(BorderFactory.createEmptyBorder(30, 50, 30, 50));
         panelPrincipal.setOpaque(false);
 
-        // --- Título/Logo superior ---
         JLabel lblLogo = new JLabel("Nexcell.", SwingConstants.CENTER);
-        lblLogo.setFont(new Font("Segoe UI", Font.BOLD, 32));
-        lblLogo.setForeground(new Color(255, 120, 30)); // Naranja exacto de Nexcell
-        lblLogo.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
+        lblLogo.setFont(new Font("Segoe UI", Font.BOLD, 42));
+        lblLogo.setForeground(new Color(255, 120, 30));
+        lblLogo.setBorder(BorderFactory.createEmptyBorder(0, 0, 30, 0));
         panelPrincipal.add(lblLogo, BorderLayout.NORTH);
 
-        // --- Panel del formulario ---
-        JPanel panelForm = new JPanel(new GridLayout(4, 1, 5, 5));
-        panelForm.setOpaque(false); // Transparente para heredar el azul oscuro
+        JPanel panelForm = new JPanel(new GridLayout(4, 1, 8, 8));
+        panelForm.setOpaque(false);
 
         JLabel userLabel = new JLabel("Usuario:");
+        userLabel.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+        userLabel.setForeground(Color.WHITE);
         userField = new JTextField();
+        userField.setFont(new Font("Segoe UI", Font.PLAIN, 15));
 
         JLabel passLabel = new JLabel("Contraseña:");
+        passLabel.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+        passLabel.setForeground(Color.WHITE);
         passField = new JPasswordField();
+        passField.setFont(new Font("Segoe UI", Font.PLAIN, 15));
 
         panelForm.add(userLabel);
         panelForm.add(userField);
@@ -45,16 +48,17 @@ public class LoginUI extends JFrame {
 
         panelPrincipal.add(panelForm, BorderLayout.CENTER);
 
-        // --- Botón inferior ---
         loginButton = new JButton("Ingresar al Sistema");
+        loginButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        loginButton.setPreferredSize(new Dimension(200, 40));
+
         JPanel panelBoton = new JPanel(new FlowLayout(FlowLayout.CENTER));
         panelBoton.setOpaque(false);
-        panelBoton.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
+        panelBoton.setBorder(BorderFactory.createEmptyBorder(25, 0, 0, 0));
         panelBoton.add(loginButton);
 
         panelPrincipal.add(panelBoton, BorderLayout.SOUTH);
 
-        // Cambiamos el color de fondo de la ventana principal
         getContentPane().setBackground(new Color(10, 25, 47));
         add(panelPrincipal);
     }
