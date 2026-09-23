@@ -56,7 +56,7 @@ public class RegistroUsuarioUI extends JDialog {
         agregarCampoConError(panelDireccion, "Ciudad:", txtCiudad = new JTextField(15), lblErrorCiudad, 4);
 
         String[] provincias = {"Corrientes", "Chaco", "Misiones", "Formosa", "Entre Ríos", "Santa Fe", "Buenos Aires", "Otra"};
-        // Como la provincia es un ComboBox cerrado, rara vez necesita error de validación manual, pero mantenemos la estructura
+
         agregarCampo(panelDireccion, "Provincia:", cbProvincia = new JComboBox<>(provincias), 6);
 
         // --- DATOS DE CUENTA ---
@@ -68,7 +68,6 @@ public class RegistroUsuarioUI extends JDialog {
         String[] roles = {"Administrador", "Gerente", "Vendedor"};
         agregarCampo(panelCuenta, "Rol del Sistema:", cbPerfil = new JComboBox<>(roles), 6);
 
-        // Ensamblar todo
         panelPrincipal.add(panelPersonales);
         panelPrincipal.add(Box.createRigidArea(new Dimension(0, 5)));
         panelPrincipal.add(panelDireccion);
@@ -83,7 +82,6 @@ public class RegistroUsuarioUI extends JDialog {
         btnCancelar = new JButton("Cancelar");
         btnGuardarUsuario = new JButton("Guardar Usuario");
 
-        // El Glue empuja el botón de cancelar a la izquierda y el de guardar a la derecha
         panelBotones.add(btnCancelar);
         panelBotones.add(Box.createHorizontalGlue());
         panelBotones.add(btnGuardarUsuario);
@@ -142,7 +140,7 @@ public class RegistroUsuarioUI extends JDialog {
         gbc.gridx = 1; panel.add(componente, gbc);
     }
 
-    // Agrega el campo y reserva la fila de abajo para el mensaje de error
+
     private void agregarCampoConError(JPanel panel, String labelText, JComponent componente, JLabel lblError, int filaBase) {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;

@@ -32,7 +32,7 @@ public class RegistroVentaUI extends JDialog {
         lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 22));
         panelPrincipal.add(lblTitulo, BorderLayout.NORTH);
 
-        // --- Panel Superior (DNI y Productos) ---
+        // --- Panel Superior
         JPanel panelForm = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(8, 5, 8, 5);
@@ -41,7 +41,7 @@ public class RegistroVentaUI extends JDialog {
 
         Font fuenteLabel = new Font("Segoe UI", Font.PLAIN, 14);
 
-        // 1. DNI y Verificar
+        // DNI y Verificar
         gbc.gridx = 0; gbc.gridy = 0;
         JLabel lblDni = new JLabel("DNI del Cliente:");
         lblDni.setFont(fuenteLabel);
@@ -63,11 +63,9 @@ public class RegistroVentaUI extends JDialog {
         lblNombreCliente.setFont(new Font("Segoe UI", Font.ITALIC, 13));
         panelForm.add(lblNombreCliente, gbc);
 
-        // Separador
         gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 3;
         panelForm.add(new JSeparator(), gbc);
 
-        // 2. Producto
         gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 1;
         JLabel lblProd = new JLabel("Producto:");
         lblProd.setFont(fuenteLabel);
@@ -77,7 +75,6 @@ public class RegistroVentaUI extends JDialog {
         productoBox = new JComboBox<>(new String[]{"Cargando productos..."});
         panelForm.add(productoBox, gbc);
 
-        // 3. Cantidad y Agregar
         gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 1;
         JLabel lblCant = new JLabel("Cantidad:");
         lblCant.setFont(fuenteLabel);
@@ -113,7 +110,6 @@ public class RegistroVentaUI extends JDialog {
 
         panelPrincipal.add(panelCentro, BorderLayout.CENTER);
 
-        // --- Panel Inferior (Total y Botón) ---
         JPanel panelBoton = new JPanel(new BorderLayout());
 
         lblTotalVenta = new JLabel("Total: $0.00");

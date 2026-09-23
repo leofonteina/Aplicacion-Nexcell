@@ -11,10 +11,10 @@ public class LoginUI extends JFrame {
 
     public LoginUI() {
         setTitle("Iniciar Sesión - Nexcell");
-        setSize(450, 380); // Tamaño ideal para un login (ni muy chico, ni pantalla completa)
+        setSize(450, 380);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setResizable(false); // Evitamos que el usuario lo deforme
-        setLocationRelativeTo(null); // Lo centra perfectamente en el medio del monitor
+        setResizable(false);
+        setLocationRelativeTo(null);
 
         JPanel panelPrincipal = new JPanel(new BorderLayout());
         panelPrincipal.setBorder(BorderFactory.createEmptyBorder(30, 50, 30, 50));

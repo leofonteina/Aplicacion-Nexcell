@@ -18,7 +18,7 @@ public class RegistroClienteUI extends JDialog {
         setLocationRelativeTo(parent);
         setResizable(false);
 
-        // Panel principal tipo "Tarjeta"
+        // Panel principal
         JPanel panelPrincipal = new JPanel(new BorderLayout());
         panelPrincipal.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
 
@@ -69,7 +69,7 @@ public class RegistroClienteUI extends JDialog {
 
         panelPrincipal.add(panelForm, BorderLayout.CENTER);
 
-        // --- Panel Inferior (Botón) ---
+        // --- Panel Inferior ---
         JPanel panelBoton = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         btnGuardarCliente = new JButton("Guardar Cliente");
         btnGuardarCliente.setCursor(new Cursor(Cursor.HAND_CURSOR));
