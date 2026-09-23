@@ -17,6 +17,7 @@ public class RegistroProductoUI extends JDialog {
     // Componentes para la imagen
     private JTextField rutaImagenField;
     private JButton btnSeleccionarImagen;
+    private JButton btnCancelar;
 
     private JButton btnGuardarProducto;
 
@@ -84,12 +85,24 @@ public class RegistroProductoUI extends JDialog {
         panelImagen.add(btnSeleccionarImagen, BorderLayout.EAST);
         panel.add(panelImagen, gbc);
 
-        // Fila 7: Botón
+        // Fila 7: Botones
         gbc.gridy = 7;
-        gbc.gridx = 1;
+        gbc.gridx = 0;
+        gbc.gridwidth = 2; // Hace que el panel ocupe las dos columnas
         gbc.insets = new Insets(15, 10, 10, 10);
+
+        JPanel panelBotones = new JPanel();
+        panelBotones.setLayout(new BoxLayout(panelBotones, BoxLayout.X_AXIS));
+
+        btnCancelar = new JButton("Cancelar");
         btnGuardarProducto = new JButton("Guardar Producto");
-        panel.add(btnGuardarProducto, gbc);
+
+        // El Glue funciona como un resorte que empuja a los componentes a los lados
+        panelBotones.add(btnCancelar);
+        panelBotones.add(Box.createHorizontalGlue());
+        panelBotones.add(btnGuardarProducto);
+
+        panel.add(panelBotones, gbc);
 
         add(panel);
     }
@@ -108,4 +121,5 @@ public class RegistroProductoUI extends JDialog {
     public JButton getBtnSeleccionarImagen() { return btnSeleccionarImagen; }
 
     public JButton getBtnGuardarProducto() { return btnGuardarProducto; }
+    public JButton getBtnCancelar() { return btnCancelar; }
 }

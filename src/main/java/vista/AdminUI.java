@@ -192,7 +192,8 @@ public class AdminUI extends JFrame {
 
         // Agregamos espaciado vertical de 10px para que mantenga el mismo margen que las otras pestañas
         JPanel panelSuperior = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
-        String[] opcionesReporte = {"Stock de productos", "Productos registrados", "Usuarios del sistema", "Movimientos"};
+        // Cambiar esta línea:
+        String[] opcionesReporte = {"Productos con Bajo Stock", "Valorización de Inventario", "Movimientos de Inventario", "Auditoría de Usuarios"};
 
         comboReportes = new JComboBox<>(opcionesReporte);
         comboReportes.setPreferredSize(new Dimension(200, 35)); // Hacemos el ComboBox más grande

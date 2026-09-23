@@ -1,5 +1,6 @@
 package controlador;
 
+// Todas las clases que se utilizan en Admin Controller
 import modelo.Producto;
 import modelo.Usuario;
 import modelo.Admin;
@@ -12,17 +13,23 @@ import vista.RegistroProductoUI;
 import vista.RegistroUsuarioUI;
 import vista.LoginUI;
 
+// Librerias para la conexión a la base de datos
 import jakarta.persistence.EntityManager;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 
+// Librerias para las fechas locales
 import java.time.LocalDateTime;
 import java.time.LocalDate;
 import java.time.DateTimeException;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+
+// Librerias para los eventos del mouse
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 public class AdminController {
 
@@ -85,7 +92,7 @@ public class AdminController {
         this.vistaPrincipal.getBtnLimpiarReporte().addActionListener(e -> limpiarReporte());
         this.vistaPrincipal.getBtnCerrarSesion().addActionListener(e -> cerrarSesion());
 
-        // Escuchadores de Búsqueda de Usuarios (CORREGIDO: Ahora están adentro del constructor)
+        // Escuchadores de Búsqueda de Usuarios
         this.vistaPrincipal.getBtnBuscarUsuario().addActionListener(e -> filtrarTablaUsuarios());
         this.vistaPrincipal.getTxtBuscarUsuario().addKeyListener(new java.awt.event.KeyAdapter() {
             @Override
@@ -95,6 +102,31 @@ public class AdminController {
         });
 
         cargarTablaUsuarios();
+
+        // --- DESELECCIONAR AL HACER CLIC EN EL VACÍO ---
+
+        // Para la tabla de Productos
+        this.vistaPrincipal.getTablaProductos().setFillsViewportHeight(true);
+        this.vistaPrincipal.getTablaProductos().addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (vistaPrincipal.getTablaProductos().rowAtPoint(e.getPoint()) == -1) {
+                    vistaPrincipal.getTablaProductos().clearSelection();
+                }
+            }
+        });
+
+        // Para la tabla de Usuarios
+        this.vistaPrincipal.getTablaUsuarios().setFillsViewportHeight(true);
+        this.vistaPrincipal.getTablaUsuarios().addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (vistaPrincipal.getTablaUsuarios().rowAtPoint(e.getPoint()) == -1) {
+                    vistaPrincipal.getTablaUsuarios().clearSelection();
+                }
+            }
+        });
+
     }
 
 // --- MÉTODOS DE BASE DE DATOS PARA PRODUCTOS ---
@@ -143,6 +175,9 @@ public class AdminController {
     private void abrirFormularioNuevoProducto() {
         RegistroProductoUI ventanaRegistro = new RegistroProductoUI(vistaPrincipal);
 
+        // Acción de Cancelar
+        ventanaRegistro.getBtnCancelar().addActionListener(e -> ventanaRegistro.dispose());
+
         ventanaRegistro.getBtnGuardarProducto().addActionListener(e -> {
             try {
                 Producto nuevoProducto = new Producto();
@@ -162,7 +197,7 @@ public class AdminController {
 
                 JOptionPane.showMessageDialog(ventanaRegistro, "Producto guardado en la base de datos.");
                 ventanaRegistro.dispose();
-                cargarTablaProductos(); // Refrescamos la tabla
+                cargarTablaProductos();
 
             } catch (NumberFormatException ex) {
                 JOptionPane.showMessageDialog(ventanaRegistro, "Error: Revisa que el precio, stock y descuento sean números válidos.", "Error de formato", JOptionPane.ERROR_MESSAGE);
@@ -183,7 +218,9 @@ public class AdminController {
         ventana.setTitle("Modificar Producto");
         ventana.getBtnGuardarProducto().setText("Actualizar");
 
-        // Cargar los datos actuales en el formulario
+        // Acción de Cancelar
+        ventana.getBtnCancelar().addActionListener(e -> ventana.dispose());
+
         ventana.getNombreField().setText(productoActual.getNombre());
         ventana.getDescripcionArea().setText(productoActual.getDescripcion());
         ventana.getPrecioField().setText(String.valueOf(productoActual.getPrecio()));
@@ -193,24 +230,31 @@ public class AdminController {
         ventana.getMarcaBox().setSelectedItem(productoActual.getMarca());
 
         ventana.getBtnGuardarProducto().addActionListener(e -> {
-            try {
-                productoActual.setNombre(ventana.getNombreField().getText());
-                productoActual.setDescripcion(ventana.getDescripcionArea().getText());
-                productoActual.setPrecio(Double.parseDouble(ventana.getPrecioField().getText()));
-                productoActual.setDescuento(Double.parseDouble(ventana.getDescuentoField().getText()));
-                productoActual.setStock(Integer.parseInt(ventana.getStockField().getText()));
-                productoActual.setCategoria(ventana.getCategoriaBox().getSelectedItem().toString());
-                productoActual.setMarca(ventana.getMarcaBox().getSelectedItem().toString());
-                productoActual.setFechaModificacion(LocalDateTime.now());
+            // Confirmación antes de actualizar
+            int confirmacion = JOptionPane.showConfirmDialog(ventana,
+                    "¿Estás seguro que deseas sobreescribir los datos de este producto?",
+                    "Confirmar Actualización", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 
-                productoRepo.actualizar(productoActual);
+            if (confirmacion == JOptionPane.YES_OPTION) {
+                try {
+                    productoActual.setNombre(ventana.getNombreField().getText());
+                    productoActual.setDescripcion(ventana.getDescripcionArea().getText());
+                    productoActual.setPrecio(Double.parseDouble(ventana.getPrecioField().getText()));
+                    productoActual.setDescuento(Double.parseDouble(ventana.getDescuentoField().getText()));
+                    productoActual.setStock(Integer.parseInt(ventana.getStockField().getText()));
+                    productoActual.setCategoria(ventana.getCategoriaBox().getSelectedItem().toString());
+                    productoActual.setMarca(ventana.getMarcaBox().getSelectedItem().toString());
+                    productoActual.setFechaModificacion(LocalDateTime.now());
 
-                JOptionPane.showMessageDialog(ventana, "Producto actualizado con éxito.");
-                ventana.dispose();
-                cargarTablaProductos();
+                    productoRepo.actualizar(productoActual);
 
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(ventana, "Revisa los valores numéricos.", "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(ventana, "Producto actualizado con éxito.");
+                    ventana.dispose();
+                    cargarTablaProductos();
+
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(ventana, "Revisa los valores numéricos.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
             }
         });
 
@@ -243,6 +287,9 @@ public class AdminController {
     private void abrirFormularioUsuario() {
         RegistroUsuarioUI ventanaRegistro = new RegistroUsuarioUI(this.vistaPrincipal);
         UsuarioRepository usuarioRepo = new UsuarioRepository(this.em);
+
+        // Acción de Cancelar
+        ventanaRegistro.getBtnCancelar().addActionListener(e -> ventanaRegistro.dispose());
 
         ventanaRegistro.getBtnGuardarUsuario().addActionListener(e -> {
             ventanaRegistro.limpiarErrores();
@@ -360,9 +407,12 @@ public class AdminController {
         ventanaModificacion.setTitle("Modificar Usuario");
         ventanaModificacion.getBtnGuardarUsuario().setText("Actualizar Datos");
 
+        // Acción de Cancelar
+        ventanaModificacion.getBtnCancelar().addActionListener(e -> ventanaModificacion.dispose());
+
         // Cargamos los datos
         ventanaModificacion.getTxtUsername().setText(usuario.getUsername());
-        ventanaModificacion.getTxtUsername().setText(usuario.getUsername()); // Lo ideal es que el username tampoco se pueda cambiar
+        ventanaModificacion.getTxtUsername().setEditable(false); // Evita cambiar el username
 
         ventanaModificacion.getTxtPassword().setText(usuario.getPassword());
         ventanaModificacion.getTxtNombre().setText(usuario.getNombre());
@@ -383,69 +433,77 @@ public class AdminController {
         }
 
         ventanaModificacion.getBtnGuardarUsuario().addActionListener(e -> {
-            ventanaModificacion.limpiarErrores();
-            boolean hayErrores = false;
 
-            String nombre = ventanaModificacion.getTxtNombre().getText().trim();
-            String apellido = ventanaModificacion.getTxtApellido().getText().trim();
-            String dni = ventanaModificacion.getTxtDni().getText().trim();
-            String email = ventanaModificacion.getTxtEmail().getText().trim();
-            String calle = ventanaModificacion.getTxtCalle().getText().trim();
-            String altura = ventanaModificacion.getTxtAltura().getText().trim();
-            String ciudad = ventanaModificacion.getTxtCiudad().getText().trim();
+            // Confirmación antes de actualizar
+            int confirmacion = JOptionPane.showConfirmDialog(ventanaModificacion,
+                    "¿Estás seguro que deseas modificar los datos de " + usuario.getUsername() + "?",
+                    "Confirmar Cambios", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 
-            if (nombre.isEmpty() || !nombre.matches("[a-zA-ZáéíóúÁÉÍÓÚñÑ\\s]+")) {
-                ventanaModificacion.getLblErrorNombre().setText("Requerido. Solo letras permitidas.");
-                hayErrores = true;
-            }
-            if (apellido.isEmpty() || !apellido.matches("[a-zA-ZáéíóúÁÉÍÓÚñÑ\\s]+")) {
-                ventanaModificacion.getLblErrorApellido().setText("Requerido. Solo letras permitidas.");
-                hayErrores = true;
-            }
-            if (!dni.matches("\\d{7,8}")) {
-                ventanaModificacion.getLblErrorDni().setText("Debe contener 7 u 8 números exactos.");
-                hayErrores = true;
-            } else if (!dni.equals(usuario.getDni()) && repo.existeDni(dni)) {
-                ventanaModificacion.getLblErrorDni().setText("Este DNI ya pertenece a otro usuario.");
-                hayErrores = true;
-            }
-            if (!email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
-                ventanaModificacion.getLblErrorEmail().setText("Formato inválido (ej: correo@mail.com).");
-                hayErrores = true;
-            }
-            if (calle.isEmpty()) {
-                ventanaModificacion.getLblErrorCalle().setText("La calle es obligatoria.");
-                hayErrores = true;
-            }
-            if (!altura.matches("\\d+")) {
-                ventanaModificacion.getLblErrorAltura().setText("Debe ser numérico.");
-                hayErrores = true;
-            }
-            if (ciudad.isEmpty()) {
-                ventanaModificacion.getLblErrorCiudad().setText("La ciudad es obligatoria.");
-                hayErrores = true;
-            }
+            if (confirmacion == JOptionPane.YES_OPTION) {
+                ventanaModificacion.limpiarErrores();
+                boolean hayErrores = false;
 
-            if (hayErrores) return;
+                String nombre = ventanaModificacion.getTxtNombre().getText().trim();
+                String apellido = ventanaModificacion.getTxtApellido().getText().trim();
+                String dni = ventanaModificacion.getTxtDni().getText().trim();
+                String email = ventanaModificacion.getTxtEmail().getText().trim();
+                String calle = ventanaModificacion.getTxtCalle().getText().trim();
+                String altura = ventanaModificacion.getTxtAltura().getText().trim();
+                String ciudad = ventanaModificacion.getTxtCiudad().getText().trim();
 
-            usuario.setNombre(nombre);
-            usuario.setApellido(apellido);
-            usuario.setDni(dni);
-            usuario.setEmail(email);
+                if (nombre.isEmpty() || !nombre.matches("[a-zA-ZáéíóúÁÉÍÓÚñÑ\\s]+")) {
+                    ventanaModificacion.getLblErrorNombre().setText("Requerido. Solo letras permitidas.");
+                    hayErrores = true;
+                }
+                if (apellido.isEmpty() || !apellido.matches("[a-zA-ZáéíóúÁÉÍÓÚñÑ\\s]+")) {
+                    ventanaModificacion.getLblErrorApellido().setText("Requerido. Solo letras permitidas.");
+                    hayErrores = true;
+                }
+                if (!dni.matches("\\d{7,8}")) {
+                    ventanaModificacion.getLblErrorDni().setText("Debe contener 7 u 8 números exactos.");
+                    hayErrores = true;
+                } else if (!dni.equals(usuario.getDni()) && repo.existeDni(dni)) {
+                    ventanaModificacion.getLblErrorDni().setText("Este DNI ya pertenece a otro usuario.");
+                    hayErrores = true;
+                }
+                if (!email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+                    ventanaModificacion.getLblErrorEmail().setText("Formato inválido (ej: correo@mail.com).");
+                    hayErrores = true;
+                }
+                if (calle.isEmpty()) {
+                    ventanaModificacion.getLblErrorCalle().setText("La calle es obligatoria.");
+                    hayErrores = true;
+                }
+                if (!altura.matches("\\d+")) {
+                    ventanaModificacion.getLblErrorAltura().setText("Debe ser numérico.");
+                    hayErrores = true;
+                }
+                if (ciudad.isEmpty()) {
+                    ventanaModificacion.getLblErrorCiudad().setText("La ciudad es obligatoria.");
+                    hayErrores = true;
+                }
 
-            if (usuario.getDireccion() == null) usuario.setDireccion(new modelo.Direccion());
-            usuario.getDireccion().setCalle(calle);
-            usuario.getDireccion().setAltura(altura);
-            usuario.getDireccion().setCiudad(ciudad);
-            usuario.getDireccion().setProvincia(ventanaModificacion.getCbProvincia().getSelectedItem().toString());
+                if (hayErrores) return;
 
-            try {
-                repo.actualizar(usuario);
-                JOptionPane.showMessageDialog(ventanaModificacion, "Datos actualizados correctamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-                ventanaModificacion.dispose();
-                cargarTablaUsuarios();
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(ventanaModificacion, "Error al actualizar la base de datos.", "Error", JOptionPane.ERROR_MESSAGE);
+                usuario.setNombre(nombre);
+                usuario.setApellido(apellido);
+                usuario.setDni(dni);
+                usuario.setEmail(email);
+
+                if (usuario.getDireccion() == null) usuario.setDireccion(new modelo.Direccion());
+                usuario.getDireccion().setCalle(calle);
+                usuario.getDireccion().setAltura(altura);
+                usuario.getDireccion().setCiudad(ciudad);
+                usuario.getDireccion().setProvincia(ventanaModificacion.getCbProvincia().getSelectedItem().toString());
+
+                try {
+                    repo.actualizar(usuario);
+                    JOptionPane.showMessageDialog(ventanaModificacion, "Datos actualizados correctamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                    ventanaModificacion.dispose();
+                    cargarTablaUsuarios();
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(ventanaModificacion, "Error al actualizar la base de datos.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
             }
         });
         ventanaModificacion.setVisible(true);
@@ -524,25 +582,90 @@ public class AdminController {
 
     // === REPORTES CON MENÚS DESPLEGABLES ===
 
+    // === REPORTES REESTRUCTURADOS ===
+
     private void generarReporte() {
         String reporte = vistaPrincipal.getComboReportes().getSelectedItem().toString();
-        if (reporte.equals("Stock de productos")) reporteStock();
-        else if (reporte.equals("Productos registrados")) reporteProductos();
-        else if (reporte.equals("Usuarios del sistema")) reporteUsuarios();
-        else reporteMovimientos();
+
+        switch (reporte) {
+            case "Productos con Bajo Stock":
+                reporteBajoStock();
+                break;
+            case "Valorización de Inventario":
+                reporteValorizacion();
+                break;
+            case "Movimientos de Inventario":
+                reporteMovimientos();
+                break;
+            case "Auditoría de Usuarios":
+                reporteAuditoriaUsuarios();
+                break;
+        }
     }
 
     private void limpiarReporte() {
         vistaPrincipal.getTablaReportes().setModel(new DefaultTableModel());
     }
 
-    private Integer[] generarRango(int inicio, int fin) {
-        Integer[] rango = new Integer[fin - inicio + 1];
-        for (int i = 0; i < rango.length; i++) rango[i] = inicio + i;
-        return rango;
+    // 1. Reporte de Bajo Stock (Alerta para compras)
+    private void reporteBajoStock() {
+        // Lógica futura: SELECT * FROM productos WHERE stock <= 5 AND estado = 1
+        String[] columnas = {"ID", "Producto", "Marca", "Stock Actual", "Precio"};
+        Object[][] datos = {
+                {"ACC-045", "Funda Silicona iPhone 13", "Genérica", 2, "$15.000"},
+                {"CEL-012", "Motorola Moto G24", "Motorola", 4, "$250.000"}
+        };
+        vistaPrincipal.getTablaReportes().setModel(new DefaultTableModel(datos, columnas));
     }
 
-    private void reporteUsuarios() {
+    // 2. Reporte de Valorización (Cálculo financiero agrupado)
+    private void reporteValorizacion() {
+        // Lógica futura: SELECT categoria, SUM(stock), SUM(stock * precio) FROM productos GROUP BY categoria
+        String[] columnas = {"Categoría", "Cantidad Total de Ítems", "Valor Total Invertido"};
+        Object[][] datos = {
+                {"Celulares", 145, "$45.500.000"},
+                {"Accesorios", 320, "$2.800.000"},
+                {"Hardware", 85, "$12.300.000"}
+        };
+
+        // Fila extra para el total general
+        Object[][] datosConTotal = new Object[datos.length + 1][3];
+        System.arraycopy(datos, 0, datosConTotal, 0, datos.length);
+        datosConTotal[datos.length] = new Object[]{"TOTAL GENERAL", 550, "$60.600.000"};
+
+        vistaPrincipal.getTablaReportes().setModel(new DefaultTableModel(datosConTotal, columnas));
+    }
+
+    // 3. Reporte de Movimientos (Auditoría de inventario)
+    private void reporteMovimientos() {
+        LocalDate[] fechas = pedirRangoFechas("Rango para Movimientos de Inventario");
+        if (fechas == null) return;
+
+        // Lógica futura: Consultar tabla 'movimientos' por rango de fecha
+        String[] columnas = {"Fecha", "Usuario", "Acción", "Producto", "Cant."};
+        Object[][] datos = {
+                {fechas[0].format(DateTimeFormatter.ofPattern("dd/MM/yyyy")), "admin_juan", "Entrada (+)", "Samsung S23", "20"},
+                {fechas[1].format(DateTimeFormatter.ofPattern("dd/MM/yyyy")), "gerente_ana", "Ajuste (-)", "Funda Silicona", "2"}
+        };
+        vistaPrincipal.getTablaReportes().setModel(new DefaultTableModel(datos, columnas));
+    }
+
+    // 4. Auditoría de Usuarios (Altas y Bajas recientes)
+    private void reporteAuditoriaUsuarios() {
+        LocalDate[] fechas = pedirRangoFechas("Rango para Auditoría de Usuarios");
+        if (fechas == null) return;
+
+        // Lógica futura: Consultar tabla 'usuarios' filtrando por fechaCreacion o fechaModificacion
+        String[] columnas = {"Fecha", "Username", "Rol", "Acción Registrada"};
+        Object[][] datos = {
+                {fechas[0].format(DateTimeFormatter.ofPattern("dd/MM/yyyy")), "vendedor_nuevo", "Vendedor", "Alta de Usuario"},
+                {fechas[1].format(DateTimeFormatter.ofPattern("dd/MM/yyyy")), "vendedor_viejo", "Vendedor", "Baja Lógica"}
+        };
+        vistaPrincipal.getTablaReportes().setModel(new DefaultTableModel(datos, columnas));
+    }
+
+    // --- MÉTODO REUTILIZABLE PARA PEDIR FECHAS ---
+    private LocalDate[] pedirRangoFechas(String titulo) {
         Integer[] dias = generarRango(1, 31);
         String[] meses = {"01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"};
         int anioActual = LocalDate.now().getYear();
@@ -576,7 +699,7 @@ public class AdminController {
         panelFechas.add(panelHasta);
 
         int result = JOptionPane.showConfirmDialog(vistaPrincipal, panelFechas,
-            "Filtro Obligatorio de Fechas (Máx 6 meses)", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+                titulo, JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 
         if (result == JOptionPane.OK_OPTION) {
             try {
@@ -593,55 +716,28 @@ public class AdminController {
 
                 if (desde.isAfter(hasta)) {
                     JOptionPane.showMessageDialog(vistaPrincipal, "La fecha 'Desde' no puede ser posterior a 'Hasta'.", "Rango Inválido", JOptionPane.WARNING_MESSAGE);
-                    return;
+                    return null;
                 }
 
                 long mesesDiferencia = ChronoUnit.MONTHS.between(desde, hasta);
                 if (mesesDiferencia > 6) {
                     JOptionPane.showMessageDialog(vistaPrincipal, "Para optimizar la base de datos, el rango máximo permitido es de 6 meses.", "Rango Excesivo", JOptionPane.WARNING_MESSAGE);
-                    return;
+                    return null;
                 }
 
-                UsuarioRepository repo = new UsuarioRepository(em);
-                List<Usuario> usuarios = repo.reporteUsuariosPorFecha(desde, hasta);
-
-                String[] columnas = {"Usuario", "Rol", "Estado", "Fecha Registro"};
-                DefaultTableModel modelo = new DefaultTableModel(null, columnas);
-
-                for (Usuario u : usuarios) {
-                    String estadoVisual = (u.getEstado() != null && u.getEstado()) ? "Activo" : "Inactivo";
-                    String rol = u.getClass().getSimpleName();
-                    String fecha = (u.getFechaRegistro() != null) ? u.getFechaRegistro().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : "N/A";
-                    modelo.addRow(new Object[]{u.getUsername(), rol, estadoVisual, fecha});
-                }
-
-                vistaPrincipal.getTablaReportes().setModel(modelo);
-
-                if (usuarios.isEmpty()) {
-                    JOptionPane.showMessageDialog(vistaPrincipal, "No se encontraron usuarios en ese rango de fechas.", "Reporte Vacío", JOptionPane.INFORMATION_MESSAGE);
-                }
+                return new LocalDate[]{desde, hasta};
 
             } catch (DateTimeException ex) {
                 JOptionPane.showMessageDialog(vistaPrincipal, "Combinación de fecha no válida (ej: 31 de febrero).", "Fecha Inexistente", JOptionPane.ERROR_MESSAGE);
+                return null;
             }
         }
+        return null;
     }
 
-    private void reporteStock() {
-        String[] columnas = {"Código", "Producto", "Stock", "Precio", "Estado"};
-        Object[][] datos = { {"CEL001", "Motorola Edge 60", 15, "$850.000", "Normal"} };
-        vistaPrincipal.getTablaReportes().setModel(new DefaultTableModel(datos, columnas));
-    }
-
-    private void reporteProductos() {
-        String[] columnas = {"Código", "Producto", "Categoría", "Precio"};
-        Object[][] datos = { {"CEL001", "Motorola Edge 60", "Celulares", "$850.000"} };
-        vistaPrincipal.getTablaReportes().setModel(new DefaultTableModel(datos, columnas));
-    }
-
-    private void reporteMovimientos() {
-        String[] columnas = {"Fecha", "Producto", "Movimiento", "Cantidad", "Usuario"};
-        Object[][] datos = { {"28/08/2026", "Motorola Edge 60", "Entrada", "+10", "admin"} };
-        vistaPrincipal.getTablaReportes().setModel(new DefaultTableModel(datos, columnas));
+    private Integer[] generarRango(int inicio, int fin) {
+        Integer[] rango = new Integer[fin - inicio + 1];
+        for (int i = 0; i < rango.length; i++) rango[i] = inicio + i;
+        return rango;
     }
 }

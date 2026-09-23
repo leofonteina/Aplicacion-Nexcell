@@ -13,6 +13,7 @@ public class RegistroUsuarioUI extends JDialog {
     private JComboBox<Integer> cbDia, cbAnio;
     private JComboBox<String> cbMes;
     private JButton btnGuardarUsuario;
+    private JButton btnCancelar;
 
     // Etiquetas de Error (Una para cada campo a validar)
     private JLabel lblErrorNombre, lblErrorApellido, lblErrorDni, lblErrorFecha;
@@ -75,11 +76,19 @@ public class RegistroUsuarioUI extends JDialog {
         panelPrincipal.add(panelCuenta);
         panelPrincipal.add(Box.createRigidArea(new Dimension(0, 10)));
 
-        // Botón
-        JPanel panelBoton = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        // Botones
+        JPanel panelBotones = new JPanel();
+        panelBotones.setLayout(new BoxLayout(panelBotones, BoxLayout.X_AXIS));
+
+        btnCancelar = new JButton("Cancelar");
         btnGuardarUsuario = new JButton("Guardar Usuario");
-        panelBoton.add(btnGuardarUsuario);
-        panelPrincipal.add(panelBoton);
+
+        // El Glue empuja el botón de cancelar a la izquierda y el de guardar a la derecha
+        panelBotones.add(btnCancelar);
+        panelBotones.add(Box.createHorizontalGlue());
+        panelBotones.add(btnGuardarUsuario);
+
+        panelPrincipal.add(panelBotones);
 
         add(panelPrincipal);
     }
@@ -170,6 +179,8 @@ public class RegistroUsuarioUI extends JDialog {
     public JComboBox<Integer> getCbAnio() { return cbAnio; }
     public JComboBox<String> getCbPerfil() { return cbPerfil; }
     public JButton getBtnGuardarUsuario() { return btnGuardarUsuario; }
+    public JButton getBtnCancelar() { return btnCancelar; }
+
 
     // --- GETTERS ETIQUETAS DE ERROR ---
     public JLabel getLblErrorNombre() { return lblErrorNombre; }
