@@ -11,7 +11,7 @@ public class VendedorUI extends JFrame {
     private JButton btnBuscarCliente;
     private JTable tablaClientes;
     private JButton btnAbrirFormularioCliente;
-    private JButton btnModificarCliente; // (Opcional si ya lo tienes planeado)
+    private JButton btnModificarCliente;
     private JButton btnBajaCliente;
     private JButton btnAltaCliente;
 
@@ -23,154 +23,220 @@ public class VendedorUI extends JFrame {
     // Botón general de la ventana
     private JButton btnCerrarSesion;
 
+    // Componentes de Ventas
     private JTable tablaVentas;
     private JButton btnAbrirFormularioVenta;
-
-    // Boton de busqueda para ventas
     private JTextField buscarVentaField;
     private JButton btnBuscarVenta;
 
+    // Constantes de diseño para mantener la simetría del "Dashboard"
+    private static final int PADDING_PANEL = 30;
+    private static final int GAP_VERTICAL = 20;
+    private static final int GAP_HORIZONTAL = 10;
+    private static final int ALTO_FILA_TABLA = 35;
+
     public VendedorUI() {
         setTitle("Panel de Vendedor - Nexcell");
-        setSize(700, 530);
+        setSize(1000, 650);
+        setMinimumSize(new Dimension(850, 550));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        // El JFrame usa BorderLayout por defecto
         setLayout(new BorderLayout());
 
+        // Menú lateral moderno con Íconos
         JTabbedPane sistemaPestanas = new JTabbedPane(JTabbedPane.LEFT);
-        sistemaPestanas.addTab("Gestión de Clientes", crearPanelClientes());
-        sistemaPestanas.addTab("Catálogo de Productos", crearPanelProductos());
-        sistemaPestanas.addTab("Registro de Ventas", crearPanelVentas());
-        // Agregamos las pestañas al CENTRO de la ventana
+        sistemaPestanas.addTab("  Gestión de Clientes  ", cargarIcono("/iconos/icono_usuarios.png"), crearPanelClientes());
+        sistemaPestanas.addTab("  Catálogo de Productos  ", cargarIcono("/iconos/icono_productos.png"), crearPanelProductos());
+        sistemaPestanas.addTab("  Registro de Ventas  ", cargarIcono("/iconos/icono_reportes.png"), crearPanelVentas());
         add(sistemaPestanas, BorderLayout.CENTER);
 
-        // --- NUEVO PANEL INFERIOR PARA CERRAR SESIÓN ---
-        JPanel panelInferior = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        // --- PANEL INFERIOR: CERRAR SESIÓN ---
+        JPanel panelInferior = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        panelInferior.setBorder(BorderFactory.createEmptyBorder(10, PADDING_PANEL, 20, PADDING_PANEL));
+
         btnCerrarSesion = new JButton("Cerrar Sesión");
-        btnCerrarSesion.setForeground(Color.RED);
+        btnCerrarSesion.setForeground(new Color(224, 82, 82));
+        btnCerrarSesion.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnCerrarSesion.setMargin(new Insets(8, 20, 8, 20));
         panelInferior.add(btnCerrarSesion);
 
-        // Agregamos el panel inferior al SUR de la ventana
         add(panelInferior, BorderLayout.SOUTH);
     }
 
-    // --- METODO DEL PANEL CLIENTES QUE FALTABA ---
+    // ------------------------------------------------------------------
+    // PANEL CLIENTES
+    // ------------------------------------------------------------------
     private JPanel crearPanelClientes() {
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        JPanel panel = crearPanelBase();
 
-        JPanel panelSuperior = new JPanel(new BorderLayout());
+        buscarClienteField = new JTextField(20);
+        btnBuscarCliente = crearBotonWeb("Buscar");
+        JPanel panelBusqueda = crearBarraBusqueda("Buscar (DNI o Apellido):", buscarClienteField, btnBuscarCliente);
 
-        // Búsqueda
-        JPanel panelBusqueda = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        buscarClienteField = new JTextField(15);
-        btnBuscarCliente = new JButton("Buscar");
-        panelBusqueda.add(new JLabel("Buscar (DNI o Apellido): "));
-        panelBusqueda.add(buscarClienteField);
-        panelBusqueda.add(btnBuscarCliente);
+        btnAbrirFormularioCliente = crearBotonWeb("Nuevo Cliente");
+        btnBajaCliente = crearBotonWeb("Baja Lógica");
+        btnAltaCliente = crearBotonWeb("Reactivar");
 
-        // Botones de Acciones (Nuevo, Baja Lógica, Reactivar)
-        JPanel panelAcciones = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
-        btnAbrirFormularioCliente = new JButton("Nuevo Cliente");
-        btnBajaCliente = new JButton("Baja Lógica");
-        btnAltaCliente = new JButton("Reactivar");
-
-        // OCULTAR BOTONES POR DEFECTO
         btnBajaCliente.setVisible(false);
         btnAltaCliente.setVisible(false);
 
-        panelAcciones.add(btnAbrirFormularioCliente);
-        panelAcciones.add(btnBajaCliente);
-        panelAcciones.add(btnAltaCliente);
+        JPanel panelAcciones = crearBarraAcciones(btnBajaCliente, btnAltaCliente, btnAbrirFormularioCliente);
 
-        panelSuperior.add(panelBusqueda, BorderLayout.WEST);
-        panelSuperior.add(panelAcciones, BorderLayout.EAST);
-
-        // Agregamos la columna "Estado" para que funcione la lógica de baja lógica
         String[] columnas = {"DNI", "Nombre", "Apellido", "Teléfono", "Email", "Estado"};
-        Object[][] datosEjemplo = {
-                {"35123456", "Juan", "Pérez", "3794123456", "juanperez@email.com", "Activo"}
-        };
+        Object[][] datosVacios = {};
 
-        // Creamos el modelo bloqueando la edición de celdas
-        DefaultTableModel modeloTabla = new DefaultTableModel(datosEjemplo, columnas) {
+        DefaultTableModel modeloTabla = new DefaultTableModel(datosVacios, columnas) {
             @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
+            public boolean isCellEditable(int row, int column) { return false; }
         };
 
         tablaClientes = new JTable(modeloTabla);
-        JScrollPane scrollTabla = new JScrollPane(tablaClientes);
+        configurarTabla(tablaClientes);
 
-        panel.add(panelSuperior, BorderLayout.NORTH);
+        JScrollPane scrollTabla = new JScrollPane(tablaClientes);
+        scrollTabla.setBorder(BorderFactory.createEmptyBorder());
+
+        panel.add(crearEncabezado("Directorio de Clientes", panelBusqueda, panelAcciones), BorderLayout.NORTH);
         panel.add(scrollTabla, BorderLayout.CENTER);
 
         return panel;
     }
 
-    // --- METODO DEL PANEL PRODUCTOS QUE FALTABA ---
+    // ------------------------------------------------------------------
+    // PANEL PRODUCTOS
+    // ------------------------------------------------------------------
     private JPanel crearPanelProductos() {
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        JPanel panel = crearPanelBase();
 
-        JPanel panelBusqueda = new JPanel(new FlowLayout(FlowLayout.LEFT));
         buscarProductoField = new JTextField(20);
-        btnBuscarProducto = new JButton("Buscar");
-        panelBusqueda.add(new JLabel("Filtrar modelo: "));
-        panelBusqueda.add(buscarProductoField);
-        panelBusqueda.add(btnBuscarProducto);
+        btnBuscarProducto = crearBotonWeb("Buscar");
+        JPanel panelBusqueda = crearBarraBusqueda("Filtrar modelo:", buscarProductoField, btnBuscarProducto);
 
         String[] columnas = {"ID", "Categoría", "Modelo", "Stock", "Precio"};
-        Object[][] datosEjemplo = {
-            {"101", "Celulares", "Motorola Edge 60 Pro", "15", "$850.000"}
+        Object[][] datosVacios = {}; // Arranca vacía para la BD
+
+        DefaultTableModel modeloTabla = new DefaultTableModel(datosVacios, columnas) {
+            @Override
+            public boolean isCellEditable(int row, int column) { return false; }
         };
 
-        DefaultTableModel modeloTabla = new DefaultTableModel(datosEjemplo, columnas);
         tablaProductos = new JTable(modeloTabla);
-        JScrollPane scrollTabla = new JScrollPane(tablaProductos);
+        configurarTabla(tablaProductos);
 
-        panel.add(panelBusqueda, BorderLayout.NORTH);
+        JScrollPane scrollTabla = new JScrollPane(tablaProductos);
+        scrollTabla.setBorder(BorderFactory.createEmptyBorder());
+
+        // Pasamos null como panelAcciones ya que el vendedor no tiene botones aquí
+        panel.add(crearEncabezado("Catálogo de Productos", panelBusqueda, null), BorderLayout.NORTH);
         panel.add(scrollTabla, BorderLayout.CENTER);
 
         return panel;
     }
 
+    // ------------------------------------------------------------------
+    // PANEL VENTAS
+    // ------------------------------------------------------------------
     private JPanel crearPanelVentas() {
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        JPanel panel = crearPanelBase();
 
-        JPanel panelSuperior = new JPanel(new BorderLayout());
+        buscarVentaField = new JTextField(20);
+        btnBuscarVenta = crearBotonWeb("Buscar");
+        JPanel panelBusqueda = crearBarraBusqueda("Buscar (ID Venta o DNI):", buscarVentaField, btnBuscarVenta);
 
-        // Sub-panel izquierdo: Búsqueda
-        JPanel panelBusqueda = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        buscarVentaField = new JTextField(15);
-        btnBuscarVenta = new JButton("Buscar");
-        panelBusqueda.add(new JLabel("Buscar (ID Venta o DNI): "));
-        panelBusqueda.add(buscarVentaField);
-        panelBusqueda.add(btnBuscarVenta);
-
-        // Sub-panel derecho: Botón Nueva Venta
-        JPanel panelAcciones = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
-        btnAbrirFormularioVenta = new JButton("Nueva Venta");
-        panelAcciones.add(btnAbrirFormularioVenta);
-
-        panelSuperior.add(panelBusqueda, BorderLayout.WEST);
-        panelSuperior.add(panelAcciones, BorderLayout.EAST);
+        btnAbrirFormularioVenta = crearBotonWeb("Nueva Venta");
+        JPanel panelAcciones = crearBarraAcciones(btnAbrirFormularioVenta);
 
         String[] columnas = {"ID Venta", "Fecha", "DNI Cliente", "Producto", "Total"};
-        Object[][] datosEjemplo = {}; // Arranca vacía
+        Object[][] datosEjemplo = {};
 
-        DefaultTableModel modeloTabla = new DefaultTableModel(datosEjemplo, columnas);
+        DefaultTableModel modeloTabla = new DefaultTableModel(datosEjemplo, columnas) {
+            @Override
+            public boolean isCellEditable(int row, int column) { return false; }
+        };
+
         tablaVentas = new JTable(modeloTabla);
-        JScrollPane scrollTabla = new JScrollPane(tablaVentas);
+        configurarTabla(tablaVentas);
 
-        panel.add(panelSuperior, BorderLayout.NORTH);
+        JScrollPane scrollTabla = new JScrollPane(tablaVentas);
+        scrollTabla.setBorder(BorderFactory.createEmptyBorder());
+
+        panel.add(crearEncabezado("Historial de Ventas", panelBusqueda, panelAcciones), BorderLayout.NORTH);
         panel.add(scrollTabla, BorderLayout.CENTER);
 
         return panel;
+    }
+
+    // ------------------------------------------------------------------
+    // MÉTODOS AUXILIARES DE DISEÑO
+    // ------------------------------------------------------------------
+
+    private JPanel crearPanelBase() {
+        JPanel panel = new JPanel(new BorderLayout(0, GAP_VERTICAL));
+        panel.setBorder(BorderFactory.createEmptyBorder(PADDING_PANEL, PADDING_PANEL, PADDING_PANEL, PADDING_PANEL));
+        return panel;
+    }
+
+    private JPanel crearEncabezado(String titulo, JPanel panelBusqueda, JPanel panelAcciones) {
+        JPanel encabezado = new JPanel(new BorderLayout(0, 20));
+
+        JLabel lblTitulo = new JLabel(titulo);
+        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 24));
+
+        JPanel barra = new JPanel(new BorderLayout(20, 0));
+        barra.add(panelBusqueda, BorderLayout.WEST);
+        if (panelAcciones != null) {
+            barra.add(panelAcciones, BorderLayout.EAST);
+        }
+
+        encabezado.add(lblTitulo, BorderLayout.NORTH);
+        encabezado.add(barra, BorderLayout.CENTER);
+        return encabezado;
+    }
+
+    private JPanel crearBarraBusqueda(String etiqueta, JTextField campo, JButton boton) {
+        JPanel barra = new JPanel(new FlowLayout(FlowLayout.LEFT, GAP_HORIZONTAL, 0));
+        JLabel lblEtiq = new JLabel(etiqueta);
+        lblEtiq.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        barra.add(lblEtiq);
+        barra.add(campo);
+        barra.add(boton);
+        return barra;
+    }
+
+    private JPanel crearBarraAcciones(JButton... botones) {
+        JPanel barra = new JPanel(new FlowLayout(FlowLayout.RIGHT, GAP_HORIZONTAL, 0));
+        for (JButton boton : botones) {
+            barra.add(boton);
+        }
+        return barra;
+    }
+
+    private void configurarTabla(JTable tabla) {
+        tabla.setRowHeight(ALTO_FILA_TABLA);
+        tabla.setShowVerticalLines(false);
+        tabla.setFillsViewportHeight(true);
+        tabla.getTableHeader().setReorderingAllowed(false);
+    }
+
+    private JButton crearBotonWeb(String texto) {
+        JButton btn = new JButton(texto);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.setMargin(new Insets(6, 15, 6, 15));
+        return btn;
+    }
+
+    // --- CARGADOR DE ÍCONOS ---
+    private ImageIcon cargarIcono(String ruta) {
+        java.net.URL imgURL = getClass().getResource(ruta);
+        if (imgURL != null) {
+            ImageIcon iconoOriginal = new ImageIcon(imgURL);
+            Image imgEscalada = iconoOriginal.getImage().getScaledInstance(32, 32, Image.SCALE_SMOOTH);
+            return new ImageIcon(imgEscalada);
+        } else {
+            System.err.println("No se encontró el ícono en: " + ruta);
+            return null;
+        }
     }
 
     // --- GETTERS DE CLIENTES ---
@@ -189,7 +255,7 @@ public class VendedorUI extends JFrame {
     // --- GETTER DE CERRAR SESIÓN ---
     public JButton getBtnCerrarSesion() { return btnCerrarSesion; }
 
-    // --- GETTERS DE VENTA
+    // --- GETTERS DE VENTA ---
     public JButton getBtnAbrirFormularioVenta() { return btnAbrirFormularioVenta; }
     public JTable getTablaVentas() { return tablaVentas; }
     public JTextField getBuscarVentaField() { return buscarVentaField; }
