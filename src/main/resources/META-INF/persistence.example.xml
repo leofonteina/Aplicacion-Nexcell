@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_1.xsd"
+             version="3.1">
+
+    <persistence-unit name="NexcellPU" transaction-type="RESOURCE_LOCAL">
+        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+
+        <!-- Lista de todas las entidades de la base de datos -->
+        <class>modelo.Usuario</class>
+        <class>modelo.Admin</class>
+        <class>modelo.Gerente</class>
+        <class>modelo.Vendedor</class>
+        <class>modelo.Direccion</class>
+        <class>modelo.Cliente</class>
+        <class>modelo.Producto</class>
+        <class>modelo.Venta</class>
+        <class>modelo.DetalleVenta</class>
+
+        <properties>
+            <!-- Conexión a MySQL (COMPLETAR CON LOS DATOS LOCALES) -->
+            <property name="jakarta.persistence.jdbc.driver" value="com.mysql.cj.jdbc.Driver"/>
+            <property name="jakarta.persistence.jdbc.url" value="jdbc:mysql://localhost:3306/TU_BASE_DE_DATOS?serverTimezone=UTC"/>
+            <property name="jakarta.persistence.jdbc.user" value="TU_USUARIO"/>
+            <property name="jakarta.persistence.jdbc.password" value="TU_CONTRASEÑA"/>
+
+            <!-- Configuración de Hibernate -->
+            <property name="hibernate.dialect" value="org.hibernate.dialect.MySQLDialect"/>
+            <property name="hibernate.show_sql" value="true"/>
+            <property name="hibernate.format_sql" value="true"/>
+
+            <!-- Actualiza el esquema automáticamente basado en las clases de Java -->
+            <property name="hibernate.hbm2ddl.auto" value="create"/>
+        </properties>
+    </persistence-unit>
+</persistence>

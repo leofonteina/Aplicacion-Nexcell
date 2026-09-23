@@ -29,7 +29,7 @@ public class VendedorUI extends JFrame {
     private JTextField buscarVentaField;
     private JButton btnBuscarVenta;
 
-    // NUEVO: Componentes de Reportes con Fechas Desplegables
+    // Componentes de Reportes con Fechas Desplegables
     private JComboBox<String> comboTipoReporte;
     private JComboBox<String> cbDiaInicio, cbMesInicio, cbAnioInicio;
     private JComboBox<String> cbDiaFin, cbMesFin, cbAnioFin;
@@ -162,7 +162,6 @@ public class VendedorUI extends JFrame {
         cbDiaInicio = new JComboBox<>(dias); cbMesInicio = new JComboBox<>(meses); cbAnioInicio = new JComboBox<>(anios);
         cbDiaFin = new JComboBox<>(dias); cbMesFin = new JComboBox<>(meses); cbAnioFin = new JComboBox<>(anios);
 
-        // Setear fecha actual por defecto para "Fin", y mes pasado para "Inicio"
         LocalDate hoy = LocalDate.now();
         LocalDate haceUnMes = hoy.minusMonths(1);
 

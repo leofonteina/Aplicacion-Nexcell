@@ -97,7 +97,6 @@ public class RegistroProductoUI extends JDialog {
         btnCancelar = new JButton("Cancelar");
         btnGuardarProducto = new JButton("Guardar Producto");
 
-        // El Glue funciona como un resorte que empuja a los componentes a los lados
         panelBotones.add(btnCancelar);
         panelBotones.add(Box.createHorizontalGlue());
         panelBotones.add(btnGuardarProducto);
