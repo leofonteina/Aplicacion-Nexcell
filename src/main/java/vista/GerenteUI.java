@@ -9,15 +9,17 @@ public class GerenteUI extends JFrame {
     // Componentes de Reportes de Ventas
     private JTextField buscarVentaField;
     private JButton btnBuscarVenta;
-    private JComboBox<String> comboFiltroVentas;
     private JButton btnGenerarReporte;
     private JButton btnLimpiarReporte;
     private JTable tablaReportesVentas;
 
     // Componentes de Rendimiento de Vendedores
-    private JComboBox<String> comboFiltroRendimiento;
     private JButton btnCalcularRendimiento;
     private JTable tablaRendimiento;
+
+    // Componentes de Productos Más Vendidos
+    private JButton btnCalcularProductosVendidos;
+    private JTable tablaProductosVendidos;
 
     // Botón general
     private JButton btnCerrarSesion;
@@ -31,11 +33,9 @@ public class GerenteUI extends JFrame {
 
         JTabbedPane sistemaPestanas = new JTabbedPane(JTabbedPane.LEFT);
         sistemaPestanas.addTab("Reportes de Ventas", crearPanelReportesVentas());
-        sistemaPestanas.addTab("Rendimiento Vendedores", crearPanelRendimiento()); // NUEVA PESTAÑA
+        sistemaPestanas.addTab("Rendimiento Vendedores", crearPanelRendimiento());
+        sistemaPestanas.addTab("Productos Más Vendidos", crearPanelProductosMasVendidos()); // NUEVA PESTAÑA
 
-        add(sistemaPestanas, BorderLayout.CENTER);
-
-        // Podés agregar más pestañas a futuro (ej: "Rendimiento Vendedores")
         add(sistemaPestanas, BorderLayout.CENTER);
 
         // Panel inferior para cerrar sesión
@@ -61,15 +61,11 @@ public class GerenteUI extends JFrame {
         panelBusqueda.add(buscarVentaField);
         panelBusqueda.add(btnBuscarVenta);
 
-        // Panel Derecho: Filtros generales
+        // Panel Derecho: Botones de reporte (Menú desplegable eliminado)
         JPanel panelFiltros = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
-        String[] filtros = {"Ventas del Día", "Ventas del Mes", "Ventas por Vendedor", "Todas las Ventas"};
-        comboFiltroVentas = new JComboBox<>(filtros);
-        btnGenerarReporte = new JButton("Generar");
+        btnGenerarReporte = new JButton("Generar Reporte");
         btnLimpiarReporte = new JButton("Limpiar");
 
-        panelFiltros.add(new JLabel("Período: "));
-        panelFiltros.add(comboFiltroVentas);
         panelFiltros.add(btnGenerarReporte);
         panelFiltros.add(btnLimpiarReporte);
 
@@ -101,14 +97,10 @@ public class GerenteUI extends JFrame {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Controles superiores
+        // Controles superiores (Menú desplegable eliminado)
         JPanel panelSuperior = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        String[] periodos = {"Este Mes", "Mes Anterior", "Año Actual"};
-        comboFiltroRendimiento = new JComboBox<>(periodos);
-        btnCalcularRendimiento = new JButton("Calcular Rendimiento");
+        btnCalcularRendimiento = new JButton("Calcular Rendimiento por Fecha");
 
-        panelSuperior.add(new JLabel("Período a evaluar: "));
-        panelSuperior.add(comboFiltroRendimiento);
         panelSuperior.add(btnCalcularRendimiento);
 
         // Tabla central con edición bloqueada por defecto
@@ -127,8 +119,32 @@ public class GerenteUI extends JFrame {
         return panel;
     }
 
+    private JPanel crearPanelProductosMasVendidos() {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        // Controles superiores
+        JPanel panelSuperior = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        btnCalcularProductosVendidos = new JButton("Calcular por Fecha");
+        panelSuperior.add(btnCalcularProductosVendidos);
+
+        // Tabla central con edición bloqueada
+        String[] columnas = {"Ranking", "Producto", "Categoría", "Cant. Vendida", "Ingresos Generados"};
+        tablaProductosVendidos = new JTable(new DefaultTableModel(null, columnas)) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        JScrollPane scrollTabla = new JScrollPane(tablaProductosVendidos);
+
+        panel.add(panelSuperior, BorderLayout.NORTH);
+        panel.add(scrollTabla, BorderLayout.CENTER);
+
+        return panel;
+    }
+
     // --- GETTERS ---
-    public JComboBox<String> getComboFiltroVentas() { return comboFiltroVentas; }
     public JButton getBtnGenerarReporte() { return btnGenerarReporte; }
     public JButton getBtnLimpiarReporte() { return btnLimpiarReporte; }
     public JTable getTablaReportesVentas() { return tablaReportesVentas; }
@@ -137,7 +153,10 @@ public class GerenteUI extends JFrame {
     public JButton getBtnBuscarVenta() { return btnBuscarVenta; }
 
     // --- GETTERS RENDIMIENTO ---
-    public JComboBox<String> getComboFiltroRendimiento() { return comboFiltroRendimiento; }
     public JButton getBtnCalcularRendimiento() { return btnCalcularRendimiento; }
     public JTable getTablaRendimiento() { return tablaRendimiento; }
+
+    // --- GETTERS PRODUCTOS MÁS VENDIDOS ---
+    public JButton getBtnCalcularProductosVendidos() { return btnCalcularProductosVendidos; }
+    public JTable getTablaProductosVendidos() { return tablaProductosVendidos; }
 }

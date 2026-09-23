@@ -7,7 +7,7 @@ import controlador.VendedorController;
 import jakarta.persistence.EntityManager;
 
 @Entity
-@DiscriminatorValue("Vendedor")
+@DiscriminatorValue("VENDEDOR")
 public class Vendedor extends Usuario {
 
     public Vendedor() {

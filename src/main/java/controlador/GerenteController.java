@@ -24,6 +24,7 @@ public class GerenteController {
         this.vistaPrincipal.getBtnCerrarSesion().addActionListener(e -> cerrarSesion());
 
         this.vistaPrincipal.getBtnCalcularRendimiento().addActionListener(e -> calcularRendimiento());
+        this.vistaPrincipal.getBtnCalcularProductosVendidos().addActionListener(e -> calcularProductosMasVendidos());
     }
 
     private void generarReporteVentas() {
@@ -61,6 +62,26 @@ public class GerenteController {
         };
 
         vistaPrincipal.getTablaRendimiento().setModel(new DefaultTableModel(datos, columnas));
+    }
+
+    private void calcularProductosMasVendidos() {
+        // Pedimos las fechas al usuario usando tu método reutilizable
+        LocalDate[] fechas = pedirRangoFechas("Rango para Productos Más Vendidos");
+
+        // Si el usuario canceló, cortamos la ejecución
+        if (fechas == null) return;
+
+        // Simulamos la búsqueda de los productos más vendidos en la base de datos
+        String[] columnas = {"Ranking", "Producto", "Categoría", "Cant. Vendida", "Ingresos Generados"};
+        Object[][] datos = {
+                {"1", "Motorola Edge 60", "Celulares", "120", "$102.000.000"},
+                {"2", "Funda Silicona iPhone 13", "Accesorios", "85", "$1.275.000"},
+                {"3", "Auriculares Bluetooth Sony", "Periféricos", "60", "$4.500.000"},
+                {"4", "Samsung Galaxy S23", "Celulares", "45", "$40.500.000"},
+                {"5", "Cargador Carga Rápida 20W", "Accesorios", "40", "$600.000"}
+        };
+
+        vistaPrincipal.getTablaProductosVendidos().setModel(new DefaultTableModel(datos, columnas));
     }
 
     // --- MÉTODO REUTILIZABLE PARA PEDIR FECHAS ---
