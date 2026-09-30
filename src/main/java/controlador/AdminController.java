@@ -92,14 +92,9 @@ public class AdminController {
         this.vistaPrincipal.getBtnLimpiarReporte().addActionListener(e -> limpiarReporte());
         this.vistaPrincipal.getBtnCerrarSesion().addActionListener(e -> cerrarSesion());
 
-        // Escuchadores de Búsqueda de Usuarios
-        this.vistaPrincipal.getBtnBuscarUsuario().addActionListener(e -> filtrarTablaUsuarios());
-        this.vistaPrincipal.getTxtBuscarUsuario().addKeyListener(new java.awt.event.KeyAdapter() {
-            @Override
-            public void keyReleased(java.awt.event.KeyEvent e) {
-                filtrarTablaUsuarios();
-            }
-        });
+        // Activar la búsqueda en tiempo real para Productos y Usuarios
+        configurarBusqueda(this.vistaPrincipal.getBuscarProductoField(), this.vistaPrincipal.getBtnBuscarProducto(), this.vistaPrincipal.getTablaProductos());
+        configurarBusqueda(this.vistaPrincipal.getTxtBuscarUsuario(), this.vistaPrincipal.getBtnBuscarUsuario(), this.vistaPrincipal.getTablaUsuarios());
 
         cargarTablaUsuarios();
 
@@ -126,7 +121,9 @@ public class AdminController {
                 }
             }
         });
-
+        this.vistaPrincipal.getTablaProductos().setAutoCreateRowSorter(true);
+        this.vistaPrincipal.getTablaUsuarios().setAutoCreateRowSorter(true);
+        this.vistaPrincipal.getTablaReportes().setAutoCreateRowSorter(true);
     }
 
 // --- MÉTODOS DE BASE DE DATOS PARA PRODUCTOS ---
@@ -547,27 +544,6 @@ public class AdminController {
         }
     }
 
-    private void filtrarTablaUsuarios() {
-        String textoBusqueda = vistaPrincipal.getTxtBuscarUsuario().getText().trim();
-        repositorio.UsuarioRepository repo = new repositorio.UsuarioRepository(this.em);
-        List<modelo.Usuario> usuarios;
-
-        if (textoBusqueda.isEmpty()) {
-            usuarios = repo.listarTodos();
-        } else {
-            usuarios = repo.buscarPorTexto(textoBusqueda);
-        }
-
-        DefaultTableModel modelo = (DefaultTableModel) vistaPrincipal.getTablaUsuarios().getModel();
-        modelo.setRowCount(0);
-
-        for (modelo.Usuario u : usuarios) {
-            String estadoVisual = (u.getEstado() != null && u.getEstado()) ? "Activo" : "Inactivo";
-            String rol = u.getClass().getSimpleName();
-            modelo.addRow(new Object[]{u.getUsername(), rol, estadoVisual});
-        }
-    }
-
     private void cerrarSesion() {
         int confirmacion = JOptionPane.showConfirmDialog(vistaPrincipal,
             "¿Estás seguro que querés salir del panel de administración?", "Cerrar Sesión",
@@ -585,20 +561,29 @@ public class AdminController {
     // === REPORTES REESTRUCTURADOS ===
 
     private void generarReporte() {
+        // 1. Leemos y validamos las fechas ANTES de generar cualquier reporte
+        LocalDateTime[] fechas = obtenerFechasDesdeUI();
+
+        // Si hay algún error con la fecha o supera los 6 meses, frenamos la ejecución acá
+        if (fechas == null) {
+            return;
+        }
+
+        // 2. Si las fechas están bien, vemos qué reporte eligió
         String reporte = vistaPrincipal.getComboReportes().getSelectedItem().toString();
 
         switch (reporte) {
             case "Productos con Bajo Stock":
-                reporteBajoStock();
+                reporteBajoStock(); // Muestra el stock actual
                 break;
             case "Valorización de Inventario":
-                reporteValorizacion();
-                break;
-            case "Movimientos de Inventario":
-                reporteMovimientos();
+                reporteValorizacion(); // Muestra el valor actual
                 break;
             case "Auditoría de Usuarios":
-                reporteAuditoriaUsuarios();
+                reporteAuditoriaUsuarios(); // Muestra el estado actual
+                break;
+            case "Movimientos de Inventario":
+                reporteMovimientos(fechas[0], fechas[1]); // Filtra los movimientos en ese rango
                 break;
         }
     }
@@ -607,61 +592,139 @@ public class AdminController {
         vistaPrincipal.getTablaReportes().setModel(new DefaultTableModel());
     }
 
-    // 1. Reporte de Bajo Stock (Alerta para compras)
+    // 1. Reporte de Bajo Stock (Consulta Real)
     private void reporteBajoStock() {
-        // Lógica futura: SELECT * FROM productos WHERE stock <= 5 AND estado = 1
+        // Trae productos activos que tengan 5 o menos unidades en stock
+        List<Producto> productos = em.createQuery(
+                "SELECT p FROM Producto p WHERE p.stock <= 5 AND p.estado = true ORDER BY p.stock ASC", Producto.class)
+            .getResultList();
+
         String[] columnas = {"ID", "Producto", "Marca", "Stock Actual", "Precio"};
-        Object[][] datos = {
-                {"ACC-045", "Funda Silicona iPhone 13", "Genérica", 2, "$15.000"},
-                {"CEL-012", "Motorola Moto G24", "Motorola", 4, "$250.000"}
-        };
-        vistaPrincipal.getTablaReportes().setModel(new DefaultTableModel(datos, columnas));
+        DefaultTableModel modelo = new DefaultTableModel(columnas, 0);
+
+        for (Producto p : productos) {
+            modelo.addRow(new Object[]{
+                p.getId(), p.getNombre(), p.getMarca(), p.getStock(), String.format("$%.2f", p.getPrecio())
+            });
+        }
+        vistaPrincipal.getTablaReportes().setModel(modelo);
     }
 
     // 2. Reporte de Valorización (Cálculo financiero agrupado)
     private void reporteValorizacion() {
-        // Lógica futura: SELECT categoria, SUM(stock), SUM(stock * precio) FROM productos GROUP BY categoria
+        // Agrupa por categoría y multiplica el stock por el precio usando Hibernate
+        List<Object[]> resultados = em.createQuery(
+                "SELECT p.categoria, SUM(p.stock), SUM(p.stock * p.precio) FROM Producto p WHERE p.estado = true GROUP BY p.categoria", Object[].class)
+            .getResultList();
+
         String[] columnas = {"Categoría", "Cantidad Total de Ítems", "Valor Total Invertido"};
-        Object[][] datos = {
-                {"Celulares", 145, "$45.500.000"},
-                {"Accesorios", 320, "$2.800.000"},
-                {"Hardware", 85, "$12.300.000"}
-        };
+        DefaultTableModel modelo = new DefaultTableModel(columnas, 0);
+
+        long totalItems = 0;
+        double granTotal = 0;
+
+        for (Object[] fila : resultados) {
+            String categoria = (String) fila[0];
+            Long cantidad = (Long) fila[1];
+            Double valor = (Double) fila[2];
+
+            totalItems += (cantidad != null ? cantidad : 0);
+            granTotal += (valor != null ? valor : 0);
+
+            modelo.addRow(new Object[]{categoria, cantidad, String.format("$%.2f", valor)});
+        }
 
         // Fila extra para el total general
-        Object[][] datosConTotal = new Object[datos.length + 1][3];
-        System.arraycopy(datos, 0, datosConTotal, 0, datos.length);
-        datosConTotal[datos.length] = new Object[]{"TOTAL GENERAL", 550, "$60.600.000"};
-
-        vistaPrincipal.getTablaReportes().setModel(new DefaultTableModel(datosConTotal, columnas));
+        modelo.addRow(new Object[]{"TOTAL GENERAL", totalItems, String.format("$%.2f", granTotal)});
+        vistaPrincipal.getTablaReportes().setModel(modelo);
     }
 
     // 3. Reporte de Movimientos (Auditoría de inventario)
-    private void reporteMovimientos() {
-        LocalDate[] fechas = pedirRangoFechas("Rango para Movimientos de Inventario");
-        if (fechas == null) return;
+    // 3. Reporte de Movimientos (Auditoría de inventario corregida)
+    private void reporteMovimientos(LocalDateTime inicio, LocalDateTime fin) {
+        // En lugar de buscar Detalles, buscamos Ventas y extraemos sus detalles
+        List<modelo.Venta> ventas = em.createQuery(
+                "SELECT DISTINCT v FROM Venta v JOIN FETCH v.detalles WHERE v.fecha BETWEEN :ini AND :fin ORDER BY v.fecha DESC", modelo.Venta.class)
+            .setParameter("ini", inicio)
+            .setParameter("fin", fin)
+            .getResultList();
 
-        // Lógica futura: Consultar tabla 'movimientos' por rango de fecha
-        String[] columnas = {"Fecha", "Usuario", "Acción", "Producto", "Cant."};
-        Object[][] datos = {
-                {fechas[0].format(DateTimeFormatter.ofPattern("dd/MM/yyyy")), "admin_juan", "Entrada (+)", "Samsung S23", "20"},
-                {fechas[1].format(DateTimeFormatter.ofPattern("dd/MM/yyyy")), "gerente_ana", "Ajuste (-)", "Funda Silicona", "2"}
-        };
-        vistaPrincipal.getTablaReportes().setModel(new DefaultTableModel(datos, columnas));
+        String[] columnas = {"Fecha", "Vendedor", "Producto", "Cant. Vendida", "Subtotal"};
+        DefaultTableModel modelo = new DefaultTableModel(columnas, 0);
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+        for (modelo.Venta v : ventas) {
+            for (modelo.DetalleVenta d : v.getDetalles()) {
+                modelo.addRow(new Object[]{
+                    v.getFecha().format(fmt),
+                    v.getVendedor().getUsername(),
+                    d.getProducto().getNombre(),
+                    d.getCantidad(),
+                    String.format("$%.2f", d.getSubtotal())
+                });
+            }
+        }
+        vistaPrincipal.getTablaReportes().setModel(modelo);
     }
 
     // 4. Auditoría de Usuarios (Altas y Bajas recientes)
     private void reporteAuditoriaUsuarios() {
-        LocalDate[] fechas = pedirRangoFechas("Rango para Auditoría de Usuarios");
-        if (fechas == null) return;
+        List<Usuario> usuarios = em.createQuery("SELECT u FROM Usuario u ORDER BY u.username ASC", Usuario.class).getResultList();
 
-        // Lógica futura: Consultar tabla 'usuarios' filtrando por fechaCreacion o fechaModificacion
-        String[] columnas = {"Fecha", "Username", "Rol", "Acción Registrada"};
-        Object[][] datos = {
-                {fechas[0].format(DateTimeFormatter.ofPattern("dd/MM/yyyy")), "vendedor_nuevo", "Vendedor", "Alta de Usuario"},
-                {fechas[1].format(DateTimeFormatter.ofPattern("dd/MM/yyyy")), "vendedor_viejo", "Vendedor", "Baja Lógica"}
-        };
-        vistaPrincipal.getTablaReportes().setModel(new DefaultTableModel(datos, columnas));
+        String[] columnas = {"Username", "Nombre Completo", "DNI", "Rol", "Estado en Sistema"};
+        DefaultTableModel modelo = new DefaultTableModel(columnas, 0);
+
+        for (Usuario u : usuarios) {
+            String rol = u.getClass().getSimpleName();
+            String estado = (u.getEstado() != null && u.getEstado()) ? "Activo" : "Inactivo / Dado de baja";
+
+            modelo.addRow(new Object[]{
+                u.getUsername(),
+                u.getNombre() + " " + u.getApellido(),
+                u.getDni(),
+                rol,
+                estado
+            });
+        }
+        vistaPrincipal.getTablaReportes().setModel(modelo);
+    }
+
+    // --- MÉTODO PARA LEER LAS FECHAS DIRECTAMENTE DE LA INTERFAZ ---
+    private LocalDateTime[] obtenerFechasDesdeUI() {
+        try {
+            // Armamos los textos leyendo los combobox de la vista
+            String strInicio = vistaPrincipal.getCbDiaInicio().getSelectedItem() + "/" +
+                vistaPrincipal.getCbMesInicio().getSelectedItem() + "/" +
+                vistaPrincipal.getCbAnioInicio().getSelectedItem();
+
+            String strFin = vistaPrincipal.getCbDiaFin().getSelectedItem() + "/" +
+                vistaPrincipal.getCbMesFin().getSelectedItem() + "/" +
+                vistaPrincipal.getCbAnioFin().getSelectedItem();
+
+            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            LocalDate fechaInicio = LocalDate.parse(strInicio, fmt);
+            LocalDate fechaFin = LocalDate.parse(strFin, fmt);
+            LocalDate hoy = LocalDate.now();
+
+            if (fechaInicio.isAfter(fechaFin)) {
+                JOptionPane.showMessageDialog(vistaPrincipal, "La fecha 'Desde' no puede ser posterior a 'Hasta'.", "Fechas Inválidas", JOptionPane.WARNING_MESSAGE);
+                return null;
+            }
+
+            // LÍMITE DE 6 MESES
+            LocalDate limiteAntiguedad = hoy.minusMonths(6);
+            if (fechaInicio.isBefore(limiteAntiguedad)) {
+                JOptionPane.showMessageDialog(vistaPrincipal, "Por políticas del sistema, solo puedes generar reportes con un máximo de 6 meses de antigüedad.\nLímite permitido: " + limiteAntiguedad.format(fmt), "Límite Excedido", JOptionPane.WARNING_MESSAGE);
+                return null;
+            }
+
+            // Convertimos las fechas a LocalDateTime (Inicio a las 00:00:00 y Fin a las 23:59:59)
+            return new LocalDateTime[]{fechaInicio.atStartOfDay(), fechaFin.atTime(23, 59, 59)};
+
+        } catch (DateTimeException ex) {
+            JOptionPane.showMessageDialog(vistaPrincipal, "La fecha seleccionada no existe en el calendario.", "Error de Fecha", JOptionPane.ERROR_MESSAGE);
+            return null;
+        }
     }
 
     // --- MÉTODO REUTILIZABLE PARA PEDIR FECHAS ---
@@ -739,5 +802,35 @@ public class AdminController {
         Integer[] rango = new Integer[fin - inicio + 1];
         for (int i = 0; i < rango.length; i++) rango[i] = inicio + i;
         return rango;
+    }
+
+    // === MÉTODOS DE BÚSQUEDA DINÁMICA ===
+    private void configurarBusqueda(JTextField campo, JButton boton, JTable tabla) {
+        // Buscar al hacer clic en el botón
+        boton.addActionListener(e -> aplicarFiltro(campo, tabla));
+
+        // Buscar al presionar Enter
+        campo.addActionListener(e -> aplicarFiltro(campo, tabla));
+
+        // Buscar en tiempo real mientras se escribe
+        campo.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { aplicarFiltro(campo, tabla); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { aplicarFiltro(campo, tabla); }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { aplicarFiltro(campo, tabla); }
+        });
+    }
+
+    private void aplicarFiltro(JTextField campo, JTable tabla) {
+        String texto = campo.getText().trim();
+        javax.swing.table.TableRowSorter<?> sorter = (javax.swing.table.TableRowSorter<?>) tabla.getRowSorter();
+
+        if (sorter != null) {
+            if (texto.isEmpty()) {
+                sorter.setRowFilter(null); // Quita el filtro si está vacío
+            } else {
+                // Filtra ignorando mayúsculas/minúsculas
+                sorter.setRowFilter(javax.swing.RowFilter.regexFilter("(?i)" + java.util.regex.Pattern.quote(texto)));
+            }
+        }
     }
 }
