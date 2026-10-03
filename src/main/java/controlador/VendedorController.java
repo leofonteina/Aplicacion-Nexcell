@@ -8,7 +8,7 @@ import vista.LoginUI;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.util.List;
-import java.awt.Color;
+import java.awt.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -80,6 +80,18 @@ public class VendedorController {
                 } else {
                     this.vistaPrincipal.getBtnBajaCliente().setVisible(false);
                     this.vistaPrincipal.getBtnAltaCliente().setVisible(false);
+                }
+            }
+        });
+
+        this.vistaPrincipal.getTablaVentas().addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    int fila = vistaPrincipal.getTablaVentas().getSelectedRow();
+                    if (fila != -1) {
+                        abrirDetalleVenta();
+                    }
                 }
             }
         });
@@ -240,6 +252,7 @@ public class VendedorController {
                 }
             });
 
+            // ACA SE ENCUENTRA LA ALERTA DE STOCK AL AGREGAR PRODUCTO
             ventanaVenta.getBtnAgregarProducto().addActionListener(e -> {
                 if (ventanaVenta.getProductoBox().getSelectedIndex() <= 0) return;
                 String item = (String) ventanaVenta.getProductoBox().getSelectedItem();
@@ -255,10 +268,21 @@ public class VendedorController {
                     for (int i = 0; i < mod.getRowCount(); i++) {
                         if (((Long) mod.getValueAt(i, 0)).equals(idProducto)) cantEnCarro += (int) mod.getValueAt(i, 3);
                     }
-                    if ((pedida + cantEnCarro) > producto.getStock()) {
-                        JOptionPane.showMessageDialog(ventanaVenta, "Stock insuficiente.", "Error", JOptionPane.ERROR_MESSAGE);
+
+                    int totalRequerido = pedida + cantEnCarro;
+
+                    // Validación principal: Supera el stock total
+                    if (totalRequerido > producto.getStock()) {
+                        JOptionPane.showMessageDialog(ventanaVenta, "Stock insuficiente. Solo cuentas con " + producto.getStock() + " unidades disponibles.", "Error de Stock", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
+
+                    // Alerta secundaria: Quedan pocas unidades que serian 5
+                    int stockRestante = producto.getStock() - totalRequerido;
+                    if (stockRestante <= 5) {
+                        JOptionPane.showMessageDialog(ventanaVenta, "Atención: Al confirmar esta venta, solo quedarán " + stockRestante + " unidades de '" + producto.getNombre() + "' en inventario.", "Alerta de Stock Crítico", JOptionPane.WARNING_MESSAGE);
+                    }
+
                     double sub = pedida * producto.getPrecio();
                     mod.addRow(new Object[]{ producto.getId(), producto.getNombre(), producto.getPrecio(), pedida, sub });
 
@@ -273,13 +297,48 @@ public class VendedorController {
                 }
             });
 
+            // ACA SE HACE LA DOBLE VALIDACIÓN Y EXPORTACIÓN DE TICKET
             ventanaVenta.getBtnConfirmarVenta().addActionListener(e -> {
                 if (clienteActual[0] == null) {
-                    JOptionPane.showMessageDialog(ventanaVenta, "Debe asociar un cliente.", "Error", JOptionPane.WARNING_MESSAGE);
+                    JOptionPane.showMessageDialog(ventanaVenta, "Debe asociar un cliente antes de facturar.", "Error", JOptionPane.WARNING_MESSAGE);
                     return;
                 }
                 DefaultTableModel mod = (DefaultTableModel) ventanaVenta.getTablaCarrito().getModel();
-                if (mod.getRowCount() == 0) return;
+                if (mod.getRowCount() == 0) {
+                    JOptionPane.showMessageDialog(ventanaVenta, "El carrito está vacío.", "Atención", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
+                // ACA SE ENCUENTRA EL TICKET :D
+                StringBuilder resumen = new StringBuilder();
+                resumen.append("--- TICKET DE VENTA - NEXCELL ---\n");
+                resumen.append("Fecha: ").append(java.time.LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))).append("\n");
+                resumen.append("Atendido por: ").append(this.vendedorLogueado.getUsername()).append("\n");
+                resumen.append("Cliente: ").append(clienteActual[0].getNombre()).append(" ").append(clienteActual[0].getApellido()).append("\n");
+                resumen.append("DNI: ").append(clienteActual[0].getDni()).append("\n\n");
+                resumen.append("--- DETALLE ---\n");
+
+                double totResumen = 0;
+                for (int i = 0; i < mod.getRowCount(); i++) {
+                    String nombreProd = (String) mod.getValueAt(i, 1);
+                    int cantProd = (int) mod.getValueAt(i, 3);
+                    double subTotalProd = (double) mod.getValueAt(i, 4);
+
+                    resumen.append("• ").append(cantProd).append("x ").append(nombreProd)
+                        .append(" - $").append(String.format("%.2f", subTotalProd)).append("\n");
+                    totResumen += subTotalProd;
+                }
+
+                resumen.append("---------------------------------\n");
+                resumen.append("TOTAL A COBRAR: $").append(String.format("%.2f", totResumen)).append("\n");
+                resumen.append("---------------------------------\n");
+
+                // Lanzamos la ventana emergente de validación
+                int confirmacion = JOptionPane.showConfirmDialog(ventanaVenta, resumen.toString() + "\n¿Desea confirmar e impactar esta venta en el sistema?", "Revisión Final de la Venta", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+
+                if (confirmacion != JOptionPane.YES_OPTION) {
+                    return;
+                }
 
                 try {
                     em.getTransaction().begin();
@@ -310,18 +369,31 @@ public class VendedorController {
                     new repositorio.VentaRepository(em).guardar(nueva);
                     em.getTransaction().commit();
 
+                    // --- GENERACIÓN DEL ARCHIVO FÍSICO (.txt) ---
+                    try {
+                        String nombreArchivo = "Ticket_Venta_" + nueva.getId() + ".txt";
+                        java.io.FileWriter writer = new java.io.FileWriter(nombreArchivo);
+                        writer.write(resumen.toString()); // Escribe el mismo texto que vio en pantalla
+                        writer.close();
+                        JOptionPane.showMessageDialog(ventanaVenta, "¡Venta registrada exitosamente!\nSe generó el comprobante: " + nombreArchivo, "Venta Exitosa", JOptionPane.INFORMATION_MESSAGE);
+                    } catch (Exception exio) {
+                        JOptionPane.showMessageDialog(ventanaVenta, "La venta se guardó en la base de datos, pero hubo un error al crear el archivo del ticket.", "Aviso", JOptionPane.WARNING_MESSAGE);
+                    }
+                    // --------------------------------------------
+
                     cargarTablaVentas();
                     cargarTablaProductos();
-                    JOptionPane.showMessageDialog(ventanaVenta, "¡Venta confirmada!\nTotal: $" + String.format("%.2f", tot));
                     ventanaVenta.dispose();
                 } catch (Exception ex) {
                     if (em.getTransaction().isActive()) em.getTransaction().rollback();
-                    JOptionPane.showMessageDialog(ventanaVenta, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(ventanaVenta, "Error al procesar la venta: " + ex.getMessage(), "Error Fatal", JOptionPane.ERROR_MESSAGE);
                 }
             });
+
             ventanaVenta.setVisible(true);
+
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(vistaPrincipal, "Error: " + ex.getMessage());
+            JOptionPane.showMessageDialog(vistaPrincipal, "Error al inicializar módulo de ventas: " + ex.getMessage());
         }
     }
 
@@ -424,6 +496,130 @@ public class VendedorController {
                 // Pattern.quote evita errores si el usuario ingresa caracteres raros
                 sorter.setRowFilter(javax.swing.RowFilter.regexFilter("(?i)" + java.util.regex.Pattern.quote(texto)));
             }
+        }
+    }
+    // =======================================================
+    // VISUALIZADOR DE VENTAS Y EXPORTACIÓN PDF
+    // =======================================================
+    private void abrirDetalleVenta() {
+        int fila = vistaPrincipal.getTablaVentas().getSelectedRow();
+        Long idVenta = (Long) vistaPrincipal.getTablaVentas().getValueAt(fila, 0);
+
+        // Buscamos la venta completa en la BD
+        modelo.Venta venta = em.find(modelo.Venta.class, idVenta);
+
+        // Creamos una ventana emergente (Dialog)
+        JDialog dialogo = new JDialog(vistaPrincipal, "Detalle de Venta #" + venta.getId(), true);
+        dialogo.setSize(550, 450);
+        dialogo.setLocationRelativeTo(vistaPrincipal);
+        dialogo.setLayout(new BorderLayout(15, 15));
+
+        // --- PANEL SUPERIOR: Info de la factura ---
+        JPanel panelInfo = new JPanel(new GridLayout(4, 1, 5, 5));
+        panelInfo.setBorder(BorderFactory.createEmptyBorder(15, 15, 5, 15));
+        panelInfo.add(new JLabel("Cliente: " + venta.getCliente().getNombre() + " " + venta.getCliente().getApellido() + " (DNI: " + venta.getCliente().getDni() + ")"));
+        panelInfo.add(new JLabel("Atendido por: " + venta.getVendedor().getUsername()));
+        panelInfo.add(new JLabel("Fecha de operación: " + venta.getFecha().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))));
+
+        dialogo.add(panelInfo, BorderLayout.NORTH);
+
+        // --- PANEL CENTRAL: Tabla de artículos ---
+        String[] columnas = {"Producto", "Cantidad", "Subtotal"};
+        DefaultTableModel modDetalle = new DefaultTableModel(columnas, 0) {
+            @Override public boolean isCellEditable(int row, int col) { return false; }
+        };
+
+        for (modelo.DetalleVenta dv : venta.getDetalles()) {
+            modDetalle.addRow(new Object[]{
+                dv.getProducto().getNombre(),
+                dv.getCantidad() + " u.",
+                String.format("$%.2f", dv.getSubtotal())
+            });
+        }
+
+        JTable tablaDetalles = new JTable(modDetalle);
+        tablaDetalles.setRowHeight(30);
+        JScrollPane scroll = new JScrollPane(tablaDetalles);
+        scroll.setBorder(BorderFactory.createEmptyBorder(0, 15, 0, 15));
+        dialogo.add(scroll, BorderLayout.CENTER);
+
+        // --- PANEL INFERIOR: Total y Botón PDF ---
+        JPanel panelInferior = new JPanel(new BorderLayout());
+        panelInferior.setBorder(BorderFactory.createEmptyBorder(10, 15, 15, 15));
+
+        JLabel lblTotal = new JLabel("TOTAL ABONADO: $" + String.format("%.2f", venta.getTotal()));
+        lblTotal.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        lblTotal.setForeground(new Color(40, 167, 69));
+
+        JButton btnPdf = new JButton("Descargar Comprobante PDF");
+        btnPdf.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnPdf.addActionListener(e -> generarComprobantePDF(venta));
+
+        panelInferior.add(lblTotal, BorderLayout.WEST);
+        panelInferior.add(btnPdf, BorderLayout.EAST);
+        dialogo.add(panelInferior, BorderLayout.SOUTH);
+
+        dialogo.setVisible(true);
+    }
+
+    private void generarComprobantePDF(modelo.Venta venta) {
+        try {
+            String nombreArchivo = "Nexcell_Comprobante_Venta_" + venta.getId() + ".pdf";
+
+            com.itextpdf.text.Document documento = new com.itextpdf.text.Document();
+            com.itextpdf.text.pdf.PdfWriter.getInstance(documento, new java.io.FileOutputStream(nombreArchivo));
+
+            documento.open();
+
+            com.itextpdf.text.Font fontTitulo = com.itextpdf.text.FontFactory.getFont(com.itextpdf.text.FontFactory.HELVETICA_BOLD, 18);
+            com.itextpdf.text.Font fontSubtitulo = com.itextpdf.text.FontFactory.getFont(com.itextpdf.text.FontFactory.HELVETICA_BOLD, 12);
+            com.itextpdf.text.Font fontNormal = com.itextpdf.text.FontFactory.getFont(com.itextpdf.text.FontFactory.HELVETICA, 12);
+
+            // Titulo
+            com.itextpdf.text.Paragraph titulo = new com.itextpdf.text.Paragraph("NEXCELL - TECNOLOGIA", fontTitulo);
+            titulo.setAlignment(com.itextpdf.text.Element.ALIGN_CENTER);
+            documento.add(titulo);
+            documento.add(new com.itextpdf.text.Paragraph("-------------------------------------------------------------------------------------------------------"));
+            documento.add(new com.itextpdf.text.Paragraph("\n"));
+
+            // Datos de la venta
+            documento.add(new com.itextpdf.text.Paragraph("N° de Factura: " + String.format("%06d", venta.getId()), fontNormal));
+            documento.add(new com.itextpdf.text.Paragraph("Fecha: " + venta.getFecha().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")), fontNormal));
+            documento.add(new com.itextpdf.text.Paragraph("Vendedor: " + venta.getVendedor().getUsername(), fontNormal));
+            documento.add(new com.itextpdf.text.Paragraph("Cliente: " + venta.getCliente().getNombre() + " " + venta.getCliente().getApellido() + " (DNI: " + venta.getCliente().getDni() + ")", fontNormal));
+            documento.add(new com.itextpdf.text.Paragraph("\n"));
+
+            // Tabla de Productos
+            com.itextpdf.text.pdf.PdfPTable tabla = new com.itextpdf.text.pdf.PdfPTable(3); // 3 Columnas
+            tabla.setWidthPercentage(100);
+            tabla.setWidths(new float[]{50f, 20f, 30f}); // Proporción de ancho de columnas
+
+            // Cabeceras de la tabla
+            tabla.addCell(new com.itextpdf.text.pdf.PdfPCell(new com.itextpdf.text.Phrase("Producto", fontSubtitulo)));
+            tabla.addCell(new com.itextpdf.text.pdf.PdfPCell(new com.itextpdf.text.Phrase("Cantidad", fontSubtitulo)));
+            tabla.addCell(new com.itextpdf.text.pdf.PdfPCell(new com.itextpdf.text.Phrase("Subtotal", fontSubtitulo)));
+
+            // Rellenar con los productos reales
+            for (modelo.DetalleVenta d : venta.getDetalles()) {
+                tabla.addCell(new com.itextpdf.text.Phrase(d.getProducto().getNombre(), fontNormal));
+                tabla.addCell(new com.itextpdf.text.Phrase(d.getCantidad() + " u.", fontNormal));
+                tabla.addCell(new com.itextpdf.text.Phrase(String.format("$%.2f", d.getSubtotal()), fontNormal));
+            }
+            documento.add(tabla);
+
+            // Total Final
+            com.itextpdf.text.Paragraph total = new com.itextpdf.text.Paragraph("\nTOTAL ABONADO: $" + String.format("%.2f", venta.getTotal()), fontTitulo);
+            total.setAlignment(com.itextpdf.text.Element.ALIGN_RIGHT);
+            documento.add(total);
+            documento.add(new com.itextpdf.text.Paragraph("\n\n*** Gracias por su compra en Nexcell ***", fontNormal));
+
+            documento.close();
+
+            JOptionPane.showMessageDialog(vistaPrincipal, "Comprobante PDF generado y guardado con éxito como:\n" + nombreArchivo, "PDF Generado", JOptionPane.INFORMATION_MESSAGE);
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(vistaPrincipal, "Error al generar el PDF: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
         }
     }
 }
