@@ -34,6 +34,9 @@ public class AdminUI extends JFrame {
     private JTable tablaReportes;
     private JButton btnCerrarSesion;
 
+    // NUEVO: Botón para el Backup
+    private JButton btnAbrirBackup;
+
     public AdminUI() {
         setTitle("Panel de Administrador - Nexcell");
         setMinimumSize(new Dimension(1050, 600));
@@ -50,15 +53,28 @@ public class AdminUI extends JFrame {
 
         add(sistemaPestanas, BorderLayout.CENTER);
 
-        JPanel panelInferior = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        // --- PANEL INFERIOR REORGANIZADO ---
+        JPanel panelInferior = new JPanel(new BorderLayout());
+        panelInferior.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+
+        // Izquierda: Botón de Backup
+        JPanel panelIzq = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        btnAbrirBackup = new JButton("Respaldo y Restauración (BD)");
+        panelIzq.add(btnAbrirBackup);
+
+        // Derecha: Botón Cerrar Sesión
+        JPanel panelDer = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         btnCerrarSesion = new JButton("Cerrar Sesión");
         btnCerrarSesion.setForeground(Color.RED);
-        panelInferior.add(btnCerrarSesion);
+        panelDer.add(btnCerrarSesion);
+
+        panelInferior.add(panelIzq, BorderLayout.WEST);
+        panelInferior.add(panelDer, BorderLayout.EAST);
+
         add(panelInferior, BorderLayout.SOUTH);
     }
 
     private JPanel crearPanelProductos() {
-        // [Este método queda igual al que ya tenías]
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         JPanel panelSuperior = new JPanel(new BorderLayout());
@@ -99,7 +115,6 @@ public class AdminUI extends JFrame {
     }
 
     private JPanel crearPanelUsuarios() {
-        // [Este método queda igual al que ya tenías]
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         JPanel panelSuperior = new JPanel(new BorderLayout());
@@ -143,7 +158,6 @@ public class AdminUI extends JFrame {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Arreglos para fechas
         String[] dias = new String[31]; for (int i = 0; i < 31; i++) dias[i] = String.format("%02d", i + 1);
         String[] meses = new String[12]; for (int i = 0; i < 12; i++) meses[i] = String.format("%02d", i + 1);
         String[] anios = new String[5];
@@ -207,7 +221,6 @@ public class AdminUI extends JFrame {
     public JTextField getBuscarProductoField() { return buscarProductoField; }
     public JButton getBtnBuscarProducto() { return btnBuscarProducto; }
 
-    // Nuevos Getters Reportes
     public JComboBox<String> getComboReportes() { return comboReportes; }
     public JComboBox<String> getCbDiaInicio() { return cbDiaInicio; }
     public JComboBox<String> getCbMesInicio() { return cbMesInicio; }
@@ -218,7 +231,10 @@ public class AdminUI extends JFrame {
     public JButton getBtnGenerarReporte() { return btnGenerarReporte; }
     public JButton getBtnLimpiarReporte() { return btnLimpiarReporte; }
     public JTable getTablaReportes() { return tablaReportes; }
+
+    // Getters botones inferiores
     public JButton getBtnCerrarSesion() { return btnCerrarSesion; }
+    public JButton getBtnAbrirBackup() { return btnAbrirBackup; }
 
     private ImageIcon cargarIcono(String ruta) {
         java.net.URL imgURL = getClass().getResource(ruta);

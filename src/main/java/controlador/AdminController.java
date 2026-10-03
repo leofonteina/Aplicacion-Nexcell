@@ -51,7 +51,7 @@ public class AdminController {
         this.vistaPrincipal.getBtnModificarProducto().addActionListener(e -> abrirFormularioModificarProducto());
         this.vistaPrincipal.getBtnBajaProducto().addActionListener(e -> cambiarEstadoProducto(false));
         this.vistaPrincipal.getBtnAltaProducto().addActionListener(e -> cambiarEstadoProducto(true));
-
+        this.vistaPrincipal.getBtnAbrirBackup().addActionListener(e -> abrirVentanaBackup());
         // Escuchador de selección de la tabla (para mostrar/ocultar botones)
         this.vistaPrincipal.getTablaProductos().getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
@@ -832,5 +832,12 @@ public class AdminController {
                 sorter.setRowFilter(javax.swing.RowFilter.regexFilter("(?i)" + java.util.regex.Pattern.quote(texto)));
             }
         }
+    }
+
+    private void abrirVentanaBackup() {
+        vista.BackupUI ventanaBackup = new vista.BackupUI();
+        // Le pasamos el EntityManager que este controlador ya posee
+        new BackupController(ventanaBackup, this.em);
+        ventanaBackup.setVisible(true);
     }
 }
