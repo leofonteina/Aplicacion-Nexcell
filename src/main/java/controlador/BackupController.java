@@ -25,7 +25,7 @@ public class BackupController {
     // CONFIGURACIÓN DE BASE DE DATOS (COMPLETA ESTOS 3 DATOS)
     // ==============================================================
     private final String DB_USER = "root";
-    private final String DB_PASS = "MessiElMasMejor123";      // Aca pones tu contraseña de MYSQLWorkbench
+    private final String DB_PASS = "MessiElMasMejor123"; // Aca pones tu contraseña de MYSQLWorkbench
     private final String DB_NAME = "nexcell_db";
 
     private final String CMD_MYSQLDUMP = "C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysqldump.exe"; // Cambiar dependiendo de la direccion de tu SGBD
@@ -162,20 +162,23 @@ public class BackupController {
         return adminValido && gerenteValido;
     }
 
+    // Método que permite la ejecución del Restore de la BD
     private void ejecutarRestore(String ruta) {
         try {
+            // Usamos la misma estructura exacta que te funcionó en el backup
             java.util.List<String> comando = new java.util.ArrayList<>();
             comando.add(CMD_MYSQL);
 
-            // Forzamos conexión TCP/IP igual que en el backup
+            // Forzamos la conexión por TCP/IP usando TU puerto
             comando.add("-h");
             comando.add("127.0.0.1");
             comando.add("-P");
-            comando.add("3306");
+            comando.add("3307"); // EL PUERTO CLAVE
 
             comando.add("-u");
             comando.add(DB_USER);
 
+            // Forma más segura de pasar la contraseña, igual que en el backup
             if (!DB_PASS.isEmpty()) {
                 comando.add("--password=" + DB_PASS);
             }
@@ -184,18 +187,17 @@ public class BackupController {
 
             ProcessBuilder pb = new ProcessBuilder(comando);
 
-            // EL TRUCO MAGISTRAL: Java inyecta el archivo directo a MySQL, esquivando el problema de las barras invertidas
+            // LA DIFERENCIA: En vez de "-r", hacemos que Java lea el archivo y se lo tire a MySQL
             pb.redirectInput(new java.io.File(ruta));
             pb.redirectErrorStream(true);
 
             Process proceso = pb.start();
 
-            // Escáner para leer qué está pasando por detrás
+            // LECTOR
             java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(proceso.getInputStream()));
             String linea;
             StringBuilder errorReal = new StringBuilder();
             while ((linea = reader.readLine()) != null) {
-                // Si MySQL tira un warning de "contraseña en la línea de comandos", lo ignoramos porque es normal
                 if (!linea.contains("Using a password on the command line interface can be insecure")) {
                     errorReal.append(linea).append("\n");
                 }
@@ -207,11 +209,11 @@ public class BackupController {
             if (exitCode == 0) {
                 vista.mostrarMensaje("Base de datos restaurada correctamente.\nSe recomienda reiniciar el sistema para refrescar las tablas.", "Éxito", 1);
             } else {
-                vista.mostrarMensaje("MySQL rechazó la orden de restauración. Detalle:\n" + errorReal.toString(), "Error de MySQL", 0);
+                vista.mostrarMensaje("MySQL rechazó la orden. Detalle:\n" + errorReal.toString(), "Error de MySQL", 0);
             }
         } catch (Exception e) {
             e.printStackTrace();
-            vista.mostrarMensaje("Error crítico de sistema al intentar restaurar.", "Error", 0);
+            vista.mostrarMensaje("Error crítico de sistema.", "Error", 0);
         }
     }
 }
