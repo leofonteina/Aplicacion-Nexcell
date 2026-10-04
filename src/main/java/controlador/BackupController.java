@@ -25,7 +25,7 @@ public class BackupController {
     // CONFIGURACIÓN DE BASE DE DATOS (COMPLETA ESTOS 3 DATOS)
     // ==============================================================
     private final String DB_USER = "root";
-    private final String DB_PASS = "MessiElMasMejor123"; // Aca pones tu contraseña de MYSQLWorkbench
+    private final String DB_PASS = "Amir11022013"; // Aca pones tu contraseña de MYSQLWorkbench
     private final String DB_NAME = "nexcell_db";
 
     private final String CMD_MYSQLDUMP = "C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysqldump.exe"; // Cambiar dependiendo de la direccion de tu SGBD
@@ -59,25 +59,90 @@ public class BackupController {
             int hora = (int) vista.getCbHora().getSelectedItem();
             int minutos = (int) vista.getCbMinutos().getSelectedItem();
 
-            LocalDateTime fechaProgramada = LocalDateTime.of(anio, mes, dia, hora, minutos);
-            LocalDateTime ahora = LocalDateTime.now();
+            java.time.LocalDateTime fechaProgramada = java.time.LocalDateTime.of(anio, mes, dia, hora, minutos);
+            java.time.LocalDateTime ahora = java.time.LocalDateTime.now();
 
             if (fechaProgramada.isBefore(ahora)) {
-                vista.mostrarMensaje("La fecha y hora deben ser a futuro.", "Error de Fecha", 0); // 0 = ERROR_MESSAGE
+                vista.mostrarMensaje("La fecha y hora deben ser a futuro.", "Error de Fecha", 0);
                 return;
             }
 
-            long minutosDeRetraso = ChronoUnit.MINUTES.between(ahora, fechaProgramada);
-            String rutaAutomatica = "C:\\backups_nexcell\\backup_automatico.sql";
+            String carpetaDestino = "C:\\backups_nexcell";
+            new java.io.File(carpetaDestino).mkdirs();
 
-            new File("C:\\backups_nexcell").mkdirs();
+            // 1. Crear el Script de PowerShell (.ps1) con lógica de Base de Datos y Correo
+            String rutaPs1 = carpetaDestino + "\\script_backup_nexcell.ps1";
+            java.io.FileWriter writerPs = new java.io.FileWriter(rutaPs1);
 
-            planificador.schedule(() -> ejecutarBackup(rutaAutomatica, false), minutosDeRetraso, TimeUnit.MINUTES);
+            writerPs.write("$fecha = Get-Date -Format 'dd-MM-yyyy_HH-mm'\n");
+            writerPs.write("$carpeta = 'C:\\backups_nexcell'\n");
+            writerPs.write("$archivo = \"$carpeta\\backup_auto_$fecha.sql\"\n\n");
 
-            vista.mostrarMensaje("Backup programado correctamente para el " + fechaProgramada.toString(), "Éxito", 1); // 1 = INFORMATION_MESSAGE
+            // Ejecuta el Backup
+            writerPs.write(String.format("& \"%s\" -h 127.0.0.1 -P 3307 -u %s --password=\"%s\" %s -r $archivo\n\n",
+                CMD_MYSQLDUMP, DB_USER, DB_PASS, DB_NAME));
+
+            // Configuración del Correo SMTP
+            writerPs.write("$SmtpServer = 'smtp.gmail.com'\n");
+            writerPs.write("$SmtpPort = 587\n");
+            writerPs.write("$Username = 'agustin552689@gmail.com' # Correo del usuario\n");
+            writerPs.write("$Password = 'clewkexbrypxmldd' # Contraseña generada por google\n");
+            writerPs.write("$Destino = 'agusagomez19@gmail.com' # correo del gerente\n\n");
+
+            writerPs.write("$Message = New-Object System.Net.Mail.MailMessage\n");
+            writerPs.write("$Message.From = $Username\n");
+            writerPs.write("$Message.To.Add($Destino)\n");
+            writerPs.write("$SMTPClient = New-Object Net.Mail.SmtpClient($SmtpServer, $SmtpPort)\n");
+            writerPs.write("$SMTPClient.EnableSsl = $true\n");
+            writerPs.write("$SMTPClient.Credentials = New-Object System.Net.NetworkCredential($Username, $Password)\n\n");
+
+            // Lógica de Notificación Inteligente
+            writerPs.write("if (Test-Path $archivo) {\n");
+            writerPs.write("    $Message.Subject = \"Nexcell - Backup Exitoso ($fecha)\"\n");
+            writerPs.write("    $Message.Body = \"El respaldo se realizo correctamente. Se adjunta el archivo de seguridad SQL.\"\n");
+            writerPs.write("    $Attachment = New-Object System.Net.Mail.Attachment($archivo)\n");
+            writerPs.write("    $Message.Attachments.Add($Attachment)\n");
+            writerPs.write("    $SMTPClient.Send($Message)\n");
+            writerPs.write("    $Attachment.Dispose()\n");
+            writerPs.write("} else {\n");
+            writerPs.write("    $Message.Subject = \"Nexcell - ERROR CRITICO DE BACKUP ($fecha)\"\n");
+            writerPs.write("    $Message.Body = \"ATENCION: Fallo la comunicacion con MySQL. No se pudo crear el archivo de respaldo.\"\n");
+            writerPs.write("    $SMTPClient.Send($Message)\n");
+            writerPs.write("}\n");
+            writerPs.close();
+
+            // 2. Crear el XML de configuración para el Sistema Operativo
+            String rutaXml = carpetaDestino + "\\tarea_backup.xml";
+            java.io.FileWriter writerXml = new java.io.FileWriter(rutaXml);
+            String startBoundary = String.format("%04d-%02d-%02dT%02d:%02d:00", anio, mes, dia, hora, minutos);
+
+            writerXml.write("<Task version=\"1.2\" xmlns=\"http://schemas.microsoft.com/windows/2004/02/mit/task\">\n");
+            writerXml.write("  <Triggers>\n    <TimeTrigger>\n      <StartBoundary>" + startBoundary + "</StartBoundary>\n      <Enabled>true</Enabled>\n    </TimeTrigger>\n  </Triggers>\n");
+            writerXml.write("  <Settings>\n    <StartWhenAvailable>true</StartWhenAvailable>\n    <WakeToRun>true</WakeToRun>\n  </Settings>\n");
+            writerXml.write("  <Actions>\n    <Exec>\n");
+            writerXml.write("      <Command>powershell.exe</Command>\n");
+            // Ejecuta PowerShell de forma totalmente invisible para el usuario
+            writerXml.write("      <Arguments>-ExecutionPolicy Bypass -WindowStyle Hidden -File \"" + rutaPs1 + "\"</Arguments>\n");
+            writerXml.write("    </Exec>\n  </Actions>\n");
+            writerXml.write("</Task>\n");
+            writerXml.close();
+
+            // 3. Registrar la tarea en Windows
+            String comandoSchtasks = String.format("schtasks /create /tn \"Nexcell_Backup_Auto\" /xml \"%s\" /f", rutaXml);
+            Process proceso = Runtime.getRuntime().exec(comandoSchtasks);
+            int exitCode = proceso.waitFor();
+
+            if (exitCode == 0) {
+                String fechaVisual = String.format("%02d/%02d/%04d %02d:%02d", dia, mes, anio, hora, minutos);
+                vista.mostrarMensaje("Backup Empresarial Configurado: " + fechaVisual +
+                    "\n\nSe realizará la copia local y se enviará por correo automáticamente al finalizar.", "Éxito", 1);
+            } else {
+                vista.mostrarMensaje("Windows rechazó la orden. Ejecute su IDE como Administrador.", "Error de Permisos", 0);
+            }
 
         } catch (Exception ex) {
-            vista.mostrarMensaje("Error al programar el backup. Revise las fechas.", "Error", 0);
+            vista.mostrarMensaje("Error crítico: " + ex.getMessage(), "Error", 0);
+            ex.printStackTrace();
         }
     }
 

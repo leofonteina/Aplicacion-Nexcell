@@ -12,6 +12,8 @@ import java.awt.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import jakarta.persistence.ParameterMode;
+import jakarta.persistence.StoredProcedureQuery;
 
 public class VendedorController {
 
@@ -340,62 +342,36 @@ public class VendedorController {
                     return;
                 }
 
-                try {
-                    em.getTransaction().begin();
-                    modelo.Venta nueva = new modelo.Venta();
-                    nueva.setCliente(clienteActual[0]);
-                    nueva.setVendedor(this.vendedorLogueado);
-                    nueva.setFecha(java.time.LocalDateTime.now());
-                    double tot = 0;
+                // --- NUEVA LÓGICA DE GUARDADO DELEGADA A MYSQL ---
+                boolean exito = procesarCheckout(vendedorLogueado.getId(), clienteActual[0].getDni(), totResumen, mod);
 
-                    for (int i = 0; i < mod.getRowCount(); i++) {
-                        Long idP = (Long) mod.getValueAt(i, 0);
-                        int c = (int) mod.getValueAt(i, 3);
-                        double s = (double) mod.getValueAt(i, 4);
-
-                        modelo.Producto p = em.find(modelo.Producto.class, idP);
-                        p.setStock(p.getStock() - c);
-                        em.merge(p);
-
-                        modelo.DetalleVenta det = new modelo.DetalleVenta();
-                        det.setProducto(p);
-                        det.setCantidad(c);
-                        det.setSubtotal(s);
-                        nueva.agregarDetalle(det);
-                        tot += s;
-                    }
-
-                    nueva.setTotal(tot);
-                    new repositorio.VentaRepository(em).guardar(nueva);
-                    em.getTransaction().commit();
-
-                    // --- GENERACIÓN DEL ARCHIVO FÍSICO (.txt) ---
+                if (exito) {
+                    // Generación del archivo físico (.txt)
                     try {
-                        String nombreArchivo = "Ticket_Venta_" + nueva.getId() + ".txt";
+                        String nombreArchivo = "Ticket_Venta_" + System.currentTimeMillis() + ".txt";
                         java.io.FileWriter writer = new java.io.FileWriter(nombreArchivo);
-                        writer.write(resumen.toString()); // Escribe el mismo texto que vio en pantalla
+                        writer.write(resumen.toString());
                         writer.close();
-                        JOptionPane.showMessageDialog(ventanaVenta, "¡Venta registrada exitosamente!\nSe generó el comprobante: " + nombreArchivo, "Venta Exitosa", JOptionPane.INFORMATION_MESSAGE);
+                        JOptionPane.showMessageDialog(ventanaVenta, "¡Venta registrada exitosamente en milisegundos!\nSe generó el comprobante: " + nombreArchivo, "Venta Exitosa", JOptionPane.INFORMATION_MESSAGE);
                     } catch (Exception exio) {
-                        JOptionPane.showMessageDialog(ventanaVenta, "La venta se guardó en la base de datos, pero hubo un error al crear el archivo del ticket.", "Aviso", JOptionPane.WARNING_MESSAGE);
+                        JOptionPane.showMessageDialog(ventanaVenta, "La venta se guardó, pero hubo un error al crear el archivo de texto.", "Aviso", JOptionPane.WARNING_MESSAGE);
                     }
-                    // --------------------------------------------
 
                     cargarTablaVentas();
                     cargarTablaProductos();
                     ventanaVenta.dispose();
-                } catch (Exception ex) {
-                    if (em.getTransaction().isActive()) em.getTransaction().rollback();
-                    JOptionPane.showMessageDialog(ventanaVenta, "Error al procesar la venta: " + ex.getMessage(), "Error Fatal", JOptionPane.ERROR_MESSAGE);
-                }
-            });
+                }  else {
+                JOptionPane.showMessageDialog(ventanaVenta, "Error interno en la base de datos al procesar la venta. Se revirtieron los cambios.", "Error Crítico", JOptionPane.ERROR_MESSAGE);
+            }
+        }); // <-- Faltaba el cierre correcto del evento del botón
 
-            ventanaVenta.setVisible(true);
+        // ¡Esta línea se había borrado, por eso no se veía la pantalla!
+        ventanaVenta.setVisible(true);
 
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(vistaPrincipal, "Error al inicializar módulo de ventas: " + ex.getMessage());
-        }
+    } catch (Exception ex) {
+        JOptionPane.showMessageDialog(vistaPrincipal, "Error al inicializar módulo de ventas: " + ex.getMessage());
     }
+}
 
     private void abrirFormularioRegistro(String dniPreCargado) {
         vista.RegistroClienteUI ven = new vista.RegistroClienteUI(this.vistaPrincipal);
@@ -620,6 +596,56 @@ public class VendedorController {
         } catch (Exception e) {
             JOptionPane.showMessageDialog(vistaPrincipal, "Error al generar el PDF: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
+        }
+    }
+
+
+    // Cambiamos "Long idCliente" por "String dniCliente"
+    public boolean procesarCheckout(Long idVendedor, String dniCliente, double totalVenta, DefaultTableModel modeloCarrito) {
+        StringBuilder jsonCarrito = new StringBuilder("[");
+
+        for (int i = 0; i < modeloCarrito.getRowCount(); i++) {
+            Long idProd = (Long) modeloCarrito.getValueAt(i, 0);
+            double precio = (double) modeloCarrito.getValueAt(i, 2);
+            int cantidad = (int) modeloCarrito.getValueAt(i, 3);
+
+            jsonCarrito.append(String.format("{\"id\": %d, \"cantidad\": %d, \"precio\": %s}",
+                idProd, cantidad, String.valueOf(precio).replace(",", ".")));
+
+            if (i < modeloCarrito.getRowCount() - 1) {
+                jsonCarrito.append(",");
+            }
+        }
+        jsonCarrito.append("]");
+
+        try {
+            em.getTransaction().begin();
+
+            StoredProcedureQuery query = em.createStoredProcedureQuery("procesar_venta_integral");
+
+            query.registerStoredProcedureParameter("p_vendedor_id", Long.class, ParameterMode.IN);
+            // El parámetro del cliente ahora es un String
+            query.registerStoredProcedureParameter("p_cliente_dni", String.class, ParameterMode.IN);
+            query.registerStoredProcedureParameter("p_total", Double.class, ParameterMode.IN);
+            query.registerStoredProcedureParameter("p_carrito_json", String.class, ParameterMode.IN);
+
+            query.setParameter("p_vendedor_id", idVendedor);
+            // Pasamos la variable dniCliente
+            query.setParameter("p_cliente_dni", dniCliente);
+            query.setParameter("p_total", totalVenta);
+            query.setParameter("p_carrito_json", jsonCarrito.toString());
+
+            query.execute();
+
+            em.getTransaction().commit();
+            return true;
+
+        } catch (Exception e) {
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            e.printStackTrace();
+            return false;
         }
     }
 }
