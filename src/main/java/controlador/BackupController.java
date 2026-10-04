@@ -47,6 +47,9 @@ public class BackupController {
         String rutaDestino = vista.seleccionarDestinoGuardar(nombreSugerido);
 
         if (rutaDestino != null) {
+            // --- NUEVO: REGISTRO DE LOG ---
+            utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "BACKUP",
+                "Se inició la generación de un backup manual.");
             ejecutarBackup(rutaDestino, true);
         }
     }
@@ -134,13 +137,22 @@ public class BackupController {
 
             if (exitCode == 0) {
                 String fechaVisual = String.format("%02d/%02d/%04d %02d:%02d", dia, mes, anio, hora, minutos);
+                // --- NUEVO: REGISTRO DE LOG ---
+                utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "BACKUP",
+                    "El Administrador programó un backup automático para la fecha: " + fechaVisual);
                 vista.mostrarMensaje("Backup Empresarial Configurado: " + fechaVisual +
                     "\n\nSe realizará la copia local y se enviará por correo automáticamente al finalizar.", "Éxito", 1);
             } else {
+                // --- NUEVO: REGISTRO DE LOG ---
+                utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ERROR, "BACKUP",
+                    "Fallo al programar backup en Windows. Posible falta de permisos de Administrador.");
                 vista.mostrarMensaje("Windows rechazó la orden. Ejecute su IDE como Administrador.", "Error de Permisos", 0);
             }
 
         } catch (Exception ex) {
+            // --- NUEVO: REGISTRO DE LOG ---
+            utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ERROR, "BACKUP",
+                "Error crítico al intentar programar backup: " + ex.getMessage());
             vista.mostrarMensaje("Error crítico: " + ex.getMessage(), "Error", 0);
             ex.printStackTrace();
         }
@@ -186,12 +198,21 @@ public class BackupController {
             int exitCode = proceso.waitFor();
 
             if (exitCode == 0) {
+                // --- NUEVO: REGISTRO DE LOG ---
+                utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "BACKUP",
+                    "Backup manual generado con éxito en: " + ruta);
                 if (mostrarMensaje) vista.mostrarMensaje("Backup completado y guardado en:\n" + ruta, "Éxito", 1);
             } else {
                 // Ahora la ventanita nos va a mostrar el error exacto
+                // --- NUEVO: REGISTRO DE LOG ---
+                utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ERROR, "BACKUP",
+                    "MySQL rechazó el backup manual. Detalle: " + errorReal.toString());
                 if (mostrarMensaje) vista.mostrarMensaje("MySQL rechazó la orden. Detalle:\n" + errorReal.toString(), "Error de MySQL", 0);
             }
         } catch (Exception e) {
+            // --- NUEVO: REGISTRO DE LOG ---
+            utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ERROR, "BACKUP",
+                "Error de sistema al ejecutar mysqldump: " + e.getMessage());
             e.printStackTrace();
             if (mostrarMensaje) vista.mostrarMensaje("Error crítico de sistema.", "Error", 0);
         }
@@ -205,6 +226,9 @@ public class BackupController {
         String[] credenciales = vista.pedirDobleAutorizacion();
 
         if (credenciales == null || !validarCredenciales(credenciales[0], credenciales[1], credenciales[2], credenciales[3])) {
+            // --- NUEVO: REGISTRO DE LOG ---
+            utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ALERTA, "SEGURIDAD",
+                "Intento fallido de restauración de base de datos. Credenciales de doble factor incorrectas.");
             vista.mostrarMensaje("Autorización denegada. Credenciales incorrectas o insuficientes.", "Acceso Denegado", 0);
             return;
         }
@@ -212,6 +236,9 @@ public class BackupController {
         // Si es válido, pedir archivo y restaurar
         String rutaArchivo = vista.seleccionarArchivoAbrir();
         if (rutaArchivo != null) {
+            // --- NUEVO: REGISTRO DE LOG ---
+            utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ALERTA, "BACKUP",
+                "Se inició una restauración de base de datos desde el archivo: " + rutaArchivo);
             ejecutarRestore(rutaArchivo);
         }
     }
@@ -272,11 +299,20 @@ public class BackupController {
             int exitCode = proceso.waitFor();
 
             if (exitCode == 0) {
+                // --- NUEVO: REGISTRO DE LOG ---
+                utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "BACKUP",
+                    "Base de datos restaurada correctamente desde el archivo: " + ruta);
                 vista.mostrarMensaje("Base de datos restaurada correctamente.\nSe recomienda reiniciar el sistema para refrescar las tablas.", "Éxito", 1);
             } else {
+                // --- NUEVO: REGISTRO DE LOG ---
+                utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ERROR, "BACKUP",
+                    "Error al restaurar base de datos. Detalle: " + errorReal.toString());
                 vista.mostrarMensaje("MySQL rechazó la orden. Detalle:\n" + errorReal.toString(), "Error de MySQL", 0);
             }
         } catch (Exception e) {
+            // --- NUEVO: REGISTRO DE LOG ---
+            utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ERROR, "BACKUP",
+                "Error crítico al intentar restaurar base de datos: " + e.getMessage());
             e.printStackTrace();
             vista.mostrarMensaje("Error crítico de sistema.", "Error", 0);
         }

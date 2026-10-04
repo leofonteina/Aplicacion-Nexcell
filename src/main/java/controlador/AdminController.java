@@ -138,12 +138,12 @@ public class AdminController {
             String estadoStr = p.isEstado() ? "Activo" : "Inactivo";
             // Las columnas son: {"ID", "Modelo", "Categoría", "Stock", "Precio", "Estado"}
             modelo.addRow(new Object[]{
-                    p.getId(),
-                    p.getNombre(),
-                    p.getCategoria(),
-                    p.getStock(),
-                    "$" + p.getPrecio(),
-                    estadoStr
+                p.getId(),
+                p.getNombre(),
+                p.getCategoria(),
+                p.getStock(),
+                "$" + p.getPrecio(),
+                estadoStr
             });
         }
     }
@@ -192,11 +192,18 @@ public class AdminController {
 
                 productoRepo.guardar(nuevoProducto);
 
+                // --- NUEVO: REGISTRO DE LOG ---
+                utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "PRODUCTOS",
+                    "El Administrador creó un nuevo producto: " + nuevoProducto.getNombre());
+
                 JOptionPane.showMessageDialog(ventanaRegistro, "Producto guardado en la base de datos.");
                 ventanaRegistro.dispose();
                 cargarTablaProductos();
 
             } catch (NumberFormatException ex) {
+                // --- NUEVO: REGISTRO DE LOG ---
+                utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ERROR, "PRODUCTOS",
+                    "Error al crear producto. Formato numérico inválido.");
                 JOptionPane.showMessageDialog(ventanaRegistro, "Error: Revisa que el precio, stock y descuento sean números válidos.", "Error de formato", JOptionPane.ERROR_MESSAGE);
             }
         });
@@ -229,8 +236,8 @@ public class AdminController {
         ventana.getBtnGuardarProducto().addActionListener(e -> {
             // Confirmación antes de actualizar
             int confirmacion = JOptionPane.showConfirmDialog(ventana,
-                    "¿Estás seguro que deseas sobreescribir los datos de este producto?",
-                    "Confirmar Actualización", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                "¿Estás seguro que deseas sobreescribir los datos de este producto?",
+                "Confirmar Actualización", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 
             if (confirmacion == JOptionPane.YES_OPTION) {
                 try {
@@ -245,11 +252,18 @@ public class AdminController {
 
                     productoRepo.actualizar(productoActual);
 
+                    // --- NUEVO: REGISTRO DE LOG ---
+                    utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "PRODUCTOS",
+                        "El Administrador modificó el producto ID: " + productoActual.getId());
+
                     JOptionPane.showMessageDialog(ventana, "Producto actualizado con éxito.");
                     ventana.dispose();
                     cargarTablaProductos();
 
                 } catch (NumberFormatException ex) {
+                    // --- NUEVO: REGISTRO DE LOG ---
+                    utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ERROR, "PRODUCTOS",
+                        "Error al modificar producto ID: " + productoActual.getId() + ". Formato numérico inválido.");
                     JOptionPane.showMessageDialog(ventana, "Revisa los valores numéricos.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
             }
@@ -272,6 +286,10 @@ public class AdminController {
             p.setEstado(activar);
             p.setFechaModificacion(LocalDateTime.now());
             productoRepo.actualizar(p);
+
+            // --- NUEVO: REGISTRO DE LOG ---
+            utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ALERTA, "PRODUCTOS",
+                "El Administrador cambió el estado del producto ID: " + p.getId() + " a " + (activar ? "Activo" : "Inactivo"));
 
             cargarTablaProductos();
             gestionarBotonesProducto();
@@ -379,11 +397,18 @@ public class AdminController {
                 usuarioRepo.guardar(nuevoUsuario);
                 em.getTransaction().commit();
 
+                // --- NUEVO: REGISTRO DE LOG ---
+                utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "USUARIOS",
+                    "El Administrador creó un nuevo usuario: " + username + " (Rol: " + rol + ")");
+
                 JOptionPane.showMessageDialog(ventanaRegistro, "Usuario '" + username + "' registrado exitosamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
                 ventanaRegistro.dispose();
                 cargarTablaUsuarios();
             } catch (Exception ex) {
                 if (em.getTransaction().isActive()) em.getTransaction().rollback();
+                // --- NUEVO: REGISTRO DE LOG ---
+                utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ERROR, "USUARIOS",
+                    "Error al crear usuario " + username + ": " + ex.getMessage());
                 ventanaRegistro.getLblErrorUsername().setText("Este nombre de usuario ya está en uso.");
             }
         });
@@ -433,8 +458,8 @@ public class AdminController {
 
             // Confirmación antes de actualizar
             int confirmacion = JOptionPane.showConfirmDialog(ventanaModificacion,
-                    "¿Estás seguro que deseas modificar los datos de " + usuario.getUsername() + "?",
-                    "Confirmar Cambios", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                "¿Estás seguro que deseas modificar los datos de " + usuario.getUsername() + "?",
+                "Confirmar Cambios", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 
             if (confirmacion == JOptionPane.YES_OPTION) {
                 ventanaModificacion.limpiarErrores();
@@ -495,10 +520,16 @@ public class AdminController {
 
                 try {
                     repo.actualizar(usuario);
+                    // --- NUEVO: REGISTRO DE LOG ---
+                    utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "USUARIOS",
+                        "El Administrador modificó los datos del usuario: " + usuario.getUsername());
                     JOptionPane.showMessageDialog(ventanaModificacion, "Datos actualizados correctamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
                     ventanaModificacion.dispose();
                     cargarTablaUsuarios();
                 } catch (Exception ex) {
+                    // --- NUEVO: REGISTRO DE LOG ---
+                    utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ERROR, "USUARIOS",
+                        "Error al modificar usuario " + usuario.getUsername() + ": " + ex.getMessage());
                     JOptionPane.showMessageDialog(ventanaModificacion, "Error al actualizar la base de datos.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
             }
@@ -538,6 +569,9 @@ public class AdminController {
             if (usuario != null) {
                 usuario.setEstado(activar);
                 repo.actualizar(usuario);
+                // --- NUEVO: REGISTRO DE LOG ---
+                utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ALERTA, "USUARIOS",
+                    "El Administrador cambió el estado del usuario " + userSeleccionado + " a " + (activar ? "Activo" : "Inactivo"));
                 cargarTablaUsuarios();
                 JOptionPane.showMessageDialog(vistaPrincipal, "Estado actualizado con éxito.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
             }
@@ -549,6 +583,9 @@ public class AdminController {
             "¿Estás seguro que querés salir del panel de administración?", "Cerrar Sesión",
             JOptionPane.YES_NO_OPTION);
         if (confirmacion == JOptionPane.YES_OPTION) {
+            // --- NUEVO: REGISTRO DE LOG ---
+            utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "SEGURIDAD",
+                "El Administrador cerró sesión.");
             vistaPrincipal.dispose();
             LoginUI ventanaLogin = new LoginUI();
             new LoginController(ventanaLogin, em);
@@ -762,7 +799,7 @@ public class AdminController {
         panelFechas.add(panelHasta);
 
         int result = JOptionPane.showConfirmDialog(vistaPrincipal, panelFechas,
-                titulo, JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+            titulo, JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 
         if (result == JOptionPane.OK_OPTION) {
             try {

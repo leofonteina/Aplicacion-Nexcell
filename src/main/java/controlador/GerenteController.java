@@ -37,11 +37,15 @@ public class GerenteController {
         LocalDate desde = fechas[0];
         LocalDate hasta = fechas[1];
 
+        // --- NUEVO: REGISTRO DE LOG ---
+        utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "REPORTES",
+            "El Gerente generó el reporte de ventas desde " + desde.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + " hasta " + hasta.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+
         // Simulamos la búsqueda en la Base de Datos usando las fechas seleccionadas
         String[] columnas = {"ID Venta", "Fecha", "DNI Cliente", "Vendedor", "Producto", "Total"};
         Object[][] datos = {
-                {"V-9998", desde.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")), "11223344", "vendedor1", "Motorola Edge 60", "$850.000"},
-                {"V-9999", hasta.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")), "44556677", "vendedor2", "Funda Silicona", "$15.000"}
+            {"V-9998", desde.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")), "11223344", "vendedor1", "Motorola Edge 60", "$850.000"},
+            {"V-9999", hasta.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")), "44556677", "vendedor2", "Funda Silicona", "$15.000"}
         };
 
         vistaPrincipal.getTablaReportesVentas().setModel(new DefaultTableModel(datos, columnas));
@@ -54,11 +58,18 @@ public class GerenteController {
         // Si devolvió null es porque el usuario canceló
         if (fechas == null) return;
 
+        LocalDate desde = fechas[0];
+        LocalDate hasta = fechas[1];
+
+        // --- NUEVO: REGISTRO DE LOG ---
+        utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "REPORTES",
+            "El Gerente generó el reporte de rendimiento de vendedores desde " + desde.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + " hasta " + hasta.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+
         // Simulamos la evaluación usando las fechas seleccionadas
         String[] columnas = {"Usuario Vendedor", "Cant. Ventas", "Total Facturado", "Comisión Estimada (5%)"};
         Object[][] datos = {
-                {"vendedor1", "45", "$3.500.000", "$175.000"},
-                {"vendedor2", "38", "$2.800.000", "$140.000"}
+            {"vendedor1", "45", "$3.500.000", "$175.000"},
+            {"vendedor2", "38", "$2.800.000", "$140.000"}
         };
 
         vistaPrincipal.getTablaRendimiento().setModel(new DefaultTableModel(datos, columnas));
@@ -71,14 +82,22 @@ public class GerenteController {
         // Si el usuario canceló, cortamos la ejecución
         if (fechas == null) return;
 
+        LocalDate desde = fechas[0];
+        LocalDate hasta = fechas[1];
+
+        // --- NUEVO: REGISTRO DE LOG ---
+        utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "REPORTES",
+            "El Gerente generó el reporte de productos más vendidos desde " + desde.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + " hasta " + hasta.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+
+
         // Simulamos la búsqueda de los productos más vendidos en la base de datos
         String[] columnas = {"Ranking", "Producto", "Categoría", "Cant. Vendida", "Ingresos Generados"};
         Object[][] datos = {
-                {"1", "Motorola Edge 60", "Celulares", "120", "$102.000.000"},
-                {"2", "Funda Silicona iPhone 13", "Accesorios", "85", "$1.275.000"},
-                {"3", "Auriculares Bluetooth Sony", "Periféricos", "60", "$4.500.000"},
-                {"4", "Samsung Galaxy S23", "Celulares", "45", "$40.500.000"},
-                {"5", "Cargador Carga Rápida 20W", "Accesorios", "40", "$600.000"}
+            {"1", "Motorola Edge 60", "Celulares", "120", "$102.000.000"},
+            {"2", "Funda Silicona iPhone 13", "Accesorios", "85", "$1.275.000"},
+            {"3", "Auriculares Bluetooth Sony", "Periféricos", "60", "$4.500.000"},
+            {"4", "Samsung Galaxy S23", "Celulares", "45", "$40.500.000"},
+            {"5", "Cargador Carga Rápida 20W", "Accesorios", "40", "$600.000"}
         };
 
         vistaPrincipal.getTablaProductosVendidos().setModel(new DefaultTableModel(datos, columnas));
@@ -119,7 +138,7 @@ public class GerenteController {
         panelFechas.add(panelHasta);
 
         int result = JOptionPane.showConfirmDialog(vistaPrincipal, panelFechas,
-                titulo, JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+            titulo, JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 
         if (result == JOptionPane.OK_OPTION) {
             try {
@@ -161,10 +180,13 @@ public class GerenteController {
 
     private void cerrarSesion() {
         int confirmacion = JOptionPane.showConfirmDialog(vistaPrincipal,
-                "¿Estás seguro que querés salir del panel de gerencia?", "Cerrar Sesión",
-                JOptionPane.YES_NO_OPTION);
+            "¿Estás seguro que querés salir del panel de gerencia?", "Cerrar Sesión",
+            JOptionPane.YES_NO_OPTION);
 
         if (confirmacion == JOptionPane.YES_OPTION) {
+            // --- NUEVO: REGISTRO DE LOG ---
+            utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "SEGURIDAD",
+                "El Gerente cerró sesión.");
             vistaPrincipal.dispose();
             LoginUI ventanaLogin = new LoginUI();
             new LoginController(ventanaLogin, em);

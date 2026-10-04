@@ -363,9 +363,8 @@ public class VendedorController {
                 }  else {
                 JOptionPane.showMessageDialog(ventanaVenta, "Error interno en la base de datos al procesar la venta. Se revirtieron los cambios.", "Error Crítico", JOptionPane.ERROR_MESSAGE);
             }
-        }); // <-- Faltaba el cierre correcto del evento del botón
+        });
 
-        // ¡Esta línea se había borrado, por eso no se veía la pantalla!
         ventanaVenta.setVisible(true);
 
     } catch (Exception ex) {
@@ -390,10 +389,18 @@ public class VendedorController {
                 em.getTransaction().begin();
                 repo.guardar(new modelo.Cliente(d, n, a, ven.getTelefonoClienteField().getText().trim(), ven.getEmailClienteField().getText().trim()));
                 em.getTransaction().commit();
+
+                // ACA SE REGISTRA EL NUEVO LOG
+                utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "CLIENTES",
+                    "El Vendedor '" + vendedorLogueado.getUsername() + "' registró un nuevo cliente con DNI: " + d);
+
                 cargarTablaClientes();
                 ven.dispose();
             } catch (Exception ex) {
                 if (em.getTransaction().isActive()) em.getTransaction().rollback();
+                // ACA SE REGISTRA EL NUEVO LOG
+                utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ERROR, "CLIENTES",
+                    "Error al registrar cliente DNI " + d + " por el Vendedor '" + vendedorLogueado.getUsername() + "'.");
             }
         });
         ven.setVisible(true);
@@ -410,8 +417,33 @@ public class VendedorController {
         int f = vistaPrincipal.getTablaClientes().getSelectedRow();
         if (f == -1) return;
         if (JOptionPane.showConfirmDialog(vistaPrincipal, "¿Seguro?", act ? "Reactivar" : "Dar Baja", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
-            vistaPrincipal.getTablaClientes().setValueAt(act ? "Activo" : "Inactivo", f, 5);
-            vistaPrincipal.getTablaClientes().clearSelection();
+
+            // Obtenemos el DNI de la fila seleccionada
+            String dniCliente = vistaPrincipal.getTablaClientes().getValueAt(f, 0).toString();
+
+            try {
+                // Buscamos y actualizamos al cliente en la base de datos
+                repositorio.ClienteRepository repo = new repositorio.ClienteRepository(this.em);
+                modelo.Cliente cliente = repo.buscarPorDni(dniCliente);
+
+                if (cliente != null) {
+                    em.getTransaction().begin();
+                    cliente.setActivo(act);
+                    repo.actualizar(cliente);
+                    em.getTransaction().commit();
+
+                    // ctualizamos la pantalla
+                    vistaPrincipal.getTablaClientes().setValueAt(act ? "Activo" : "Inactivo", f, 5);
+                    vistaPrincipal.getTablaClientes().clearSelection();
+
+                    //Aca se registra el nuevo LOG
+                    utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ALERTA, "CLIENTES",
+                        "El Vendedor '" + vendedorLogueado.getUsername() + "' cambió el estado del cliente DNI " + dniCliente + " a " + (act ? "Activo" : "Inactivo"));
+                }
+            } catch (Exception ex) {
+                if (em.getTransaction().isActive()) em.getTransaction().rollback();
+                utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ERROR, "CLIENTES", "Error al cambiar estado: " + ex.getMessage());
+            }
         }
     }
 
@@ -438,6 +470,11 @@ public class VendedorController {
 
     private void cerrarSesion() {
         if (JOptionPane.showConfirmDialog(vistaPrincipal, "¿Salir?", "Cerrar", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+
+            // ACA SE REGISTRA EL NUEVO LOG
+            utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "SEGURIDAD",
+                "El Vendedor '" + vendedorLogueado.getUsername() + "' cerró sesión.");
+
             vistaPrincipal.dispose();
             LoginUI ven = new LoginUI();
             new LoginController(ven, this.em);
@@ -624,26 +661,31 @@ public class VendedorController {
             StoredProcedureQuery query = em.createStoredProcedureQuery("procesar_venta_integral");
 
             query.registerStoredProcedureParameter("p_vendedor_id", Long.class, ParameterMode.IN);
-            // El parámetro del cliente ahora es un String
             query.registerStoredProcedureParameter("p_cliente_dni", String.class, ParameterMode.IN);
             query.registerStoredProcedureParameter("p_total", Double.class, ParameterMode.IN);
             query.registerStoredProcedureParameter("p_carrito_json", String.class, ParameterMode.IN);
 
             query.setParameter("p_vendedor_id", idVendedor);
-            // Pasamos la variable dniCliente
             query.setParameter("p_cliente_dni", dniCliente);
             query.setParameter("p_total", totalVenta);
             query.setParameter("p_carrito_json", jsonCarrito.toString());
 
             query.execute();
-
             em.getTransaction().commit();
+
+            // --- NUEVO: REGISTRO DE LOG ---
+            utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "VENTAS",
+                "El Vendedor '" + vendedorLogueado.getUsername() + "' registró exitosamente una venta por $" + totalVenta + " al DNI: " + dniCliente);
+
             return true;
 
         } catch (Exception e) {
             if (em.getTransaction().isActive()) {
                 em.getTransaction().rollback();
             }
+            // --- NUEVO: REGISTRO DE LOG ---
+            utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ERROR, "VENTAS",
+                "Fallo al registrar venta del Vendedor '" + vendedorLogueado.getUsername() + "'. Motivo: " + e.getMessage());
             e.printStackTrace();
             return false;
         }

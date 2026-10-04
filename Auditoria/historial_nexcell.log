@@ -1,0 +1,6 @@
+[04/10/2026 11:21:30] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[04/10/2026 11:23:28] [INFO] [SEGURIDAD] - El usuario 'juan' (Admin) inició sesión exitosamente.
+[04/10/2026 11:31:48] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[04/10/2026 11:32:05] [INFO] [CLIENTES] - El Vendedor 'pedro' registró un nuevo cliente con DNI: 2354325
+[04/10/2026 11:32:57] [INFO] [VENTAS] - El Vendedor 'pedro' registró exitosamente una venta por $2850000.0 al DNI: 42111333
+[04/10/2026 11:33:21] [INFO] [SEGURIDAD] - El Vendedor 'pedro' cerró sesión.
