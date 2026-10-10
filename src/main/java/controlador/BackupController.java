@@ -25,7 +25,7 @@ public class BackupController {
     // CONFIGURACIÓN DE BASE DE DATOS (COMPLETA ESTOS 3 DATOS)
     // ==============================================================
     private final String DB_USER = "root";
-    private final String DB_PASS = "Amir11022013"; // Aca pones tu contraseña de MYSQLWorkbench
+    private final String DB_PASS = "MessiElMasMejor123"; // Aca pones tu contraseña de MYSQLWorkbench
     private final String DB_NAME = "nexcell_db";
 
     private final String CMD_MYSQLDUMP = "C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysqldump.exe"; // Cambiar dependiendo de la direccion de tu SGBD

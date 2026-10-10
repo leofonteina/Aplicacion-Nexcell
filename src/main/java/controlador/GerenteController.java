@@ -31,24 +31,51 @@ public class GerenteController {
         // Pedimos las fechas al usuario
         LocalDate[] fechas = pedirRangoFechas("Seleccionar Rango para Reporte de Ventas");
 
-        // Si devolvió null es porque el usuario canceló o hubo un error en la fecha
+        // Si devolvió null es porque el usuario canceló
         if (fechas == null) return;
 
-        LocalDate desde = fechas[0];
-        LocalDate hasta = fechas[1];
+        // Transformamos a LocalDateTime
+        java.time.LocalDateTime fechaInicio = fechas[0].atStartOfDay();
+        java.time.LocalDateTime fechaFin = fechas[1].atTime(23, 59, 59);
 
-        // --- NUEVO: REGISTRO DE LOG ---
+        // --- MANTENEMOS EL LOG ---
         utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "REPORTES",
-            "El Gerente generó el reporte de ventas desde " + desde.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + " hasta " + hasta.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+                "El Gerente generó el reporte de ventas desde " + fechas[0].format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + " hasta " + fechas[1].format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
 
-        // Simulamos la búsqueda en la Base de Datos usando las fechas seleccionadas
-        String[] columnas = {"ID Venta", "Fecha", "DNI Cliente", "Vendedor", "Producto", "Total"};
-        Object[][] datos = {
-            {"V-9998", desde.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")), "11223344", "vendedor1", "Motorola Edge 60", "$850.000"},
-            {"V-9999", hasta.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")), "44556677", "vendedor2", "Funda Silicona", "$15.000"}
-        };
+        // --- CONSULTA REAL A LA BASE DE DATOS ---
+        java.util.List<Object[]> resultados = em.createNativeQuery("CALL reporte_ventas_detallado(:inicio, :fin)")
+                .setParameter("inicio", fechaInicio)
+                .setParameter("fin", fechaFin)
+                .getResultList();
 
-        vistaPrincipal.getTablaReportesVentas().setModel(new DefaultTableModel(datos, columnas));
+        String[] columnas = {"ID Venta", "Fecha", "DNI Cliente", "Vendedor", "Producto", "Total Ítem"};
+        DefaultTableModel modelo = new DefaultTableModel(null, columnas);
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+        // Iteramos los datos REALES
+        for (Object[] fila : resultados) {
+            // Mantenemos el formato estético "V-ID"
+            String idVenta = "V-" + fila[0].toString();
+
+            // MySQL nos devuelve un Timestamp, lo convertimos a LocalDateTime de Java para formatearlo
+            java.time.LocalDateTime fechaVenta = ((java.sql.Timestamp) fila[1]).toLocalDateTime();
+
+            String dniCliente = (String) fila[2];
+            String vendedor = (String) fila[3];
+            String producto = (String) fila[4];
+            double subtotal = ((Number) fila[5]).doubleValue();
+
+            modelo.addRow(new Object[]{
+                    idVenta,
+                    fechaVenta.format(fmt),
+                    dniCliente,
+                    vendedor,
+                    producto,
+                    String.format("$%.2f", subtotal)
+            });
+        }
+
+        vistaPrincipal.getTablaReportesVentas().setModel(modelo);
     }
 
     private void calcularRendimiento() {
@@ -58,21 +85,41 @@ public class GerenteController {
         // Si devolvió null es porque el usuario canceló
         if (fechas == null) return;
 
-        LocalDate desde = fechas[0];
-        LocalDate hasta = fechas[1];
+        // Transformamos a LocalDateTime para abarcar el día completo (00:00:00 a 23:59:59)
+        java.time.LocalDateTime fechaInicio = fechas[0].atStartOfDay();
+        java.time.LocalDateTime fechaFin = fechas[1].atTime(23, 59, 59);
 
-        // --- NUEVO: REGISTRO DE LOG ---
+        // --- MANTENEMOS EL REGISTRO DE LOG ---
         utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "REPORTES",
-            "El Gerente generó el reporte de rendimiento de vendedores desde " + desde.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + " hasta " + hasta.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+                "El Gerente generó el reporte de rendimiento de vendedores desde " + fechas[0].format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + " hasta " + fechas[1].format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
 
-        // Simulamos la evaluación usando las fechas seleccionadas
+        // --- CONSULTA REAL A LA BASE DE DATOS ---
+        // Llamamos al Procedimiento Almacenado pasándole las fechas
+        java.util.List<Object[]> resultados = em.createNativeQuery("CALL rendimiento_vendedores(:inicio, :fin)")
+                .setParameter("inicio", fechaInicio)
+                .setParameter("fin", fechaFin)
+                .getResultList();
+
         String[] columnas = {"Usuario Vendedor", "Cant. Ventas", "Total Facturado", "Comisión Estimada (5%)"};
-        Object[][] datos = {
-            {"vendedor1", "45", "$3.500.000", "$175.000"},
-            {"vendedor2", "38", "$2.800.000", "$140.000"}
-        };
+        DefaultTableModel modelo = new DefaultTableModel(null, columnas);
 
-        vistaPrincipal.getTablaRendimiento().setModel(new DefaultTableModel(datos, columnas));
+        // Iteramos los datos REALES que nos devolvió MySQL
+        for (Object[] fila : resultados) {
+            String vendedor = (String) fila[0];
+            // Usamos Number para evitar problemas de casteo (BigInteger/BigDecimal) que suele dar Hibernate
+            int cantVentas = ((Number) fila[1]).intValue();
+            double totalFacturado = ((Number) fila[2]).doubleValue();
+            double comision = ((Number) fila[3]).doubleValue();
+
+            modelo.addRow(new Object[]{
+                    vendedor,
+                    cantVentas,
+                    String.format("$%.2f", totalFacturado),
+                    String.format("$%.2f", comision)
+            });
+        }
+
+        vistaPrincipal.getTablaRendimiento().setModel(modelo);
     }
 
     private void calcularProductosMasVendidos() {
@@ -82,25 +129,44 @@ public class GerenteController {
         // Si el usuario canceló, cortamos la ejecución
         if (fechas == null) return;
 
-        LocalDate desde = fechas[0];
-        LocalDate hasta = fechas[1];
+        // Transformamos a LocalDateTime para abarcar el día completo (00:00:00 a 23:59:59)
+        java.time.LocalDateTime fechaInicio = fechas[0].atStartOfDay();
+        java.time.LocalDateTime fechaFin = fechas[1].atTime(23, 59, 59);
 
-        // --- NUEVO: REGISTRO DE LOG ---
+        // --- MANTENEMOS EL REGISTRO DE LOG ---
         utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "REPORTES",
-            "El Gerente generó el reporte de productos más vendidos desde " + desde.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + " hasta " + hasta.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+                "El Gerente generó el reporte de productos más vendidos desde " + fechas[0].format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + " hasta " + fechas[1].format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
 
+        // --- ACÁ OCURRE LA MAGIA REAL ---
+        // Llamamos al Procedimiento Almacenado pasándole las fechas
+        java.util.List<Object[]> resultados = em.createNativeQuery("CALL top_productos_mas_vendidos(:inicio, :fin)")
+                .setParameter("inicio", fechaInicio)
+                .setParameter("fin", fechaFin)
+                .getResultList();
 
-        // Simulamos la búsqueda de los productos más vendidos en la base de datos
         String[] columnas = {"Ranking", "Producto", "Categoría", "Cant. Vendida", "Ingresos Generados"};
-        Object[][] datos = {
-            {"1", "Motorola Edge 60", "Celulares", "120", "$102.000.000"},
-            {"2", "Funda Silicona iPhone 13", "Accesorios", "85", "$1.275.000"},
-            {"3", "Auriculares Bluetooth Sony", "Periféricos", "60", "$4.500.000"},
-            {"4", "Samsung Galaxy S23", "Celulares", "45", "$40.500.000"},
-            {"5", "Cargador Carga Rápida 20W", "Accesorios", "40", "$600.000"}
-        };
+        DefaultTableModel modelo = new DefaultTableModel(null, columnas);
 
-        vistaPrincipal.getTablaProductosVendidos().setModel(new DefaultTableModel(datos, columnas));
+        int ranking = 1;
+
+        // Iteramos los datos REALES que nos devolvió MySQL
+        for (Object[] fila : resultados) {
+            String producto = (String) fila[0];
+            String categoria = (String) fila[1];
+            // Usamos Number para evitar problemas de casteo entre distintos tipos de datos numéricos de MySQL
+            int cantidad = ((Number) fila[2]).intValue();
+            double ingresos = ((Number) fila[3]).doubleValue();
+
+            modelo.addRow(new Object[]{
+                    ranking++, // Incrementa el ranking automáticamente 1, 2, 3...
+                    producto,
+                    categoria,
+                    cantidad,
+                    String.format("$%.2f", ingresos)
+            });
+        }
+
+        vistaPrincipal.getTablaProductosVendidos().setModel(modelo);
     }
 
     // --- MÉTODO REUTILIZABLE PARA PEDIR FECHAS ---

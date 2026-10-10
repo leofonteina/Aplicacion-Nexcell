@@ -3,6 +3,7 @@ package repositorio;
 import jakarta.persistence.EntityManager;
 import modelo.Producto;
 import java.util.List;
+import utilidades.GestorLogs;
 
 public class ProductoRepository {
 
@@ -11,6 +12,29 @@ public class ProductoRepository {
     // Inyectamos la conexión al instanciar el repositorio
     public ProductoRepository(EntityManager em) {
         this.em = em;
+    }
+
+    public void darDeBajaProducto(Long idProducto) {
+        em.getTransaction().begin();
+        try {
+            // 1. Ejecutamos el Procedimiento Almacenado directamente en MySQL
+            em.createNativeQuery("CALL baja_logica_producto(:id)")
+                    .setParameter("id", idProducto)
+                    .executeUpdate();
+
+            em.getTransaction().commit();
+
+            // Vaciamos la memoria caché de Hibernate.
+            // Esto lo obliga a leer los datos reales de MySQL en la próxima consulta.
+            em.clear();
+
+        } catch (Exception e) {
+            em.getTransaction().rollback();
+
+            // Si algo falla, también se guarda en el log
+            GestorLogs.registrar(GestorLogs.Nivel.ERROR, "PRODUCTOS", "Fallo al dar de baja el producto ID: " + idProducto + ". Motivo: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     // CREATE: Guarda un producto nuevo

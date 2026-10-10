@@ -283,13 +283,21 @@ public class AdminController {
         int confirm = JOptionPane.showConfirmDialog(vistaPrincipal, "¿Seguro que deseas " + accion + " este producto?", "Confirmar", JOptionPane.YES_NO_OPTION);
 
         if (confirm == JOptionPane.YES_OPTION) {
-            p.setEstado(activar);
-            p.setFechaModificacion(LocalDateTime.now());
-            productoRepo.actualizar(p);
 
-            // --- NUEVO: REGISTRO DE LOG ---
+            // --- ACÁ METEMOS TU LÓGICA ---
+            if (!activar) {
+                // Si es BAJA, usamos tu Procedimiento Almacenado blindado
+                productoRepo.darDeBajaProducto(idProducto);
+            } else {
+                // Si es ALTA, usamos la actualización normal de Hibernate de tu compa
+                p.setEstado(true);
+                p.setFechaModificacion(LocalDateTime.now());
+                productoRepo.actualizar(p);
+            }
+
+            // --- NUEVO: REGISTRO DE LOG (Mantenemos el de tu compa que está perfecto) ---
             utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ALERTA, "PRODUCTOS",
-                "El Administrador cambió el estado del producto ID: " + p.getId() + " a " + (activar ? "Activo" : "Inactivo"));
+                    "El Administrador cambió el estado del producto ID: " + p.getId() + " a " + (activar ? "Activo" : "Inactivo"));
 
             cargarTablaProductos();
             gestionarBotonesProducto();
