@@ -42,22 +42,33 @@
 [10/10/2026 20:34:27] [ALERTA] [PRODUCTOS] - El Administrador cambió el estado del producto ID: 3 a Inactivo
 [10/10/2026 20:34:52] [INFO] [SEGURIDAD] - El usuario 'juan' (Admin) inició sesión exitosamente.
 [10/10/2026 20:34:55] [ALERTA] [PRODUCTOS] - El Administrador cambió el estado del producto ID: 3 a Inactivo
-[10/10/2026 20:46:59] [INFO] [SEGURIDAD] - El Administrador cerró sesión.
-[10/10/2026 20:47:03] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
-[10/10/2026 20:47:09] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 01/05/2026 hasta 01/10/2026
-[10/10/2026 20:47:42] [INFO] [REPORTES] - El Gerente generó el reporte de rendimiento de vendedores desde 01/05/2026 hasta 01/10/2026
-[10/10/2026 20:47:54] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos desde 01/06/2026 hasta 01/10/2026
-[10/10/2026 21:09:39] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
-[10/10/2026 21:09:54] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos...
-[10/10/2026 21:19:55] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
-[10/10/2026 21:20:10] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos...
-[10/10/2026 21:33:09] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
-[10/10/2026 21:33:19] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos...
-[10/10/2026 21:45:29] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
-[10/10/2026 21:45:39] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos...
-[10/10/2026 21:48:50] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
-[10/10/2026 21:48:57] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos...
-[10/10/2026 21:55:23] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
-[10/10/2026 21:55:29] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos...
-[10/10/2026 22:02:55] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
-[10/10/2026 22:03:04] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos...
+[10/10/2026 20:52:54] [INFO] [SEGURIDAD] - El usuario 'juan' (Admin) inició sesión exitosamente.
+[10/10/2026 20:52:59] [INFO] [SEGURIDAD] - El Administrador cerró sesión.
+[10/10/2026 20:53:03] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[10/10/2026 20:57:53] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[10/10/2026 20:58:33] [INFO] [SEGURIDAD] - El Vendedor 'pedro' cerró sesión.
+[10/10/2026 21:11:46] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[10/10/2026 21:13:16] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[10/10/2026 21:18:10] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[10/10/2026 21:22:30] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[10/10/2026 21:24:28] [INFO] [SEGURIDAD] - El Vendedor 'pedro' cerró sesión.
+[10/10/2026 21:25:43] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[10/10/2026 21:30:26] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[10/10/2026 21:31:10] [INFO] [SEGURIDAD] - El Vendedor 'pedro' cerró sesión.
+[10/10/2026 21:34:29] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[10/10/2026 21:37:46] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[10/10/2026 21:45:41] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[10/10/2026 21:56:54] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[10/10/2026 21:57:49] [INFO] [REPORTES] - El Vendedor exportó datos a formato CSV.
+[10/10/2026 21:58:42] [INFO] [REPORTES] - El Vendedor exportó datos a formato CSV.
+[10/10/2026 22:08:47] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[10/10/2026 22:09:04] [INFO] [SEGURIDAD] - El Vendedor 'pedro' cerró sesión.
+[10/10/2026 22:09:25] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[10/10/2026 22:09:49] [INFO] [SEGURIDAD] - El Vendedor 'pedro' cerró sesión.
+[10/10/2026 22:17:00] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[10/10/2026 22:17:21] [INFO] [SEGURIDAD] - El Vendedor 'pedro' cerró sesión.
+[10/10/2026 22:19:10] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[10/10/2026 22:19:21] [INFO] [CLIENTES] - El Vendedor 'pedro' modificó los datos del cliente DNI: 41234567
+[10/10/2026 22:21:24] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[10/10/2026 22:22:01] [INFO] [CLIENTES] - El Vendedor 'pedro' modificó la dirección del cliente DNI: 34567890
+[10/10/2026 22:22:11] [INFO] [SEGURIDAD] - El Vendedor 'pedro' cerró sesión.

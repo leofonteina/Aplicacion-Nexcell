@@ -23,7 +23,7 @@ public class DatabaseSeeder {
         seederProductos(em);
         seederUsuarios(em);
         seederClientes(em);
-        seederVentas(em); // Se ejecuta al final porque depende de Clientes y Productos
+        seederVentas(em);
     }
 
     private static void seederProductos(EntityManager em) {
@@ -123,7 +123,6 @@ public class DatabaseSeeder {
         }
     }
 
-    // --- SEEDER DE CLIENTES CON NOMBRES SERIOS ---
     private static void seederClientes(EntityManager em) {
         Long cantidadClientes = em.createQuery("SELECT COUNT(c) FROM Cliente c", Long.class).getSingleResult();
 
@@ -132,11 +131,15 @@ public class DatabaseSeeder {
             try {
                 em.getTransaction().begin();
 
-                Cliente c1 = new Cliente("34567890", "Lucas", "Fernández", "3794123456", "lucas.fernandez@gmail.com");
-                Cliente c2 = new Cliente("41234567", "María", "Giménez", "3794654321", "maria.gimenez@hotmail.com");
-                Cliente c3 = new Cliente("29876543", "Javier", "Romero", "3794987654", "jromero_82@yahoo.com");
-                Cliente c4 = new Cliente("36987123", "Florencia", "Acosta", "3794112233", "flor.acosta@gmail.com");
-                Cliente c5 = new Cliente("42111333", "Gonzalo", "Díaz", "3794559988", "gonza.diaz@gmail.com");
+                // Creamos una dirección genérica de prueba para los clientes
+                Direccion dirPrueba = new Direccion("San Martin", "1000", "Corrientes", "Corrientes");
+
+                // Ahora les pasamos los 7 parámetros: DNI, Nombre, Apellido, Teléfono, Email, Fecha Nacimiento, Dirección
+                Cliente c1 = new Cliente("34567890", "Lucas", "Fernández", "3794123456", "lucas.fernandez@gmail.com", LocalDate.of(1990, 5, 14), dirPrueba);
+                Cliente c2 = new Cliente("41234567", "María", "Giménez", "3794654321", "maria.gimenez@hotmail.com", LocalDate.of(1995, 8, 21), dirPrueba);
+                Cliente c3 = new Cliente("29876543", "Javier", "Romero", "3794987654", "jromero_82@yahoo.com", LocalDate.of(1982, 11, 2), dirPrueba);
+                Cliente c4 = new Cliente("36987123", "Florencia", "Acosta", "3794112233", "flor.acosta@gmail.com", LocalDate.of(1992, 3, 10), dirPrueba);
+                Cliente c5 = new Cliente("42111333", "Gonzalo", "Díaz", "3794559988", "gonza.diaz@gmail.com", LocalDate.of(1998, 7, 25), dirPrueba);
 
                 em.persist(c1);
                 em.persist(c2);

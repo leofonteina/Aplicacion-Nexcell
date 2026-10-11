@@ -17,6 +17,7 @@ public class RegistroVentaUI extends JDialog {
     private JTable tablaCarrito;
     private JLabel lblTotalVenta;
     private JButton btnConfirmarVenta;
+    private JButton btnEliminarDelCarrito; // NUEVO: Botón para eliminar productos
 
     public RegistroVentaUI(JFrame parent) {
         super(parent, "Registrar Nueva Venta", true);
@@ -112,9 +113,19 @@ public class RegistroVentaUI extends JDialog {
 
         JPanel panelBoton = new JPanel(new BorderLayout());
 
+        JPanel panelIzquierdoInferior = new JPanel(new FlowLayout(FlowLayout.LEFT));
         lblTotalVenta = new JLabel("Total: $0.00");
         lblTotalVenta.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        panelBoton.add(lblTotalVenta, BorderLayout.WEST);
+
+        btnEliminarDelCarrito = new JButton("Quitar Producto"); // INICIALIZAMOS EL BOTON
+        btnEliminarDelCarrito.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnEliminarDelCarrito.setVisible(false);
+
+        panelIzquierdoInferior.add(lblTotalVenta);
+        panelIzquierdoInferior.add(Box.createHorizontalStrut(15)); // Espacio
+        panelIzquierdoInferior.add(btnEliminarDelCarrito); // AGREGAMOS EL BOTON AL PANEL
+
+        panelBoton.add(panelIzquierdoInferior, BorderLayout.WEST);
 
         btnConfirmarVenta = new JButton("Confirmar Venta Completa");
         btnConfirmarVenta.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -136,4 +147,5 @@ public class RegistroVentaUI extends JDialog {
     public JTable getTablaCarrito() { return tablaCarrito; }
     public JLabel getLblTotalVenta() { return lblTotalVenta; }
     public JButton getBtnConfirmarVenta() { return btnConfirmarVenta; }
+    public JButton getBtnEliminarDelCarrito() { return btnEliminarDelCarrito; } // NUEVO GETTER
 }

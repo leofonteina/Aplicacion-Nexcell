@@ -14,6 +14,7 @@ public class VendedorUI extends JFrame {
     private JButton btnAbrirFormularioCliente;
     private JButton btnBajaCliente;
     private JButton btnAltaCliente;
+    private JButton btnEditarCliente;
 
     // Componentes de Productos
     private JTextField buscarProductoField;
@@ -31,9 +32,11 @@ public class VendedorUI extends JFrame {
 
     // Componentes de Reportes con Fechas Desplegables
     private JComboBox<String> comboTipoReporte;
+    private JComboBox<String> comboCategoriasReporte; // EL NUEVO COMBO DE CATEGORÍAS
     private JComboBox<String> cbDiaInicio, cbMesInicio, cbAnioInicio;
     private JComboBox<String> cbDiaFin, cbMesFin, cbAnioFin;
     private JButton btnGenerarReporte;
+    private JButton btnExportarReporte; // NUEVO: Botón para exportar a Excel
     private JTable tablaReportes;
     private JLabel lblTotalReporte;
 
@@ -81,10 +84,14 @@ public class VendedorUI extends JFrame {
         btnAbrirFormularioCliente = crearBotonWeb("Nuevo Cliente");
         btnBajaCliente = crearBotonWeb("Baja Lógica");
         btnAltaCliente = crearBotonWeb("Reactivar");
+        btnEditarCliente = crearBotonWeb("Editar");
+
         btnBajaCliente.setVisible(false);
         btnAltaCliente.setVisible(false);
+        btnEditarCliente.setVisible(false);
 
-        JPanel panelAcciones = crearBarraAcciones(btnBajaCliente, btnAltaCliente, btnAbrirFormularioCliente);
+
+        JPanel panelAcciones = crearBarraAcciones(btnBajaCliente, btnAltaCliente, btnEditarCliente, btnAbrirFormularioCliente);
         String[] columnas = {"DNI", "Nombre", "Apellido", "Teléfono", "Email", "Estado"};
         tablaClientes = new JTable(new DefaultTableModel(new Object[][]{}, columnas) {
             @Override public boolean isCellEditable(int row, int col) { return false; }
@@ -142,9 +149,31 @@ public class VendedorUI extends JFrame {
     private JPanel crearPanelReportes() {
         JPanel panel = crearPanelBase();
 
+        // 1. ACTUALIZAMOS LOS TIPOS DE REPORTES
         comboTipoReporte = new JComboBox<>(new String[]{
-            "Resumen de ventas",
-            "Productos mas vendidos"
+            "Resumen Diario / Arqueo",
+            "Top Productos Vendidos",
+            "Rendimiento por Categoría",
+            "Mis Mejores Clientes"
+        });
+
+        // 2. CREAMOS EL COMBO DE CATEGORÍAS (OCULTO POR DEFECTO)
+        String[] categorias = {"Smartphone", "Accesorio", "Auricular", "Parlante", "SmartWatch"};
+        comboCategoriasReporte = new JComboBox<>(categorias);
+        comboCategoriasReporte.setVisible(false);
+
+        // 3. LÓGICA DE VISIBILIDAD DINÁMICA Y BLOQUEO DE FECHAS
+        comboTipoReporte.addActionListener(e -> {
+            String seleccionado = comboTipoReporte.getSelectedItem().toString();
+
+            // Muestra u oculta el combo de categorías
+            comboCategoriasReporte.setVisible(seleccionado.equals("Rendimiento por Categoría"));
+
+            // Si es "Resumen Diario", bloqueamos la fecha "Hasta"
+            boolean esRango = !seleccionado.equals("Resumen Diario / Arqueo");
+            cbDiaFin.setEnabled(esRango);
+            cbMesFin.setEnabled(esRango);
+            cbAnioFin.setEnabled(esRango);
         });
 
         // Configuración de arrays para los ComboBox de fechas
@@ -174,16 +203,22 @@ public class VendedorUI extends JFrame {
         cbAnioFin.setSelectedItem(String.valueOf(hoy.getYear()));
 
         btnGenerarReporte = crearBotonWeb("Generar Reporte");
+        btnExportarReporte = crearBotonWeb("Exportar a Excel"); // INICIALIZAMOS EL BOTON
 
         // Construir barra superior de filtros
         JPanel panelFiltros = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         panelFiltros.add(new JLabel("Métrica:"));
         panelFiltros.add(comboTipoReporte);
+
+        // AGREGAMOS EL COMBO DE CATEGORÍAS AL PANEL DE FILTROS
+        panelFiltros.add(comboCategoriasReporte);
+
         panelFiltros.add(new JLabel("Desde:"));
         panelFiltros.add(crearAgrupacionFecha(cbDiaInicio, cbMesInicio, cbAnioInicio));
         panelFiltros.add(new JLabel("Hasta:"));
         panelFiltros.add(crearAgrupacionFecha(cbDiaFin, cbMesFin, cbAnioFin));
         panelFiltros.add(btnGenerarReporte);
+        panelFiltros.add(btnExportarReporte); // AGREGAMOS EL BOTON AL PANEL
 
         tablaReportes = new JTable(new DefaultTableModel(new Object[][]{}, new String[]{"-"})) {
             @Override public boolean isCellEditable(int row, int col) { return false; }
@@ -285,9 +320,11 @@ public class VendedorUI extends JFrame {
     public JTable getTablaVentas() { return tablaVentas; }
     public JTextField getBuscarVentaField() { return buscarVentaField; }
     public JButton getBtnBuscarVenta() { return btnBuscarVenta; }
+    public JButton getBtnEditarCliente() { return btnEditarCliente; }
 
     // Getters de Reportes
     public JComboBox<String> getComboTipoReporte() { return comboTipoReporte; }
+    public JComboBox<String> getComboCategoriasReporte() { return comboCategoriasReporte; }
     public JComboBox<String> getCbDiaInicio() { return cbDiaInicio; }
     public JComboBox<String> getCbMesInicio() { return cbMesInicio; }
     public JComboBox<String> getCbAnioInicio() { return cbAnioInicio; }
@@ -295,6 +332,7 @@ public class VendedorUI extends JFrame {
     public JComboBox<String> getCbMesFin() { return cbMesFin; }
     public JComboBox<String> getCbAnioFin() { return cbAnioFin; }
     public JButton getBtnGenerarReporte() { return btnGenerarReporte; }
+    public JButton getBtnExportarReporte() { return btnExportarReporte; } // NUEVO GETTER
     public JTable getTablaReportes() { return tablaReportes; }
     public JLabel getLblTotalReporte() { return lblTotalReporte; }
 }
