@@ -19,7 +19,13 @@ public class GerenteUI extends JFrame {
 
     // Componentes de Productos Más Vendidos
     private JButton btnCalcularProductosVendidos;
+    private JButton btnGenerarGraficoProductos;
     private JTable tablaProductosVendidos;
+    private JScrollPane scrollTablaProductos;
+    private JTabbedPane tabsProductos;
+
+    // Panel para el gráfico de Productos Más Vendidos
+    private JPanel panelGraficoProductos;
 
     // Botón general
     private JButton btnCerrarSesion;
@@ -116,25 +122,45 @@ public class GerenteUI extends JFrame {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        JPanel panelSuperior = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        // Panel superior dividido en Izquierda y Derecha
+        JPanel panelSuperior = new JPanel(new BorderLayout());
+
+        // Botón calcular a la izquierda
+        JPanel panelIzquierda = new JPanel(new FlowLayout(FlowLayout.LEFT));
         btnCalcularProductosVendidos = new JButton("Calcular por Fecha");
-        panelSuperior.add(btnCalcularProductosVendidos);
+        panelIzquierda.add(btnCalcularProductosVendidos);
+
+        // Botón gráfico a la derecha
+        JPanel panelDerecha = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        btnGenerarGraficoProductos = new JButton("Generar Gráfico");
+        btnGenerarGraficoProductos.setEnabled(false); // Lo deshabilitamos hasta que haya datos en la tabla
+        panelDerecha.add(btnGenerarGraficoProductos);
+
+        panelSuperior.add(panelIzquierda, BorderLayout.WEST);
+        panelSuperior.add(panelDerecha, BorderLayout.EAST);
+        // -------------------------------------------------------------
 
         String[] columnas = {"Ranking", "Producto", "Categoría", "Cant. Vendida", "Ingresos Generados"};
         tablaProductosVendidos = new JTable(new DefaultTableModel(null, columnas)) {
             @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
+            public boolean isCellEditable(int row, int column) { return false; }
         };
-        JScrollPane scrollTabla = new JScrollPane(tablaProductosVendidos);
+        scrollTablaProductos = new JScrollPane(tablaProductosVendidos);
+
+        panelGraficoProductos = new JPanel(new BorderLayout());
+        panelGraficoProductos.setPreferredSize(new Dimension(800, 300));
+
+        tabsProductos = new JTabbedPane();
+        tabsProductos.addTab("Tabla de Datos", scrollTablaProductos);
+        tabsProductos.addTab("Gráfico de Barras", panelGraficoProductos);
 
         panel.add(panelSuperior, BorderLayout.NORTH);
-        panel.add(scrollTabla, BorderLayout.CENTER);
+        panel.add(tabsProductos, BorderLayout.CENTER); // Agregamos las pestañas en lugar del divisor
 
         return panel;
     }
 
+    // Getters de Reporte de Ventas
     public JButton getBtnGenerarReporte() { return btnGenerarReporte; }
     public JButton getBtnLimpiarReporte() { return btnLimpiarReporte; }
     public JTable getTablaReportesVentas() { return tablaReportesVentas; }
@@ -142,9 +168,15 @@ public class GerenteUI extends JFrame {
     public JTextField getBuscarVentaField() { return buscarVentaField; }
     public JButton getBtnBuscarVenta() { return btnBuscarVenta; }
 
+    // Getters de Rendimiento de Vendedores
     public JButton getBtnCalcularRendimiento() { return btnCalcularRendimiento; }
     public JTable getTablaRendimiento() { return tablaRendimiento; }
 
+    // Getters de Productos más Vendidos
     public JButton getBtnCalcularProductosVendidos() { return btnCalcularProductosVendidos; }
     public JTable getTablaProductosVendidos() { return tablaProductosVendidos; }
+    public JPanel getPanelGraficoProductos() { return panelGraficoProductos; }
+    public JButton getBtnGenerarGraficoProductos() { return btnGenerarGraficoProductos; }
+    public JScrollPane getScrollTablaProductos() { return scrollTablaProductos; }
+    public JTabbedPane getTabsProductos() { return tabsProductos; }
 }
