@@ -5,23 +5,28 @@ import vista.RegistroClienteUI;
 import vista.RegistroVentaUI;
 import vista.LoginUI;
 
-import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
-import java.util.List;
-import java.awt.*;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.ParameterMode;
 import jakarta.persistence.StoredProcedureQuery;
+import javax.swing.JOptionPane;
+import javax.swing.JTable;
+import javax.swing.table.TableModel;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.PrintWriter;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.List;
 
 public class VendedorController {
 
     private VendedorUI vistaPrincipal;
-    private jakarta.persistence.EntityManager em;
+    private EntityManager em;
     private modelo.Usuario vendedorLogueado;
 
-    public VendedorController(VendedorUI vistaPrincipal, jakarta.persistence.EntityManager em, modelo.Usuario vendedorLogueado) {
+    public VendedorController(VendedorUI vistaPrincipal, EntityManager em, modelo.Usuario vendedorLogueado) {
         this.vistaPrincipal = vistaPrincipal;
         this.em = em;
         this.vendedorLogueado = vendedorLogueado;
@@ -34,6 +39,7 @@ public class VendedorController {
             System.err.println("Aviso inicial: " + ex.getMessage());
         }
 
+        // Vinculación de Eventos de Negocio
         this.vistaPrincipal.getBtnAbrirFormularioCliente().addActionListener(e -> abrirFormularioRegistro(""));
         this.vistaPrincipal.getBtnCerrarSesion().addActionListener(e -> cerrarSesion());
         this.vistaPrincipal.getBtnAbrirFormularioVenta().addActionListener(e -> abrirFormularioVenta());
@@ -41,162 +47,112 @@ public class VendedorController {
         this.vistaPrincipal.getBtnAltaCliente().addActionListener(e -> cambiarEstadoCliente(true));
         this.vistaPrincipal.getBtnEditarCliente().addActionListener(e -> abrirFormularioEdicionCliente());
 
-        this.vistaPrincipal.getTablaClientes().setAutoCreateRowSorter(true);
-        this.vistaPrincipal.getTablaProductos().setAutoCreateRowSorter(true);
-        this.vistaPrincipal.getTablaVentas().setAutoCreateRowSorter(true);
-        this.vistaPrincipal.getTablaReportes().setAutoCreateRowSorter(true);
+        this.vistaPrincipal.getBtnGenerarReporte().addActionListener(e -> generarReporte());
+        this.vistaPrincipal.getBtnExportarReporte().addActionListener(e -> exportarReporteCSV());
 
-        configurarBusqueda(this.vistaPrincipal.getBuscarClienteField(), this.vistaPrincipal.getBtnBuscarCliente(), this.vistaPrincipal.getTablaClientes());
-        configurarBusqueda(this.vistaPrincipal.getBuscarProductoField(), this.vistaPrincipal.getBtnBuscarProducto(), this.vistaPrincipal.getTablaProductos());
-        configurarBusqueda(this.vistaPrincipal.getBuscarVentaField(), this.vistaPrincipal.getBtnBuscarVenta(), this.vistaPrincipal.getTablaVentas());
-
-        this.vistaPrincipal.getBtnBajaCliente().setVisible(false);
-        this.vistaPrincipal.getBtnAltaCliente().setVisible(false);
-        this.vistaPrincipal.getBtnEditarCliente().setVisible(false);
-
-        this.vistaPrincipal.getBtnExportarReporte().addActionListener(e -> exportarTablaACSV(this.vistaPrincipal.getTablaReportes()));
-
-        java.awt.event.MouseAdapter deseleccionador = new java.awt.event.MouseAdapter() {
-            @Override
-            public void mouseClicked(java.awt.event.MouseEvent e) {
-                JTable tabla = vistaPrincipal.getTablaClientes();
-                if (tabla.rowAtPoint(e.getPoint()) == -1) {
-                    tabla.clearSelection();
-                    vistaPrincipal.getBtnBajaCliente().setVisible(false);
-                    vistaPrincipal.getBtnAltaCliente().setVisible(false);
-                    vistaPrincipal.getBtnEditarCliente().setVisible(false);
-                }
-            }
-        };
-
-        this.vistaPrincipal.getTablaClientes().addMouseListener(deseleccionador);
-        java.awt.Container parent = this.vistaPrincipal.getTablaClientes().getParent();
-        if (parent instanceof javax.swing.JViewport) parent.addMouseListener(deseleccionador);
-
-        this.vistaPrincipal.getTablaClientes().getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) {
-                int f = this.vistaPrincipal.getTablaClientes().getSelectedRow();
-                if (f != -1) {
-                    boolean activo = this.vistaPrincipal.getTablaClientes().getValueAt(f, 5).toString().equalsIgnoreCase("Activo");
-                    this.vistaPrincipal.getBtnBajaCliente().setVisible(activo);
-                    this.vistaPrincipal.getBtnAltaCliente().setVisible(!activo);
-                    this.vistaPrincipal.getBtnEditarCliente().setVisible(true);
-                } else {
-                    this.vistaPrincipal.getBtnBajaCliente().setVisible(false);
-                    this.vistaPrincipal.getBtnAltaCliente().setVisible(false);
-                    this.vistaPrincipal.getBtnEditarCliente().setVisible(false);
-                }
-            }
-        });
-
+        // Doble clic en tabla de ventas para pedir el detalle
         this.vistaPrincipal.getTablaVentas().addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
-                if (e.getClickCount() == 2) {
-                    int fila = vistaPrincipal.getTablaVentas().getSelectedRow();
-                    if (fila != -1) {
-                        abrirDetalleVenta();
-                    }
+                if (e.getClickCount() == 2 && vistaPrincipal.getIdVentaSeleccionada() != null) {
+                    abrirDetalleVenta();
                 }
             }
         });
-
-        this.vistaPrincipal.getBtnGenerarReporte().addActionListener(e -> generarReporte());
     }
 
-    private void generarReporte() {
-        String strInicio = vistaPrincipal.getCbDiaInicio().getSelectedItem() + "/" +
-            vistaPrincipal.getCbMesInicio().getSelectedItem() + "/" +
-            vistaPrincipal.getCbAnioInicio().getSelectedItem();
+    // =========================================================================
+    // CONSULTAS DE REPORTES (Ejecuta en BD y delega el dibujo a VendedorUI)
+    // =========================================================================
 
-        String strFin = vistaPrincipal.getCbDiaFin().getSelectedItem() + "/" +
-            vistaPrincipal.getCbMesFin().getSelectedItem() + "/" +
-            vistaPrincipal.getCbAnioFin().getSelectedItem();
+    private void generarReporte() {
+        String strInicio = vistaPrincipal.getFechaInicioReporteStr();
+        String strFin = vistaPrincipal.getFechaFinReporteStr();
 
         try {
-            java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy");
-
-            java.time.LocalDate fechaInicio = java.time.LocalDate.parse(strInicio, fmt);
-            java.time.LocalDate fechaFin = java.time.LocalDate.parse(strFin, fmt);
+            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            LocalDate fechaInicio = LocalDate.parse(strInicio, fmt);
+            LocalDate fechaFin = LocalDate.parse(strFin, fmt);
 
             int tipoReporte = vistaPrincipal.getComboTipoReporte().getSelectedIndex();
 
             if (tipoReporte == 0) {
-                fechaFin = fechaInicio;
+                fechaFin = fechaInicio; // Resumen diario es de un solo día
             }
 
             if (fechaInicio.isAfter(fechaFin)) {
-                JOptionPane.showMessageDialog(vistaPrincipal, "La fecha de inicio no puede ser mayor a la fecha de fin.", "Fechas Inválidas", JOptionPane.WARNING_MESSAGE);
+                vistaPrincipal.mostrarMensaje("La fecha de inicio no puede ser mayor a la fecha de fin.", "Fechas Inválidas", JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
             if (fechaInicio.plusMonths(6).isBefore(fechaFin)) {
-                JOptionPane.showMessageDialog(vistaPrincipal, "El rango seleccionado supera los 6 meses. Por favor, seleccione un periodo más corto para no sobrecargar el sistema.", "Rango Excedido", JOptionPane.WARNING_MESSAGE);
+                vistaPrincipal.mostrarMensaje("El rango seleccionado supera los 6 meses. Por favor, seleccione un periodo más corto.", "Rango Excedido", JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
-            java.time.LocalDateTime inicioLDT = fechaInicio.atStartOfDay();
-            java.time.LocalDateTime finLDT = fechaFin.atTime(23, 59, 59);
-
-            DefaultTableModel modeloTabla = (DefaultTableModel) vistaPrincipal.getTablaReportes().getModel();
-            modeloTabla.setRowCount(0);
+            LocalDateTime inicioLDT = fechaInicio.atStartOfDay();
+            LocalDateTime finLDT = fechaFin.atTime(23, 59, 59);
 
             if (tipoReporte == 0) {
-                reporteResumenDiario(inicioLDT, finLDT);
+                List<Object[]> datos = consultarProcedimiento("reporte_resumen_diario", inicioLDT, finLDT);
+                vistaPrincipal.mostrarReporteResumenDiario(datos);
             } else if (tipoReporte == 1) {
-                reporteTopProductos(inicioLDT, finLDT);
+                List<Object[]> datos = consultarProcedimiento("reporte_top_productos", inicioLDT, finLDT);
+                vistaPrincipal.mostrarReporteTopProductos(datos);
             } else if (tipoReporte == 2) {
-                String categoriaSeleccionada = vistaPrincipal.getComboCategoriasReporte().getSelectedItem().toString();
-                reporteRendimientoCategoria(inicioLDT, finLDT, categoriaSeleccionada);
+                String categoria = vistaPrincipal.getComboCategoriasReporte().getSelectedItem().toString();
+                List<Object[]> datos = consultarProcedimientoCategoria(inicioLDT, finLDT, categoria);
+                vistaPrincipal.mostrarReporteRendimientoCategoria(datos, categoria);
             } else if (tipoReporte == 3) {
-                reporteMejoresClientes(inicioLDT, finLDT);
+                List<Object[]> datos = consultarProcedimiento("reporte_mejores_clientes", inicioLDT, finLDT);
+                vistaPrincipal.mostrarReporteMejoresClientes(datos);
             }
 
-        } catch (java.time.format.DateTimeParseException ex) {
-            JOptionPane.showMessageDialog(vistaPrincipal, "La fecha seleccionada no existe en el calendario.", "Fecha Inválida", JOptionPane.ERROR_MESSAGE);
+        } catch (DateTimeParseException ex) {
+            vistaPrincipal.mostrarMensaje("La fecha seleccionada no existe en el calendario.", "Fecha Inválida", JOptionPane.ERROR_MESSAGE);
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(vistaPrincipal, "Ocurrió un error al generar el reporte: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            vistaPrincipal.mostrarMensaje("Ocurrió un error al generar el reporte: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    private void reporteRendimientoCategoria(java.time.LocalDateTime inicio, java.time.LocalDateTime fin, String categoria) {
+    private List<Object[]> consultarProcedimiento(String nombreSp, LocalDateTime inicio, LocalDateTime fin) {
+        StoredProcedureQuery query = em.createStoredProcedureQuery(nombreSp);
+        query.registerStoredProcedureParameter(1, Long.class, ParameterMode.IN);
+        query.registerStoredProcedureParameter(2, LocalDateTime.class, ParameterMode.IN);
+        query.registerStoredProcedureParameter(3, LocalDateTime.class, ParameterMode.IN);
+
+        query.setParameter(1, this.vendedorLogueado.getId());
+        query.setParameter(2, inicio);
+        query.setParameter(3, fin);
+
+        return query.getResultList();
+    }
+
+    private List<Object[]> consultarProcedimientoCategoria(LocalDateTime inicio, LocalDateTime fin, String categoria) {
         StoredProcedureQuery query = em.createStoredProcedureQuery("reporte_rendimiento_categoria");
         query.registerStoredProcedureParameter(1, Long.class, ParameterMode.IN);
         query.registerStoredProcedureParameter(2, String.class, ParameterMode.IN);
-        query.registerStoredProcedureParameter(3, java.time.LocalDateTime.class, ParameterMode.IN);
-        query.registerStoredProcedureParameter(4, java.time.LocalDateTime.class, ParameterMode.IN);
+        query.registerStoredProcedureParameter(3, LocalDateTime.class, ParameterMode.IN);
+        query.registerStoredProcedureParameter(4, LocalDateTime.class, ParameterMode.IN);
 
         query.setParameter(1, this.vendedorLogueado.getId());
         query.setParameter(2, categoria);
         query.setParameter(3, inicio);
         query.setParameter(4, fin);
 
-        List<Object[]> resultados = query.getResultList();
-        DefaultTableModel modelo = (DefaultTableModel) vistaPrincipal.getTablaReportes().getModel();
-        modelo.setColumnIdentifiers(new String[]{"Producto (" + categoria + ")", "Unidades Vendidas", "Ingresos Generados"});
-        modelo.setRowCount(0);
-
-        double granTotal = 0;
-        for (Object[] fila : resultados) {
-            double ingresos = ((Number) fila[2]).doubleValue();
-            granTotal += ingresos;
-            modelo.addRow(new Object[]{ fila[0], fila[1], String.format("$%.2f", ingresos) });
-        }
-        vistaPrincipal.getLblTotalReporte().setText(String.format("Total en Categoría: $%.2f", granTotal));
+        return query.getResultList();
     }
 
-    private void exportarTablaACSV(JTable tabla) {
+    private void exportarReporteCSV() {
+        JTable tabla = vistaPrincipal.getTablaReportes();
         if (tabla.getRowCount() == 0) {
-            JOptionPane.showMessageDialog(vistaPrincipal, "No hay datos en la tabla para exportar.", "Aviso", JOptionPane.WARNING_MESSAGE);
+            vistaPrincipal.mostrarMensaje("No hay datos en la tabla para exportar.", "Aviso", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle("Guardar Reporte Excel (CSV)");
-        fileChooser.setSelectedFile(new java.io.File("Nexcell_Reporte_" + System.currentTimeMillis() + ".csv"));
-
-        if (fileChooser.showSaveDialog(vistaPrincipal) == JFileChooser.APPROVE_OPTION) {
-            try (java.io.PrintWriter writer = new java.io.PrintWriter(fileChooser.getSelectedFile(), "UTF-8")) {
+        File archivoDestino = vistaPrincipal.seleccionarArchivoCSVGuardar();
+        if (archivoDestino != null) {
+            try (PrintWriter writer = new PrintWriter(archivoDestino, "UTF-8")) {
                 for (int i = 0; i < tabla.getColumnCount(); i++) {
                     writer.print(tabla.getColumnName(i));
                     if (i < tabla.getColumnCount() - 1) writer.print(";");
@@ -212,217 +168,99 @@ public class VendedorController {
                     writer.println();
                 }
 
-                JOptionPane.showMessageDialog(vistaPrincipal, "Reporte exportado con éxito. Ya puedes abrirlo con Excel.", "Exportación Exitosa", JOptionPane.INFORMATION_MESSAGE);
+                vistaPrincipal.mostrarMensaje("Reporte exportado con éxito. Ya puedes abrirlo con Excel.", "Exportación Exitosa", JOptionPane.INFORMATION_MESSAGE);
                 utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "REPORTES", "El Vendedor exportó datos a formato CSV.");
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(vistaPrincipal, "Error al guardar el archivo.", "Error Crítico", JOptionPane.ERROR_MESSAGE);
+                vistaPrincipal.mostrarMensaje("Error al guardar el archivo.", "Error Crítico", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
 
-    private void reporteResumenDiario(java.time.LocalDateTime inicio, java.time.LocalDateTime fin) {
-        StoredProcedureQuery query = em.createStoredProcedureQuery("reporte_resumen_diario");
-        query.registerStoredProcedureParameter(1, Long.class, ParameterMode.IN);
-        query.registerStoredProcedureParameter(2, java.time.LocalDateTime.class, ParameterMode.IN);
-        query.registerStoredProcedureParameter(3, java.time.LocalDateTime.class, ParameterMode.IN);
-
-        query.setParameter(1, this.vendedorLogueado.getId());
-        query.setParameter(2, inicio);
-        query.setParameter(3, fin);
-
-        List<Object[]> resultados = query.getResultList();
-        DefaultTableModel modelo = (DefaultTableModel) vistaPrincipal.getTablaReportes().getModel();
-        modelo.setColumnIdentifiers(new String[]{"Fecha de Operación", "Tickets Emitidos", "Monto Facturado"});
-        modelo.setRowCount(0);
-
-        double granTotal = 0;
-        java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy");
-
-        for (Object[] fila : resultados) {
-            java.sql.Date fechaSql = (java.sql.Date) fila[0];
-            String fechaStr = fechaSql.toLocalDate().format(fmt);
-            int tickets = ((Number) fila[1]).intValue();
-            double total = ((Number) fila[2]).doubleValue();
-
-            granTotal += total;
-            modelo.addRow(new Object[]{fechaStr, tickets + " ventas", String.format("$%.2f", total)});
-        }
-        vistaPrincipal.getLblTotalReporte().setText(String.format("Facturación Periodo: $%.2f", granTotal));
-    }
-
-    private void reporteTopProductos(java.time.LocalDateTime inicio, java.time.LocalDateTime fin) {
-        StoredProcedureQuery query = em.createStoredProcedureQuery("reporte_top_productos");
-        query.registerStoredProcedureParameter(1, Long.class, ParameterMode.IN);
-        query.registerStoredProcedureParameter(2, java.time.LocalDateTime.class, ParameterMode.IN);
-        query.registerStoredProcedureParameter(3, java.time.LocalDateTime.class, ParameterMode.IN);
-
-        query.setParameter(1, this.vendedorLogueado.getId());
-        query.setParameter(2, inicio);
-        query.setParameter(3, fin);
-
-        List<Object[]> resultados = query.getResultList();
-        DefaultTableModel modelo = (DefaultTableModel) vistaPrincipal.getTablaReportes().getModel();
-        modelo.setColumnIdentifiers(new String[]{"Producto (Modelo)", "Categoría", "Unidades Vendidas", "Ingreso Generado"});
-        modelo.setRowCount(0);
-
-        double granTotal = 0;
-        for (Object[] fila : resultados) {
-            String producto = (String) fila[0];
-            String categoria = (String) fila[1];
-            int unidades = ((Number) fila[2]).intValue();
-            double total = ((Number) fila[3]).doubleValue();
-
-            granTotal += total;
-            modelo.addRow(new Object[]{producto, categoria, unidades + " u.", String.format("$%.2f", total)});
-        }
-        vistaPrincipal.getLblTotalReporte().setText(String.format("Ingreso por estos productos: $%.2f", granTotal));
-    }
-
-    private void reporteMejoresClientes(java.time.LocalDateTime inicio, java.time.LocalDateTime fin) {
-        StoredProcedureQuery query = em.createStoredProcedureQuery("reporte_mejores_clientes");
-        query.registerStoredProcedureParameter(1, Long.class, ParameterMode.IN);
-        query.registerStoredProcedureParameter(2, java.time.LocalDateTime.class, ParameterMode.IN);
-        query.registerStoredProcedureParameter(3, java.time.LocalDateTime.class, ParameterMode.IN);
-
-        query.setParameter(1, this.vendedorLogueado.getId());
-        query.setParameter(2, inicio);
-        query.setParameter(3, fin);
-
-        List<Object[]> resultados = query.getResultList();
-        DefaultTableModel modelo = (DefaultTableModel) vistaPrincipal.getTablaReportes().getModel();
-        modelo.setColumnIdentifiers(new String[]{"DNI Cliente", "Nombre Completo", "Compras", "Total Gastado"});
-        modelo.setRowCount(0);
-
-        for (Object[] fila : resultados) {
-            String nombreCompleto = fila[1] + " " + fila[2];
-            double gastado = ((Number) fila[4]).doubleValue();
-            modelo.addRow(new Object[]{ fila[0], nombreCompleto, fila[3], String.format("$%.2f", gastado) });
-        }
-        vistaPrincipal.getLblTotalReporte().setText("Ranking de Fidelización (Clientes del Vendedor)");
-    }
+    // =========================================================================
+    // LÓGICA DE VENTAS Y CHECKOUT
+    // =========================================================================
 
     private void abrirFormularioVenta() {
         try {
-            vista.RegistroVentaUI ventanaVenta = new vista.RegistroVentaUI(this.vistaPrincipal);
+            RegistroVentaUI ventanaVenta = new RegistroVentaUI(this.vistaPrincipal);
             repositorio.ProductoRepository repoProd = new repositorio.ProductoRepository(this.em);
-            List<modelo.Producto> productosDB = repoProd.listarTodos();
+            repositorio.ClienteRepository repoCli = new repositorio.ClienteRepository(this.em);
 
-            ventanaVenta.getProductoBox().removeAllItems();
-            ventanaVenta.getProductoBox().addItem("Seleccionar...");
-            for (modelo.Producto p : productosDB) {
-                if (p.isEstado() && p.getStock() > 0) {
-                    ventanaVenta.getProductoBox().addItem(p.getId() + " - " + p.getNombre() + " (Stock: " + p.getStock() + ")");
-                }
-            }
+            // La vista se encarga de cargar su propio ComboBox
+            ventanaVenta.cargarProductosDisponibles(repoProd.listarTodos());
 
             final modelo.Cliente[] clienteActual = {null};
-            repositorio.ClienteRepository repoCli = new repositorio.ClienteRepository(this.em);
 
             ventanaVenta.getBtnVerificarCliente().addActionListener(e -> {
                 String dni = ventanaVenta.getDniClienteField().getText().trim();
                 if (dni.isEmpty()) {
-                    JOptionPane.showMessageDialog(ventanaVenta, "Ingrese un DNI primero.", "Atención", JOptionPane.WARNING_MESSAGE);
+                    ventanaVenta.mostrarMensaje("Ingrese un DNI primero.", "Atención", JOptionPane.WARNING_MESSAGE);
                     return;
                 }
                 modelo.Cliente c = repoCli.buscarPorDni(dni);
                 if (c != null && c.isActivo()) {
                     clienteActual[0] = c;
-                    ventanaVenta.getLblNombreCliente().setText("Cliente validado: " + c.getNombre() + " " + c.getApellido());
-                    ventanaVenta.getLblNombreCliente().setForeground(new Color(40, 167, 69));
+                    ventanaVenta.mostrarClienteValidado(c.getDni(), c.getNombre() + " " + c.getApellido(), false);
                 } else {
-                    if (JOptionPane.showConfirmDialog(ventanaVenta, "Cliente no encontrado. ¿Registrarlo?", "No encontrado", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+                    if (ventanaVenta.confirmarAccion("Cliente no encontrado. ¿Registrarlo?", "No encontrado", JOptionPane.QUESTION_MESSAGE)) {
                         abrirFormularioRegistro(dni);
                         modelo.Cliente nuevoC = repoCli.buscarPorDni(dni);
                         if (nuevoC != null) {
                             clienteActual[0] = nuevoC;
-                            ventanaVenta.getDniClienteField().setText(nuevoC.getDni());
-                            ventanaVenta.getLblNombreCliente().setText("Cliente nuevo: " + nuevoC.getNombre() + " " + nuevoC.getApellido());
-                            ventanaVenta.getLblNombreCliente().setForeground(new Color(40, 167, 69));
+                            ventanaVenta.mostrarClienteValidado(nuevoC.getDni(), nuevoC.getNombre() + " " + nuevoC.getApellido(), true);
                         }
                     }
                 }
             });
 
-            ventanaVenta.getTablaCarrito().getSelectionModel().addListSelectionListener(e -> {
-                if (!e.getValueIsAdjusting()) {
-                    boolean hayFilaSeleccionada = ventanaVenta.getTablaCarrito().getSelectedRow() != -1;
-                    ventanaVenta.getBtnEliminarDelCarrito().setVisible(hayFilaSeleccionada);
-                }
-            });
-
-            ventanaVenta.getBtnEliminarDelCarrito().addActionListener(e -> {
-                int fila = ventanaVenta.getTablaCarrito().getSelectedRow();
-                if (fila != -1) {
-                    int confirmar = JOptionPane.showConfirmDialog(ventanaVenta, "¿Desea quitar este producto del carrito?", "Quitar Artículo", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-                    if (confirmar == JOptionPane.YES_OPTION) {
-                        DefaultTableModel mod = (DefaultTableModel) ventanaVenta.getTablaCarrito().getModel();
-                        mod.removeRow(fila);
-
-                        double tot = 0;
-                        for (int i = 0; i < mod.getRowCount(); i++) tot += (double) mod.getValueAt(i, 4);
-                        ventanaVenta.getLblTotalVenta().setText(String.format("Total: $%.2f", tot));
-                    }
-                } else {
-                    JOptionPane.showMessageDialog(ventanaVenta, "Seleccione un producto del carrito para eliminarlo.", "Aviso", JOptionPane.WARNING_MESSAGE);
-                }
-            });
+            // La vista se encarga de eliminar la fila y recalcular su total
+            ventanaVenta.getBtnEliminarDelCarrito().addActionListener(e -> ventanaVenta.eliminarFilaSeleccionadaCarrito());
 
             ventanaVenta.getBtnAgregarProducto().addActionListener(e -> {
-                if (ventanaVenta.getProductoBox().getSelectedIndex() <= 0) return;
-                String item = (String) ventanaVenta.getProductoBox().getSelectedItem();
-                Long idProducto = Long.parseLong(item.split(" - ")[0]);
+                Long idProducto = ventanaVenta.getIdProductoSeleccionado();
+                if (idProducto == null) return;
+
                 modelo.Producto producto = repoProd.buscarPorId(idProducto);
 
                 try {
                     int pedida = Integer.parseInt(ventanaVenta.getCantidadField().getText().trim());
                     if (pedida <= 0) throw new NumberFormatException();
 
-                    DefaultTableModel mod = (DefaultTableModel) ventanaVenta.getTablaCarrito().getModel();
-                    int cantEnCarro = 0;
-                    for (int i = 0; i < mod.getRowCount(); i++) {
-                        if (((Long) mod.getValueAt(i, 0)).equals(idProducto)) cantEnCarro += (int) mod.getValueAt(i, 3);
-                    }
-
+                    int cantEnCarro = ventanaVenta.obtenerCantidadEnCarritoParaProducto(idProducto);
                     int totalRequerido = pedida + cantEnCarro;
 
                     if (totalRequerido > producto.getStock()) {
-                        JOptionPane.showMessageDialog(ventanaVenta, "Stock insuficiente. Solo cuentas con " + producto.getStock() + " unidades disponibles.", "Error de Stock", JOptionPane.ERROR_MESSAGE);
+                        ventanaVenta.mostrarMensaje("Stock insuficiente. Solo cuentas con " + producto.getStock() + " unidades disponibles.", "Error de Stock", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
 
                     int stockRestante = producto.getStock() - totalRequerido;
                     if (stockRestante <= 5) {
-                        JOptionPane.showMessageDialog(ventanaVenta, "Atención: Al confirmar esta venta, solo quedarán " + stockRestante + " unidades de '" + producto.getNombre() + "' en inventario.", "Alerta de Stock Crítico", JOptionPane.WARNING_MESSAGE);
+                        ventanaVenta.mostrarMensaje("Atención: Al confirmar esta venta, solo quedarán " + stockRestante + " unidades de '" + producto.getNombre() + "' en inventario.", "Alerta de Stock Crítico", JOptionPane.WARNING_MESSAGE);
                     }
 
                     double sub = pedida * producto.getPrecio();
-                    mod.addRow(new Object[]{ producto.getId(), producto.getNombre(), producto.getPrecio(), pedida, sub });
+                    ventanaVenta.agregarFilaCarrito(producto.getId(), producto.getNombre(), producto.getPrecio(), pedida, sub);
 
-                    double tot = 0;
-                    for (int i = 0; i < mod.getRowCount(); i++) tot += (double) mod.getValueAt(i, 4);
-
-                    ventanaVenta.getLblTotalVenta().setText(String.format("Total: $%.2f", tot));
-                    ventanaVenta.getProductoBox().setSelectedIndex(0);
-                    ventanaVenta.getCantidadField().setText("");
                 } catch (NumberFormatException ex) {
-                    JOptionPane.showMessageDialog(ventanaVenta, "Cantidad inválida.", "Error", JOptionPane.ERROR_MESSAGE);
+                    ventanaVenta.mostrarMensaje("Cantidad inválida.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
             });
 
             ventanaVenta.getBtnConfirmarVenta().addActionListener(e -> {
                 if (clienteActual[0] == null) {
-                    JOptionPane.showMessageDialog(ventanaVenta, "Debe asociar un cliente antes de facturar.", "Error", JOptionPane.WARNING_MESSAGE);
+                    ventanaVenta.mostrarMensaje("Debe asociar un cliente antes de facturar.", "Error", JOptionPane.WARNING_MESSAGE);
                     return;
                 }
-                DefaultTableModel mod = (DefaultTableModel) ventanaVenta.getTablaCarrito().getModel();
-                if (mod.getRowCount() == 0) {
-                    JOptionPane.showMessageDialog(ventanaVenta, "El carrito está vacío.", "Atención", JOptionPane.WARNING_MESSAGE);
+                if (ventanaVenta.isCarritoVacio()) {
+                    ventanaVenta.mostrarMensaje("El carrito está vacío.", "Atención", JOptionPane.WARNING_MESSAGE);
                     return;
                 }
 
+                TableModel mod = ventanaVenta.getTablaCarrito().getModel();
                 StringBuilder resumen = new StringBuilder();
                 resumen.append("--- TICKET DE VENTA - NEXCELL ---\n");
-                resumen.append("Fecha: ").append(java.time.LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))).append("\n");
+                resumen.append("Fecha: ").append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))).append("\n");
                 resumen.append("Atendido por: ").append(this.vendedorLogueado.getUsername()).append("\n");
                 resumen.append("Cliente: ").append(clienteActual[0].getNombre()).append(" ").append(clienteActual[0].getApellido()).append("\n");
                 resumen.append("DNI: ").append(clienteActual[0].getDni()).append("\n\n");
@@ -443,49 +281,92 @@ public class VendedorController {
                 resumen.append("TOTAL A COBRAR: $").append(String.format("%.2f", totResumen)).append("\n");
                 resumen.append("---------------------------------\n");
 
-                int confirmacion = JOptionPane.showConfirmDialog(ventanaVenta, resumen.toString() + "\n¿Desea confirmar e impactar esta venta en el sistema?", "Revisión Final de la Venta", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-
-                if (confirmacion != JOptionPane.YES_OPTION) {
+                if (!ventanaVenta.confirmarAccion(resumen.toString() + "\n¿Desea confirmar e impactar esta venta en el sistema?", "Revisión Final de la Venta", JOptionPane.QUESTION_MESSAGE)) {
                     return;
                 }
 
                 boolean exito = procesarCheckout(vendedorLogueado.getId(), clienteActual[0].getDni(), totResumen, mod);
 
                 if (exito) {
-                    try {
-                        String nombreArchivo = "Ticket_Venta_" + System.currentTimeMillis() + ".txt";
-                        java.io.FileWriter writer = new java.io.FileWriter(nombreArchivo);
+                    try (FileWriter writer = new FileWriter("Ticket_Venta_" + System.currentTimeMillis() + ".txt")) {
                         writer.write(resumen.toString());
-                        writer.close();
-                        JOptionPane.showMessageDialog(ventanaVenta, "¡Venta registrada exitosamente en milisegundos!\nSe generó el comprobante: " + nombreArchivo, "Venta Exitosa", JOptionPane.INFORMATION_MESSAGE);
+                        ventanaVenta.mostrarMensaje("¡Venta registrada exitosamente!\nSe generó el comprobante físico.", "Venta Exitosa", JOptionPane.INFORMATION_MESSAGE);
                     } catch (Exception exio) {
-                        JOptionPane.showMessageDialog(ventanaVenta, "La venta se guardó, pero hubo un error al crear el archivo de texto.", "Aviso", JOptionPane.WARNING_MESSAGE);
+                        ventanaVenta.mostrarMensaje("La venta se guardó, pero hubo un error al crear el archivo de texto.", "Aviso", JOptionPane.WARNING_MESSAGE);
                     }
 
                     cargarTablaVentas();
                     cargarTablaProductos();
                     ventanaVenta.dispose();
-                }  else {
-                    JOptionPane.showMessageDialog(ventanaVenta, "Error interno en la base de datos al procesar la venta.", "Error Crítico", JOptionPane.ERROR_MESSAGE);
+                } else {
+                    ventanaVenta.mostrarMensaje("Error interno en la base de datos al procesar la venta.", "Error Crítico", JOptionPane.ERROR_MESSAGE);
                 }
             });
 
             ventanaVenta.setVisible(true);
 
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(vistaPrincipal, "Error al inicializar módulo de ventas: " + ex.getMessage());
+            vistaPrincipal.mostrarMensaje("Error al inicializar módulo de ventas: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    private void abrirFormularioRegistro(String dniPreCargado) {
-        vista.RegistroClienteUI ven = new vista.RegistroClienteUI(this.vistaPrincipal);
+    public boolean procesarCheckout(Long idVendedor, String dniCliente, double totalVenta, TableModel modeloCarrito) {
+        StringBuilder jsonCarrito = new StringBuilder("[");
 
-        ven.getBtnCancelar().addActionListener(e -> ven.dispose());
+        for (int i = 0; i < modeloCarrito.getRowCount(); i++) {
+            Long idProd = (Long) modeloCarrito.getValueAt(i, 0);
+            double precio = (double) modeloCarrito.getValueAt(i, 2);
+            int cantidad = (int) modeloCarrito.getValueAt(i, 3);
 
-        if (!dniPreCargado.isEmpty()) {
-            ven.getTxtDni().setText(dniPreCargado);
-            ven.getTxtDni().setEditable(false);
+            jsonCarrito.append(String.format("{\"id\": %d, \"cantidad\": %d, \"precio\": %s}",
+                idProd, cantidad, String.valueOf(precio).replace(",", ".")));
+
+            if (i < modeloCarrito.getRowCount() - 1) {
+                jsonCarrito.append(",");
+            }
         }
+        jsonCarrito.append("]");
+
+        try {
+            em.getTransaction().begin();
+
+            StoredProcedureQuery query = em.createStoredProcedureQuery("procesar_venta_integral");
+            query.registerStoredProcedureParameter(1, Long.class, ParameterMode.IN);
+            query.registerStoredProcedureParameter(2, String.class, ParameterMode.IN);
+            query.registerStoredProcedureParameter(3, Double.class, ParameterMode.IN);
+            query.registerStoredProcedureParameter(4, String.class, ParameterMode.IN);
+
+            query.setParameter(1, idVendedor);
+            query.setParameter(2, dniCliente);
+            query.setParameter(3, totalVenta);
+            query.setParameter(4, jsonCarrito.toString());
+
+            query.execute();
+            em.getTransaction().commit();
+
+            utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "VENTAS",
+                "El Vendedor '" + vendedorLogueado.getUsername() + "' registró exitosamente una venta por $" + totalVenta + " al DNI: " + dniCliente);
+
+            return true;
+
+        } catch (Exception e) {
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ERROR, "VENTAS",
+                "Fallo al registrar venta del Vendedor '" + vendedorLogueado.getUsername() + "'. Motivo: " + e.getMessage());
+            return false;
+        }
+    }
+
+    // =========================================================================
+    // GESTIÓN DE CLIENTES (ABM)
+    // =========================================================================
+
+    private void abrirFormularioRegistro(String dniPreCargado) {
+        RegistroClienteUI ven = new RegistroClienteUI(this.vistaPrincipal);
+        ven.preCargarDni(dniPreCargado);
+        ven.getBtnCancelar().addActionListener(e -> ven.dispose());
 
         ven.getBtnGuardarCliente().addActionListener(e -> {
             ven.limpiarErrores();
@@ -504,12 +385,12 @@ public class VendedorController {
             if (apellido.isEmpty()) { ven.getLblErrorApellido().setText("Requerido."); hayErrores = true; }
             if (dni.isEmpty()) { ven.getLblErrorDni().setText("Requerido."); hayErrores = true; }
 
-            java.time.LocalDate fechaNac = null;
+            LocalDate fechaNac = null;
             try {
                 int d = (int) ven.getCbDia().getSelectedItem();
                 int m = Integer.parseInt(ven.getCbMes().getSelectedItem().toString());
                 int a = (int) ven.getCbAnio().getSelectedItem();
-                fechaNac = java.time.LocalDate.of(a, m, d);
+                fechaNac = LocalDate.of(a, m, d);
             } catch (Exception ex) {
                 ven.getLblErrorFecha().setText("Fecha inválida."); hayErrores = true;
             }
@@ -534,7 +415,7 @@ public class VendedorController {
 
                 cargarTablaClientes();
                 ven.dispose();
-                JOptionPane.showMessageDialog(vistaPrincipal, "Cliente registrado con éxito.");
+                vistaPrincipal.mostrarMensaje("Cliente registrado con éxito.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
 
             } catch (Exception ex) {
                 if (em.getTransaction().isActive()) em.getTransaction().rollback();
@@ -546,50 +427,16 @@ public class VendedorController {
     }
 
     private void abrirFormularioEdicionCliente() {
-        int fila = vistaPrincipal.getTablaClientes().getSelectedRow();
-        if (fila == -1) return;
+        String dni = vistaPrincipal.getDniClienteSeleccionado();
+        if (dni == null) return;
 
-        String dni = vistaPrincipal.getTablaClientes().getValueAt(fila, 0).toString();
-        // CORRECCIÓN: Búsqueda unificada y segura con el repositorio
         repositorio.ClienteRepository repo = new repositorio.ClienteRepository(this.em);
         modelo.Cliente cliente = repo.buscarPorDni(dni);
         if (cliente == null) return;
 
-        vista.RegistroClienteUI ven = new vista.RegistroClienteUI(this.vistaPrincipal);
-        ven.setTitle("Actualizando dirección de: " + cliente.getNombre() + " " + cliente.getApellido());
-        ven.getBtnGuardarCliente().setText("Actualizar Dirección");
-
-        ven.getTxtDni().setText(cliente.getDni());
-        ven.getTxtDni().setEditable(false);
-
-        ven.getTxtNombre().setText(cliente.getNombre());
-        ven.getTxtNombre().setEditable(false);
-
-        ven.getTxtApellido().setText(cliente.getApellido());
-        ven.getTxtApellido().setEditable(false);
-
-        ven.getTxtTelefono().setText(cliente.getTelefono());
-        ven.getTxtTelefono().setEditable(false);
-
-        ven.getTxtEmail().setText(cliente.getEmail());
-        ven.getTxtEmail().setEditable(false);
-
-        if (cliente.getFechaNacimiento() != null) {
-            ven.getCbDia().setSelectedItem(cliente.getFechaNacimiento().getDayOfMonth());
-            ven.getCbMes().setSelectedIndex(cliente.getFechaNacimiento().getMonthValue() - 1);
-            ven.getCbAnio().setSelectedItem(cliente.getFechaNacimiento().getYear());
-        }
-        ven.getCbDia().setEnabled(false);
-        ven.getCbMes().setEnabled(false);
-        ven.getCbAnio().setEnabled(false);
-
-        if (cliente.getDireccion() != null) {
-            ven.getTxtCalle().setText(cliente.getDireccion().getCalle());
-            ven.getTxtAltura().setText(cliente.getDireccion().getAltura());
-            ven.getTxtCiudad().setText(cliente.getDireccion().getCiudad());
-            ven.getCbProvincia().setSelectedItem(cliente.getDireccion().getProvincia());
-        }
-
+        RegistroClienteUI ven = new RegistroClienteUI(this.vistaPrincipal);
+        // La Vista se encarga de pre-cargar y bloquear los campos que no corresponden a Dirección
+        ven.configurarModoEdicionDireccion(cliente);
         ven.getBtnCancelar().addActionListener(e -> ven.dispose());
 
         ven.getBtnGuardarCliente().addActionListener(e -> {
@@ -598,17 +445,18 @@ public class VendedorController {
             String calle = ven.getTxtCalle().getText().trim();
             String altura = ven.getTxtAltura().getText().trim();
             String ciudad = ven.getTxtCiudad().getText().trim();
+            String provincia = ven.getCbProvincia().getSelectedItem().toString();
 
             try {
                 em.getTransaction().begin();
 
                 if (cliente.getDireccion() == null) {
-                    cliente.setDireccion(new modelo.Direccion(calle, altura, ciudad, ven.getCbProvincia().getSelectedItem().toString()));
+                    cliente.setDireccion(new modelo.Direccion(calle, altura, ciudad, provincia));
                 } else {
                     cliente.getDireccion().setCalle(calle);
                     cliente.getDireccion().setAltura(altura);
                     cliente.getDireccion().setCiudad(ciudad);
-                    cliente.getDireccion().setProvincia(ven.getCbProvincia().getSelectedItem().toString());
+                    cliente.getDireccion().setProvincia(provincia);
                 }
 
                 em.merge(cliente);
@@ -619,32 +467,24 @@ public class VendedorController {
 
                 cargarTablaClientes();
                 ven.dispose();
-                JOptionPane.showMessageDialog(vistaPrincipal, "Dirección actualizada correctamente.", "Edición Exitosa", JOptionPane.INFORMATION_MESSAGE);
+                vistaPrincipal.mostrarMensaje("Dirección actualizada correctamente.", "Edición Exitosa", JOptionPane.INFORMATION_MESSAGE);
 
             } catch (Exception ex) {
                 if (em.getTransaction().isActive()) em.getTransaction().rollback();
                 utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ERROR, "CLIENTES", "Error al editar cliente: " + ex.getMessage());
-                JOptionPane.showMessageDialog(vistaPrincipal, "Error al actualizar la base de datos.", "Error", JOptionPane.ERROR_MESSAGE);
+                vistaPrincipal.mostrarMensaje("Error al actualizar la base de datos.", "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
 
         ven.setVisible(true);
     }
 
-    private void cargarTablaClientes() {
-        List<modelo.Cliente> cls = new repositorio.ClienteRepository(this.em).listarTodos();
-        DefaultTableModel mod = (DefaultTableModel) vistaPrincipal.getTablaClientes().getModel();
-        mod.setRowCount(0);
-        for (modelo.Cliente c : cls) mod.addRow(new Object[]{ c.getDni(), c.getNombre(), c.getApellido(), c.getTelefono(), c.getEmail(), c.isActivo() ? "Activo" : "Inactivo" });
-    }
-
     private void cambiarEstadoCliente(boolean act) {
-        int f = vistaPrincipal.getTablaClientes().getSelectedRow();
-        if (f == -1) return;
-        if (JOptionPane.showConfirmDialog(vistaPrincipal, "¿Seguro?", act ? "Reactivar" : "Dar Baja", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+        int fila = vistaPrincipal.getTablaClientes().getSelectedRow();
+        String dniCliente = vistaPrincipal.getDniClienteSeleccionado();
+        if (dniCliente == null) return;
 
-            String dniCliente = vistaPrincipal.getTablaClientes().getValueAt(f, 0).toString();
-
+        if (vistaPrincipal.confirmarAccion("¿Seguro?", act ? "Reactivar" : "Dar Baja")) {
             try {
                 repositorio.ClienteRepository repo = new repositorio.ClienteRepository(this.em);
                 modelo.Cliente cliente = repo.buscarPorDni(dniCliente);
@@ -655,8 +495,7 @@ public class VendedorController {
                     repo.actualizar(cliente);
                     em.getTransaction().commit();
 
-                    vistaPrincipal.getTablaClientes().setValueAt(act ? "Activo" : "Inactivo", f, 5);
-                    vistaPrincipal.getTablaClientes().clearSelection();
+                    vistaPrincipal.actualizarEstadoClienteEnTabla(fila, act);
 
                     utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ALERTA, "CLIENTES",
                         "El Vendedor '" + vendedorLogueado.getUsername() + "' cambió el estado del cliente DNI " + dniCliente + " a " + (act ? "Activo" : "Inactivo"));
@@ -668,114 +507,36 @@ public class VendedorController {
         }
     }
 
+    // =========================================================================
+    // CARGA DE DATOS E IMPRESIÓN DE COMPROBANTES
+    // =========================================================================
+
+    private void cargarTablaClientes() {
+        List<modelo.Cliente> cls = new repositorio.ClienteRepository(this.em).listarTodos();
+        vistaPrincipal.mostrarClientes(cls);
+    }
+
     private void cargarTablaProductos() {
         List<modelo.Producto> prs = new repositorio.ProductoRepository(this.em).listarTodos();
-        DefaultTableModel mod = (DefaultTableModel) vistaPrincipal.getTablaProductos().getModel();
-        mod.setRowCount(0);
-        for (modelo.Producto p : prs) mod.addRow(new Object[]{ p.getId(), p.getCategoria(), p.getNombre(), p.getStock(), String.format("$%.2f", p.getPrecio()) });
+        vistaPrincipal.mostrarProductos(prs);
     }
 
     private void cargarTablaVentas() {
         try {
             List<modelo.Venta> vts = new repositorio.VentaRepository(this.em).listarPorVendedor(this.vendedorLogueado);
-            DefaultTableModel mod = (DefaultTableModel) vistaPrincipal.getTablaVentas().getModel();
-            mod.setRowCount(0);
-            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-            for (modelo.Venta v : vts) {
-                int cant = v.getDetalles().size();
-                String desc = cant == 1 ? v.getDetalles().get(0).getProducto().getNombre() : cant + " art. (Varios)";
-                mod.addRow(new Object[]{ v.getId(), v.getFecha().format(fmt), v.getCliente().getDni(), desc, String.format("$%.2f", v.getTotal()) });
-            }
+            vistaPrincipal.mostrarVentas(vts);
         } catch (Exception e) {}
     }
 
-    private void cerrarSesion() {
-        if (JOptionPane.showConfirmDialog(vistaPrincipal, "¿Salir?", "Cerrar", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
-            utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "SEGURIDAD",
-                "El Vendedor '" + vendedorLogueado.getUsername() + "' cerró sesión.");
-            vistaPrincipal.dispose();
-            LoginUI ven = new LoginUI();
-            new LoginController(ven, this.em);
-            ven.setVisible(true);
-        }
-    }
-
-    private void configurarBusqueda(JTextField campo, JButton boton, JTable tabla) {
-        boton.addActionListener(e -> aplicarFiltro(campo, tabla));
-        campo.addActionListener(e -> aplicarFiltro(campo, tabla));
-        campo.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-            public void insertUpdate(javax.swing.event.DocumentEvent e) { aplicarFiltro(campo, tabla); }
-            public void removeUpdate(javax.swing.event.DocumentEvent e) { aplicarFiltro(campo, tabla); }
-            public void changedUpdate(javax.swing.event.DocumentEvent e) { aplicarFiltro(campo, tabla); }
-        });
-    }
-
-    private void aplicarFiltro(JTextField campo, JTable tabla) {
-        String texto = campo.getText().trim();
-        javax.swing.table.TableRowSorter<?> sorter = (javax.swing.table.TableRowSorter<?>) tabla.getRowSorter();
-        if (sorter != null) {
-            if (texto.isEmpty()) {
-                sorter.setRowFilter(null);
-            } else {
-                sorter.setRowFilter(javax.swing.RowFilter.regexFilter("(?i)" + java.util.regex.Pattern.quote(texto)));
-            }
-        }
-    }
-
     private void abrirDetalleVenta() {
-        int fila = vistaPrincipal.getTablaVentas().getSelectedRow();
-        Long idVenta = (Long) vistaPrincipal.getTablaVentas().getValueAt(fila, 0);
+        Long idVenta = vistaPrincipal.getIdVentaSeleccionada();
+        if (idVenta == null) return;
 
         modelo.Venta venta = em.find(modelo.Venta.class, idVenta);
-
-        JDialog dialogo = new JDialog(vistaPrincipal, "Detalle de Venta #" + venta.getId(), true);
-        dialogo.setSize(550, 450);
-        dialogo.setLocationRelativeTo(vistaPrincipal);
-        dialogo.setLayout(new BorderLayout(15, 15));
-
-        JPanel panelInfo = new JPanel(new GridLayout(4, 1, 5, 5));
-        panelInfo.setBorder(BorderFactory.createEmptyBorder(15, 15, 5, 15));
-        panelInfo.add(new JLabel("Cliente: " + venta.getCliente().getNombre() + " " + venta.getCliente().getApellido() + " (DNI: " + venta.getCliente().getDni() + ")"));
-        panelInfo.add(new JLabel("Atendido por: " + venta.getVendedor().getUsername()));
-        panelInfo.add(new JLabel("Fecha de operación: " + venta.getFecha().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))));
-
-        dialogo.add(panelInfo, BorderLayout.NORTH);
-
-        String[] columnas = {"Producto", "Cantidad", "Subtotal"};
-        DefaultTableModel modDetalle = new DefaultTableModel(columnas, 0) {
-            @Override public boolean isCellEditable(int row, int col) { return false; }
-        };
-
-        for (modelo.DetalleVenta dv : venta.getDetalles()) {
-            modDetalle.addRow(new Object[]{
-                dv.getProducto().getNombre(),
-                dv.getCantidad() + " u.",
-                String.format("$%.2f", dv.getSubtotal())
-            });
+        if (venta != null) {
+            // Le pasamos la venta a la Vista para que arme el diálogo, y le pasamos el método generarComprobantePDF como callback
+            vistaPrincipal.mostrarDialogoDetalleVenta(venta, this::generarComprobantePDF);
         }
-
-        JTable tablaDetalles = new JTable(modDetalle);
-        tablaDetalles.setRowHeight(30);
-        JScrollPane scroll = new JScrollPane(tablaDetalles);
-        scroll.setBorder(BorderFactory.createEmptyBorder(0, 15, 0, 15));
-        dialogo.add(scroll, BorderLayout.CENTER);
-
-        JPanel panelInferior = new JPanel(new BorderLayout());
-        panelInferior.setBorder(BorderFactory.createEmptyBorder(10, 15, 15, 15));
-
-        JLabel lblTotal = new JLabel("TOTAL ABONADO: $" + String.format("%.2f", venta.getTotal()));
-        lblTotal.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        lblTotal.setForeground(new Color(40, 167, 69));
-
-        JButton btnPdf = new JButton("Descargar Comprobante PDF");
-        btnPdf.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btnPdf.addActionListener(e -> generarComprobantePDF(venta));
-
-        panelInferior.add(lblTotal, BorderLayout.WEST);
-        panelInferior.add(btnPdf, BorderLayout.EAST);
-        dialogo.add(panelInferior, BorderLayout.SOUTH);
-
-        dialogo.setVisible(true);
     }
 
     private void generarComprobantePDF(modelo.Venta venta) {
@@ -821,61 +582,21 @@ public class VendedorController {
 
             documento.close();
 
-            JOptionPane.showMessageDialog(vistaPrincipal, "Comprobante PDF generado y guardado con éxito como:\n" + nombreArchivo, "PDF Generado", JOptionPane.INFORMATION_MESSAGE);
+            vistaPrincipal.mostrarMensaje("Comprobante PDF generado y guardado con éxito como:\n" + nombreArchivo, "PDF Generado", JOptionPane.INFORMATION_MESSAGE);
 
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(vistaPrincipal, "Error al generar el PDF: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            vistaPrincipal.mostrarMensaje("Error al generar el PDF: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    public boolean procesarCheckout(Long idVendedor, String dniCliente, double totalVenta, DefaultTableModel modeloCarrito) {
-        StringBuilder jsonCarrito = new StringBuilder("[");
-
-        for (int i = 0; i < modeloCarrito.getRowCount(); i++) {
-            Long idProd = (Long) modeloCarrito.getValueAt(i, 0);
-            double precio = (double) modeloCarrito.getValueAt(i, 2);
-            int cantidad = (int) modeloCarrito.getValueAt(i, 3);
-
-            jsonCarrito.append(String.format("{\"id\": %d, \"cantidad\": %d, \"precio\": %s}",
-                idProd, cantidad, String.valueOf(precio).replace(",", ".")));
-
-            if (i < modeloCarrito.getRowCount() - 1) {
-                jsonCarrito.append(",");
-            }
-        }
-        jsonCarrito.append("]");
-
-        try {
-            em.getTransaction().begin();
-
-            StoredProcedureQuery query = em.createStoredProcedureQuery("procesar_venta_integral");
-
-            // CORRECCIÓN: Uso de parámetros posicionales
-            query.registerStoredProcedureParameter(1, Long.class, ParameterMode.IN);
-            query.registerStoredProcedureParameter(2, String.class, ParameterMode.IN);
-            query.registerStoredProcedureParameter(3, Double.class, ParameterMode.IN);
-            query.registerStoredProcedureParameter(4, String.class, ParameterMode.IN);
-
-            query.setParameter(1, idVendedor);
-            query.setParameter(2, dniCliente);
-            query.setParameter(3, totalVenta);
-            query.setParameter(4, jsonCarrito.toString());
-
-            query.execute();
-            em.getTransaction().commit();
-
-            utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "VENTAS",
-                "El Vendedor '" + vendedorLogueado.getUsername() + "' registró exitosamente una venta por $" + totalVenta + " al DNI: " + dniCliente);
-
-            return true;
-
-        } catch (Exception e) {
-            if (em.getTransaction().isActive()) {
-                em.getTransaction().rollback();
-            }
-            utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ERROR, "VENTAS",
-                "Fallo al registrar venta del Vendedor '" + vendedorLogueado.getUsername() + "'. Motivo: " + e.getMessage());
-            return false;
+    private void cerrarSesion() {
+        if (vistaPrincipal.confirmarAccion("¿Salir?", "Cerrar")) {
+            utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "SEGURIDAD",
+                "El Vendedor '" + vendedorLogueado.getUsername() + "' cerró sesión.");
+            vistaPrincipal.dispose();
+            LoginUI ven = new LoginUI();
+            new LoginController(ven, this.em);
+            ven.setVisible(true);
         }
     }
 }

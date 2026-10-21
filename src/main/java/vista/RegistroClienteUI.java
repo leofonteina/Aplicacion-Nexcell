@@ -5,7 +5,6 @@ import java.awt.*;
 
 public class RegistroClienteUI extends JDialog {
 
-    // Campos de texto
     private JTextField txtNombre, txtApellido, txtDni, txtTelefono, txtEmail;
     private JTextField txtCalle, txtAltura, txtCiudad;
     private JComboBox<String> cbProvincia;
@@ -13,14 +12,12 @@ public class RegistroClienteUI extends JDialog {
     private JComboBox<String> cbMes;
     private JButton btnGuardarCliente, btnCancelar;
 
-    // Etiquetas de Error (Una para cada campo a validar)
     private JLabel lblErrorNombre, lblErrorApellido, lblErrorDni, lblErrorTelefono, lblErrorEmail;
     private JLabel lblErrorFecha, lblErrorCalle, lblErrorAltura, lblErrorCiudad;
 
     public RegistroClienteUI(JFrame parent) {
         super(parent, "Registrar Nuevo Cliente", true);
-        setSize(480, 700); // Mismo tamaño que RegistroUsuarioUI
-        setLocationRelativeTo(parent);
+        setMinimumSize(new Dimension(480, 680));
         setResizable(false);
 
         inicializarEtiquetasDeError();
@@ -71,7 +68,9 @@ public class RegistroClienteUI extends JDialog {
         panelBotones.setLayout(new BoxLayout(panelBotones, BoxLayout.X_AXIS));
 
         btnCancelar = new JButton("Cancelar");
+        btnCancelar.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btnGuardarCliente = new JButton("Guardar Cliente");
+        btnGuardarCliente.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
         panelBotones.add(btnCancelar);
         panelBotones.add(Box.createHorizontalGlue());
@@ -79,6 +78,55 @@ public class RegistroClienteUI extends JDialog {
 
         panelPrincipal.add(panelBotones);
         add(panelPrincipal);
+        pack();
+        setLocationRelativeTo(parent);
+    }
+
+    // =========================================================================
+    // MÉTODOS DE LA VISTA PARA CONFIGURAR SU PROPIO ESTADO VISUAL
+    // =========================================================================
+
+    public void preCargarDni(String dni) {
+        if (dni != null && !dni.isEmpty()) {
+            txtDni.setText(dni);
+            txtDni.setEditable(false);
+        }
+    }
+
+    public void configurarModoEdicionDireccion(modelo.Cliente cliente) {
+        setTitle("Actualizando dirección de: " + cliente.getNombre() + " " + cliente.getApellido());
+        btnGuardarCliente.setText("Actualizar Dirección");
+
+        txtDni.setText(cliente.getDni());
+        txtDni.setEditable(false);
+
+        txtNombre.setText(cliente.getNombre());
+        txtNombre.setEditable(false);
+
+        txtApellido.setText(cliente.getApellido());
+        txtApellido.setEditable(false);
+
+        txtTelefono.setText(cliente.getTelefono());
+        txtTelefono.setEditable(false);
+
+        txtEmail.setText(cliente.getEmail());
+        txtEmail.setEditable(false);
+
+        if (cliente.getFechaNacimiento() != null) {
+            cbDia.setSelectedItem(cliente.getFechaNacimiento().getDayOfMonth());
+            cbMes.setSelectedIndex(cliente.getFechaNacimiento().getMonthValue() - 1);
+            cbAnio.setSelectedItem(cliente.getFechaNacimiento().getYear());
+        }
+        cbDia.setEnabled(false);
+        cbMes.setEnabled(false);
+        cbAnio.setEnabled(false);
+
+        if (cliente.getDireccion() != null) {
+            txtCalle.setText(cliente.getDireccion().getCalle());
+            txtAltura.setText(cliente.getDireccion().getAltura());
+            txtCiudad.setText(cliente.getDireccion().getCiudad());
+            cbProvincia.setSelectedItem(cliente.getDireccion().getProvincia());
+        }
     }
 
     private void inicializarEtiquetasDeError() {
@@ -95,8 +143,8 @@ public class RegistroClienteUI extends JDialog {
 
     private JLabel crearEtiquetaError() {
         JLabel lbl = new JLabel("");
-        lbl.setForeground(Color.RED);
-        lbl.setFont(new Font("Arial", Font.BOLD, 10));
+        lbl.setForeground(new Color(224, 82, 82));
+        lbl.setFont(new Font("Segoe UI", Font.BOLD, 11));
         return lbl;
     }
 
@@ -135,7 +183,7 @@ public class RegistroClienteUI extends JDialog {
         panel.add(lblError, gbc);
     }
 
-    // --- GETTERS COMPONENTES ---
+    // Getters
     public JTextField getTxtNombre() { return txtNombre; }
     public JTextField getTxtApellido() { return txtApellido; }
     public JTextField getTxtDni() { return txtDni; }
@@ -151,14 +199,8 @@ public class RegistroClienteUI extends JDialog {
     public JButton getBtnGuardarCliente() { return btnGuardarCliente; }
     public JButton getBtnCancelar() { return btnCancelar; }
 
-    // --- GETTERS ETIQUETAS ERROR ---
     public JLabel getLblErrorNombre() { return lblErrorNombre; }
     public JLabel getLblErrorApellido() { return lblErrorApellido; }
     public JLabel getLblErrorDni() { return lblErrorDni; }
-    public JLabel getLblErrorTelefono() { return lblErrorTelefono; }
-    public JLabel getLblErrorEmail() { return lblErrorEmail; }
     public JLabel getLblErrorFecha() { return lblErrorFecha; }
-    public JLabel getLblErrorCalle() { return lblErrorCalle; }
-    public JLabel getLblErrorAltura() { return lblErrorAltura; }
-    public JLabel getLblErrorCiudad() { return lblErrorCiudad; }
 }
