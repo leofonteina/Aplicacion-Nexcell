@@ -33,6 +33,19 @@ public class GerenteUI extends JFrame {
     private JComboBox<String> cbDiaInicioP, cbMesInicioP, cbAnioInicioP;
     private JComboBox<String> cbDiaFinP, cbMesFinP, cbAnioFinP;
 
+    // Componentes para la busqueda de un vendedor o compras de un cliente
+    private JLabel lblInfoNombre;
+    private JLabel lblInfoApellido;
+    private JLabel lblInfoDni;
+    private JLabel lblInfoExtra; // Se adapta para ser "Usuario" o "Atendido por"
+
+    private JPopupMenu popupBusqueda;
+    private DefaultListModel<String> modeloListaBusqueda;
+    private JList<String> listaBusqueda;
+    private java.util.List<Object[]> datosActualesBusqueda;
+    private boolean ignorarEventosBusqueda = false;
+    private JComboBox<String> comboCriterioBusqueda;
+
     private JButton btnCerrarSesion;
 
     private static final int ALTO_FILA_TABLA = 35;
@@ -64,20 +77,58 @@ public class GerenteUI extends JFrame {
         JPanel panel = new JPanel(new BorderLayout(15, 15));
         panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
+        // Contenedor superior para apilar los elementos verticalmente
         JPanel panelSuperior = new JPanel(new BorderLayout(10, 10));
 
         JPanel panelBusqueda = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+
+        // Solo dejamos las 2 opciones solicitadas
+        comboCriterioBusqueda = new JComboBox<>(new String[]{"DNI Cliente", "Usuario Vendedor"});
+        comboCriterioBusqueda.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
         buscarVentaField = new JTextField(15);
         btnBuscarVenta = crearBotonEstilizado("Buscar");
-        panelBusqueda.add(new JLabel("ID o DNI:"));
+
+        // 4 JLabels informativos
+        lblInfoNombre = new JLabel("Nombre: -");
+        lblInfoApellido = new JLabel("Apellido: -");
+        lblInfoDni = new JLabel("DNI: -");
+        lblInfoExtra = new JLabel("Atendido por: -"); // Default porque Cliente es la opción 1
+
+        Font fontInfo = new Font("Segoe UI", Font.ITALIC, 13);
+        Color colorInfo = new Color(120, 120, 120);
+
+        lblInfoNombre.setFont(fontInfo); lblInfoNombre.setForeground(colorInfo);
+        lblInfoApellido.setFont(fontInfo); lblInfoApellido.setForeground(colorInfo);
+        lblInfoDni.setFont(fontInfo); lblInfoDni.setForeground(colorInfo);
+        lblInfoExtra.setFont(fontInfo); lblInfoExtra.setForeground(colorInfo);
+
+        // Si el gerente cambia el combo, se limpian los campos para no mezclar datos
+        comboCriterioBusqueda.addActionListener(e -> {
+            ignorarEventosBusqueda = true;
+            buscarVentaField.setText("");
+            restablecerLabelsInfo();
+            ignorarEventosBusqueda = false;
+        });
+
+        panelBusqueda.add(new JLabel("Filtrar por:"));
+        panelBusqueda.add(comboCriterioBusqueda);
         panelBusqueda.add(buscarVentaField);
         panelBusqueda.add(btnBuscarVenta);
+        panelBusqueda.add(Box.createHorizontalStrut(15));
+        panelBusqueda.add(lblInfoNombre);
+        panelBusqueda.add(Box.createHorizontalStrut(10));
+        panelBusqueda.add(lblInfoApellido);
+        panelBusqueda.add(Box.createHorizontalStrut(10));
+        panelBusqueda.add(lblInfoDni);
+        panelBusqueda.add(Box.createHorizontalStrut(10));
+        panelBusqueda.add(lblInfoExtra);
 
         cbDiaInicioV = new JComboBox<>(obtenerDias()); cbMesInicioV = new JComboBox<>(obtenerMeses()); cbAnioInicioV = new JComboBox<>(obtenerAnios());
         cbDiaFinV = new JComboBox<>(obtenerDias()); cbMesFinV = new JComboBox<>(obtenerMeses()); cbAnioFinV = new JComboBox<>(obtenerAnios());
         setearFechasPorDefecto(cbDiaInicioV, cbMesInicioV, cbAnioInicioV, cbDiaFinV, cbMesFinV, cbAnioFinV);
 
-        JPanel panelFiltros = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        JPanel panelFiltros = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         btnGenerarReporte = crearBotonEstilizado("Generar Reporte");
         btnLimpiarReporte = crearBotonEstilizado("Limpiar");
 
@@ -88,8 +139,9 @@ public class GerenteUI extends JFrame {
         panelFiltros.add(btnGenerarReporte);
         panelFiltros.add(btnLimpiarReporte);
 
-        panelSuperior.add(panelBusqueda, BorderLayout.WEST);
-        panelSuperior.add(panelFiltros, BorderLayout.EAST);
+        // Colocamos la búsqueda arriba (NORTH) y los filtros abajo (CENTER)
+        panelSuperior.add(panelBusqueda, BorderLayout.NORTH);
+        panelSuperior.add(panelFiltros, BorderLayout.CENTER);
 
         tablaReportesVentas = new JTable(new DefaultTableModel()) {
             @Override public boolean isCellEditable(int row, int column) { return false; }
@@ -250,6 +302,206 @@ public class GerenteUI extends JFrame {
         aF.setSelectedItem(String.valueOf(hoy.getYear()));
     }
 
+    public void alHacerDobleClicEnVenta(java.util.function.Consumer<Long> accion) {
+        tablaReportesVentas.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    Long id = getIdVentaSeleccionada();
+                    if (id != null) {
+                        accion.accept(id);
+                    }
+                }
+            }
+        });
+    }
+
+    public Long getIdVentaSeleccionada() {
+        int fila = tablaReportesVentas.getSelectedRow();
+        if (fila != -1) {
+            // Se obtiene el valor y se remueve el prefijo "V-" agregado en el controlador
+            String idStr = tablaReportesVentas.getValueAt(fila, 0).toString().replace("V-", "");
+            try {
+                return Long.parseLong(idStr);
+            } catch (NumberFormatException ex) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    public void mostrarDialogoDetalleVenta(modelo.Venta venta, java.util.function.Consumer<modelo.Venta> accionDescargarPdf) {
+        JDialog dialogo = new JDialog(this, "Detalle de Venta #" + venta.getId(), true);
+        dialogo.setSize(550, 450);
+        dialogo.setLocationRelativeTo(this);
+        dialogo.setLayout(new BorderLayout(15, 15));
+
+        JPanel panelInfo = new JPanel(new GridLayout(4, 1, 5, 5));
+        panelInfo.setBorder(BorderFactory.createEmptyBorder(15, 15, 5, 15));
+        panelInfo.add(new JLabel("Cliente: " + venta.getCliente().getNombre() + " " + venta.getCliente().getApellido() + " (DNI: " + venta.getCliente().getDni() + ")"));
+        panelInfo.add(new JLabel("Atendido por: " + venta.getVendedor().getUsername()));
+        panelInfo.add(new JLabel("Fecha de operación: " + venta.getFecha().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))));
+
+        dialogo.add(panelInfo, BorderLayout.NORTH);
+
+        String[] columnas = {"Producto", "Cantidad", "Subtotal"};
+        DefaultTableModel modDetalle = new DefaultTableModel(columnas, 0) {
+            @Override public boolean isCellEditable(int row, int col) { return false; }
+        };
+
+        for (modelo.DetalleVenta dv : venta.getDetalles()) {
+            modDetalle.addRow(new Object[]{
+                    dv.getProducto().getNombre(),
+                    dv.getCantidad() + " u.",
+                    String.format("$%.2f", dv.getSubtotal())
+            });
+        }
+
+        JTable tablaDetalles = new JTable(modDetalle);
+        tablaDetalles.setRowHeight(30);
+        JScrollPane scroll = new JScrollPane(tablaDetalles);
+        scroll.setBorder(BorderFactory.createEmptyBorder(0, 15, 0, 15));
+        dialogo.add(scroll, BorderLayout.CENTER);
+
+        JPanel panelInferior = new JPanel(new BorderLayout());
+        panelInferior.setBorder(BorderFactory.createEmptyBorder(10, 15, 15, 15));
+
+        JLabel lblTotal = new JLabel("TOTAL ABONADO: $" + String.format("%.2f", venta.getTotal()));
+        lblTotal.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        lblTotal.setForeground(new Color(40, 167, 69));
+
+        JButton btnPdf = new JButton("Descargar Comprobante PDF");
+        btnPdf.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnPdf.addActionListener(e -> accionDescargarPdf.accept(venta));
+
+        panelInferior.add(lblTotal, BorderLayout.WEST);
+        panelInferior.add(btnPdf, BorderLayout.EAST);
+        dialogo.add(panelInferior, BorderLayout.SOUTH);
+
+        dialogo.setVisible(true);
+    }
+
+    public void inicializarAutocompletadoDni(java.util.function.Function<String, java.util.List<Object[]>> buscador) {
+        popupBusqueda = new JPopupMenu();
+        popupBusqueda.setFocusable(false);
+
+        modeloListaBusqueda = new DefaultListModel<>();
+        listaBusqueda = new JList<>(modeloListaBusqueda);
+        listaBusqueda.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        listaBusqueda.setFixedCellHeight(25);
+        listaBusqueda.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        listaBusqueda.setFocusable(false);
+
+        JScrollPane scrollAutocompletado = new JScrollPane(listaBusqueda);
+        scrollAutocompletado.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+        popupBusqueda.add(scrollAutocompletado);
+
+        buscarVentaField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { actualizarResultados(); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { actualizarResultados(); }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { actualizarResultados(); }
+
+            private void actualizarResultados() {
+                if (ignorarEventosBusqueda) return;
+
+                SwingUtilities.invokeLater(() -> {
+                    String texto = buscarVentaField.getText().trim();
+                    if (texto.length() > 0) {
+                        datosActualesBusqueda = buscador.apply(texto);
+                        modeloListaBusqueda.clear();
+
+                        if (datosActualesBusqueda != null && !datosActualesBusqueda.isEmpty()) {
+                            boolean esCliente = comboCriterioBusqueda.getSelectedItem().equals("DNI Cliente");
+                            for (Object[] fila : datosActualesBusqueda) {
+                                if (esCliente) {
+                                    modeloListaBusqueda.addElement(" " + fila[0].toString() + " - " + fila[1].toString() + " " + fila[2].toString());
+                                } else {
+                                    modeloListaBusqueda.addElement(" " + fila[3].toString() + " - " + fila[0].toString());
+                                }
+                            }
+
+                            // Calcula la altura exacta según la cantidad de resultados ---
+                            int cantidadResultados = datosActualesBusqueda.size();
+                            int alturaFila = 25; // Altura fija de cada celda
+                            int alturaDinamica = Math.min(cantidadResultados * alturaFila + 6, 130); // Máximo de 130px de alto
+
+                            scrollAutocompletado.setPreferredSize(new Dimension(buscarVentaField.getWidth(), alturaDinamica));
+                            scrollAutocompletado.revalidate();
+
+                            if (!popupBusqueda.isVisible() && buscarVentaField.isShowing()) {
+                                popupBusqueda.show(buscarVentaField, 0, buscarVentaField.getHeight());
+                                buscarVentaField.requestFocusInWindow();
+                            }
+                        } else {
+                            popupBusqueda.setVisible(false);
+                            restablecerLabelsInfo();
+                        }
+                    } else {
+                        popupBusqueda.setVisible(false);
+                        restablecerLabelsInfo();
+                    }
+                });
+            }
+        });
+
+        listaBusqueda.addMouseMotionListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseMoved(java.awt.event.MouseEvent e) {
+                int index = listaBusqueda.locationToIndex(e.getPoint());
+                if (index >= 0 && datosActualesBusqueda != null && index < datosActualesBusqueda.size()) {
+                    listaBusqueda.setSelectedIndex(index);
+                    Object[] seleccionado = datosActualesBusqueda.get(index);
+
+                    lblInfoDni.setText("DNI: " + seleccionado[0].toString());
+                    lblInfoNombre.setText("Nombre: " + seleccionado[1].toString());
+                    lblInfoApellido.setText("Apellido: " + seleccionado[2].toString());
+
+                    if (comboCriterioBusqueda.getSelectedItem().equals("DNI Cliente")) {
+                        lblInfoExtra.setText("Atendido por: " + seleccionado[3].toString());
+                    } else {
+                        lblInfoExtra.setText("Usuario: " + seleccionado[3].toString());
+                    }
+                }
+            }
+        });
+
+        listaBusqueda.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (e.getClickCount() == 1) {
+                    int index = listaBusqueda.locationToIndex(e.getPoint());
+                    if (index >= 0 && datosActualesBusqueda != null) {
+                        Object[] seleccionado = datosActualesBusqueda.get(index);
+                        SwingUtilities.invokeLater(() -> {
+                            ignorarEventosBusqueda = true;
+                            if (comboCriterioBusqueda.getSelectedItem().equals("Usuario Vendedor")) {
+                                buscarVentaField.setText(seleccionado[3].toString());
+                            } else {
+                                buscarVentaField.setText(seleccionado[0].toString());
+                            }
+                            popupBusqueda.setVisible(false);
+                            btnBuscarVenta.doClick();
+                            ignorarEventosBusqueda = false;
+                        });
+                    }
+                }
+            }
+        });
+    }
+
+    private void restablecerLabelsInfo() {
+        lblInfoNombre.setText("Nombre: -");
+        lblInfoApellido.setText("Apellido: -");
+        lblInfoDni.setText("DNI: -");
+        if (comboCriterioBusqueda != null && comboCriterioBusqueda.getSelectedItem() != null) {
+            if (comboCriterioBusqueda.getSelectedItem().equals("DNI Cliente")) {
+                lblInfoExtra.setText("Atendido por: -");
+            } else {
+                lblInfoExtra.setText("Usuario: -");
+            }
+        }
+    }
+
     // Getters
     public JButton getBtnGenerarReporte() { return btnGenerarReporte; }
     public JButton getBtnLimpiarReporte() { return btnLimpiarReporte; }
@@ -289,4 +541,5 @@ public class GerenteUI extends JFrame {
     public JComboBox<String> getCbDiaFinP() { return cbDiaFinP; }
     public JComboBox<String> getCbMesFinP() { return cbMesFinP; }
     public JComboBox<String> getCbAnioFinP() { return cbAnioFinP; }
+    public JComboBox<String> getComboCriterioBusqueda() { return comboCriterioBusqueda; }
 }

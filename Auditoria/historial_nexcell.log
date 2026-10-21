@@ -137,7 +137,53 @@
 [21/10/2026 11:50:14] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
 [21/10/2026 11:50:24] [INFO] [SEGURIDAD] - El Vendedor 'pedro' cerró sesión.
 [21/10/2026 11:50:53] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
-[21/10/2026 12:11:56] [INFO] [SEGURIDAD] - El Vendedor 'pedro' cerró sesión.
-[21/10/2026 12:30:33] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
-[21/10/2026 12:31:01] [INFO] [SEGURIDAD] - El Vendedor 'pedro' cerró sesión.
-[21/10/2026 12:34:07] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[21/10/2026 12:44:48] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[21/10/2026 12:44:51] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos...
+[21/10/2026 12:45:05] [INFO] [SEGURIDAD] - El Gerente cerró sesión.
+[21/10/2026 12:45:08] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[21/10/2026 12:48:18] [INFO] [SEGURIDAD] - El Vendedor 'pedro' cerró sesión.
+[21/10/2026 12:48:21] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[21/10/2026 12:48:40] [INFO] [REPORTES] - El Gerente generó el reporte de rendimiento de vendedores desde 21/09/2026 hasta 21/10/2026
+[21/10/2026 12:49:22] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 21/05/2026 hasta 21/10/2026
+[21/10/2026 13:38:38] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[21/10/2026 13:38:41] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos...
+[21/10/2026 13:38:50] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 21/04/2026 hasta 21/10/2026
+[21/10/2026 13:44:02] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[21/10/2026 13:44:11] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 21/05/2026 hasta 21/10/2026
+[21/10/2026 14:09:44] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[21/10/2026 14:10:00] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 21/09/2026 hasta 21/10/2026
+[21/10/2026 14:22:22] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[21/10/2026 14:22:30] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 21/09/2026 hasta 21/10/2026
+[21/10/2026 14:25:12] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[21/10/2026 14:25:33] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 21/09/2026 hasta 21/10/2026
+[21/10/2026 14:25:43] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 21/05/2026 hasta 21/10/2026
+[21/10/2026 14:26:04] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 21/05/2026 hasta 21/10/2026
+[21/10/2026 15:30:16] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 21/05/2026 hasta 21/10/2026
+[21/10/2026 15:32:41] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 21/05/2025 hasta 21/10/2026
+[21/10/2026 15:50:37] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[21/10/2026 15:51:42] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 21/09/2026 hasta 21/10/2026
+[21/10/2026 15:51:47] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 21/05/2026 hasta 21/10/2026
+[21/10/2026 15:52:01] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 21/05/2026 hasta 21/10/2026
+[21/10/2026 15:52:23] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 21/05/2026 hasta 21/10/2026
+[21/10/2026 15:52:26] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 21/05/2026 hasta 21/10/2026
+[21/10/2026 15:56:51] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[21/10/2026 16:01:41] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[21/10/2026 16:01:56] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 21/05/2026 hasta 21/10/2026
+[21/10/2026 16:02:47] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 21/05/2026 hasta 21/10/2026
+[21/10/2026 16:03:19] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 21/05/2026 hasta 21/10/2026
+[21/10/2026 16:03:21] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 21/05/2026 hasta 21/10/2026
+[21/10/2026 16:03:27] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 21/05/2026 hasta 21/10/2026
+[21/10/2026 16:04:01] [INFO] [REPORTES] - El Gerente generó el reporte de rendimiento de vendedores desde 21/09/2026 hasta 21/10/2026
+[21/10/2026 16:04:09] [INFO] [REPORTES] - El Gerente generó el reporte de rendimiento de vendedores desde 21/05/2026 hasta 21/10/2026
+[21/10/2026 16:08:33] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[21/10/2026 16:09:14] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 21/09/2026 hasta 21/10/2026
+[21/10/2026 16:27:20] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[21/10/2026 16:28:59] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[21/10/2026 16:29:25] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 21/09/2026 hasta 21/10/2026
+[21/10/2026 16:30:08] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[21/10/2026 16:31:01] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[21/10/2026 16:32:26] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[21/10/2026 16:33:33] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[21/10/2026 16:34:27] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 21/09/2026 hasta 21/10/2026
+[21/10/2026 16:34:48] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[21/10/2026 16:35:10] [INFO] [REPORTES] - El Gerente generó el reporte de rendimiento de vendedores desde 21/05/2026 hasta 21/10/2026
