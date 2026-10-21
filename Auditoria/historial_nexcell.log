@@ -72,3 +72,53 @@
 [10/10/2026 22:21:24] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
 [10/10/2026 22:22:01] [INFO] [CLIENTES] - El Vendedor 'pedro' modificó la dirección del cliente DNI: 34567890
 [10/10/2026 22:22:11] [INFO] [SEGURIDAD] - El Vendedor 'pedro' cerró sesión.
+[19/10/2026 16:28:35] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[19/10/2026 16:29:16] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos...
+[19/10/2026 16:30:26] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[19/10/2026 16:30:36] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos...
+[19/10/2026 16:30:48] [INFO] [REPORTES] - El Gerente generó el reporte de rendimiento de vendedores desde 01/06/2026 hasta 01/10/2026
+[19/10/2026 16:34:50] [INFO] [SEGURIDAD] - El Gerente cerró sesión.
+[19/10/2026 16:34:58] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[19/10/2026 17:20:34] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[19/10/2026 17:44:00] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[19/10/2026 17:49:13] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[19/10/2026 17:53:22] [INFO] [SEGURIDAD] - El Vendedor 'pedro' cerró sesión.
+[19/10/2026 17:53:28] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[19/10/2026 17:53:41] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos...
+[19/10/2026 17:54:16] [INFO] [REPORTES] - El Gerente generó el reporte de rendimiento de vendedores desde 01/06/2026 hasta 01/10/2026
+[19/10/2026 17:54:27] [INFO] [REPORTES] - El Gerente generó el reporte de rendimiento de vendedores desde 01/01/2026 hasta 01/04/2026
+[19/10/2026 17:54:34] [INFO] [REPORTES] - El Gerente generó el reporte de rendimiento de vendedores desde 01/01/2026 hasta 01/05/2026
+[19/10/2026 17:54:53] [INFO] [REPORTES] - El Gerente generó el reporte de rendimiento de vendedores desde 01/01/2026 hasta 01/05/2026
+[19/10/2026 17:55:19] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 01/01/2026 hasta 01/05/2026
+[19/10/2026 17:55:45] [INFO] [SEGURIDAD] - El Gerente cerró sesión.
+[19/10/2026 17:55:51] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[19/10/2026 18:08:21] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[19/10/2026 18:09:08] [INFO] [SEGURIDAD] - El Vendedor 'pedro' cerró sesión.
+[19/10/2026 18:09:13] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[19/10/2026 18:10:15] [INFO] [REPORTES] - El Vendedor exportó datos a formato CSV.
+[19/10/2026 18:11:26] [INFO] [SEGURIDAD] - El Vendedor 'pedro' cerró sesión.
+[19/10/2026 18:11:34] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[19/10/2026 18:12:28] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos...
+[19/10/2026 18:13:18] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos...
+[19/10/2026 18:13:43] [INFO] [SEGURIDAD] - El Gerente cerró sesión.
+[19/10/2026 18:20:57] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[19/10/2026 18:27:10] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[19/10/2026 18:27:14] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos...
+[19/10/2026 18:27:19] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos...
+[19/10/2026 18:27:48] [INFO] [SEGURIDAD] - El Gerente cerró sesión.
+[19/10/2026 18:28:43] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[19/10/2026 18:28:53] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos...
+[19/10/2026 18:29:13] [INFO] [REPORTES] - El Gerente generó el reporte de rendimiento de vendedores desde 19/05/2026 hasta 19/10/2026
+[19/10/2026 18:33:14] [INFO] [SEGURIDAD] - El Gerente cerró sesión.
+[19/10/2026 18:33:54] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[19/10/2026 18:35:39] [ERROR] [VENTAS] - Fallo al registrar venta del Vendedor 'pedro'. Motivo: Error calling CallableStatement.getMoreResults [Data truncation: Out of range value for column 'p_total' at row 1] [com.mysql.cj.jdbc.CallableStatement: CALL procesar_venta_integral(5,'42111333',1.186819E+8,'[{"id": 3, "cantidad": 50, "precio": 2316100.0},{"id": 12, "cantidad": 2, "precio": 350000.0},{"id": 1, "cantidad": 1, "precio": 2176900.0}]')]
+[19/10/2026 18:35:46] [ERROR] [VENTAS] - Fallo al registrar venta del Vendedor 'pedro'. Motivo: Error calling CallableStatement.getMoreResults [Data truncation: Out of range value for column 'p_total' at row 1] [com.mysql.cj.jdbc.CallableStatement: CALL procesar_venta_integral(5,'42111333',1.186819E+8,'[{"id": 3, "cantidad": 50, "precio": 2316100.0},{"id": 12, "cantidad": 2, "precio": 350000.0},{"id": 1, "cantidad": 1, "precio": 2176900.0}]')]
+[19/10/2026 18:37:11] [INFO] [REPORTES] - El Vendedor exportó datos a formato CSV.
+[19/10/2026 18:37:54] [INFO] [SEGURIDAD] - El Vendedor 'pedro' cerró sesión.
+[19/10/2026 18:38:01] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[19/10/2026 18:38:14] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos...
+[19/10/2026 18:45:08] [INFO] [SEGURIDAD] - El Gerente cerró sesión.
+[19/10/2026 18:48:48] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[19/10/2026 18:50:38] [INFO] [SEGURIDAD] - El Vendedor 'pedro' cerró sesión.
+[19/10/2026 18:51:04] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[19/10/2026 18:52:33] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.

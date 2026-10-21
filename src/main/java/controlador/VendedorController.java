@@ -113,8 +113,92 @@ public class VendedorController {
     }
 
     // =======================================================
+    private void generarReporte() {
+        String strInicio = vistaPrincipal.getCbDiaInicio().getSelectedItem() + "/" +
+                vistaPrincipal.getCbMesInicio().getSelectedItem() + "/" +
+                vistaPrincipal.getCbAnioInicio().getSelectedItem();
+
+        String strFin = vistaPrincipal.getCbDiaFin().getSelectedItem() + "/" +
+                vistaPrincipal.getCbMesFin().getSelectedItem() + "/" +
+                vistaPrincipal.getCbAnioFin().getSelectedItem();
+
+        try {
+            java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+            java.time.LocalDate fechaInicio = java.time.LocalDate.parse(strInicio, fmt);
+            java.time.LocalDate fechaFin = java.time.LocalDate.parse(strFin, fmt);
+
+            int tipoReporte = vistaPrincipal.getComboTipoReporte().getSelectedIndex();
+
+            if (tipoReporte == 0) {
+                fechaFin = fechaInicio; // Si es resumen diario, inicio y fin son el mismo día
+            }
+
+            if (fechaInicio.isAfter(fechaFin)) {
+                JOptionPane.showMessageDialog(vistaPrincipal, "La fecha de inicio no puede ser mayor a la fecha de fin.", "Fechas Inválidas", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            // --- NUEVA LÓGICA DE VALIDACIÓN ---
+            // Solo validamos que el rango (distancia entre inicio y fin) no supere los 6 meses
+            // Ya no importa qué tan antigua sea la fecha de inicio.
+            if (fechaInicio.plusMonths(6).isBefore(fechaFin)) {
+                JOptionPane.showMessageDialog(vistaPrincipal, "El rango seleccionado supera los 6 meses. Por favor, seleccione un periodo más corto para no sobrecargar el sistema.", "Rango Excedido", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            java.time.LocalDateTime inicioLDT = fechaInicio.atStartOfDay();
+            java.time.LocalDateTime finLDT = fechaFin.atTime(23, 59, 59);
+
+            DefaultTableModel modeloTabla = (DefaultTableModel) vistaPrincipal.getTablaReportes().getModel();
+            modeloTabla.setRowCount(0);
+
+            if (tipoReporte == 0) {
+                reporteResumenDiario(inicioLDT, finLDT);
+            } else if (tipoReporte == 1) {
+                reporteTopProductos(inicioLDT, finLDT);
+            } else if (tipoReporte == 2) {
+                String categoriaSeleccionada = vistaPrincipal.getComboCategoriasReporte().getSelectedItem().toString();
+                reporteRendimientoCategoria(inicioLDT, finLDT, categoriaSeleccionada);
+            } else if (tipoReporte == 3) {
+                reporteMejoresClientes(inicioLDT, finLDT);
+            }
+
+        } catch (java.time.format.DateTimeParseException ex) {
+            JOptionPane.showMessageDialog(vistaPrincipal, "La fecha seleccionada no existe en el calendario.", "Fecha Inválida", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(vistaPrincipal, "Ocurrió un error al generar el reporte: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void reporteRendimientoCategoria(java.time.LocalDateTime inicio, java.time.LocalDateTime fin, String categoria) {
+        StoredProcedureQuery query = em.createStoredProcedureQuery("reporte_rendimiento_categoria");
+        query.registerStoredProcedureParameter("p_vendedor_id", Long.class, ParameterMode.IN);
+        query.registerStoredProcedureParameter("p_categoria", String.class, ParameterMode.IN);
+        query.registerStoredProcedureParameter("p_ini", java.time.LocalDateTime.class, ParameterMode.IN);
+        query.registerStoredProcedureParameter("p_fin", java.time.LocalDateTime.class, ParameterMode.IN);
+
+        query.setParameter("p_vendedor_id", this.vendedorLogueado.getId());
+        query.setParameter("p_categoria", categoria);
+        query.setParameter("p_ini", inicio);
+        query.setParameter("p_fin", fin);
+
+        List<Object[]> resultados = query.getResultList();
+        DefaultTableModel modelo = (DefaultTableModel) vistaPrincipal.getTablaReportes().getModel();
+        modelo.setColumnIdentifiers(new String[]{"Producto (" + categoria + ")", "Unidades Vendidas", "Ingresos Generados"});
+        modelo.setRowCount(0);
+
+        double granTotal = 0;
+        for (Object[] fila : resultados) {
+            double ingresos = ((Number) fila[2]).doubleValue();
+            granTotal += ingresos;
+            modelo.addRow(new Object[]{ fila[0], fila[1], String.format("$%.2f", ingresos) });
+        }
+        vistaPrincipal.getLblTotalReporte().setText(String.format("Total en Categoría: $%.2f", granTotal));
+    }
     // EXPORTACIÓN EXCEL / CSV
     // =======================================================
+
     private void exportarTablaACSV(JTable tabla) {
         if (tabla.getRowCount() == 0) {
             JOptionPane.showMessageDialog(vistaPrincipal, "No hay datos en la tabla para exportar.", "Aviso", JOptionPane.WARNING_MESSAGE);
@@ -151,66 +235,9 @@ public class VendedorController {
             }
         }
     }
-
     // =======================================================
     // REPORTES ESTADÍSTICOS
     // =======================================================
-    private void generarReporte() {
-        String strInicio = vistaPrincipal.getCbDiaInicio().getSelectedItem() + "/" +
-            vistaPrincipal.getCbMesInicio().getSelectedItem() + "/" +
-            vistaPrincipal.getCbAnioInicio().getSelectedItem();
-
-        String strFin = vistaPrincipal.getCbDiaFin().getSelectedItem() + "/" +
-            vistaPrincipal.getCbMesFin().getSelectedItem() + "/" +
-            vistaPrincipal.getCbAnioFin().getSelectedItem();
-
-        try {
-            java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy");
-
-            java.time.LocalDate fechaInicio = java.time.LocalDate.parse(strInicio, fmt);
-            java.time.LocalDate fechaFin = java.time.LocalDate.parse(strFin, fmt);
-            java.time.LocalDate hoy = java.time.LocalDate.now();
-
-            int tipoReporte = vistaPrincipal.getComboTipoReporte().getSelectedIndex();
-
-            if (tipoReporte == 0) {
-                fechaFin = fechaInicio;
-            }
-
-            if (fechaInicio.isAfter(fechaFin)) {
-                JOptionPane.showMessageDialog(vistaPrincipal, "La fecha de inicio no puede ser mayor a la fecha de fin.", "Fechas Inválidas", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            java.time.LocalDate limiteAntiguedad = hoy.minusMonths(6);
-            if (fechaInicio.isBefore(limiteAntiguedad)) {
-                JOptionPane.showMessageDialog(vistaPrincipal, "Por políticas del sistema, solo puedes generar reportes con un máximo de 6 meses de antigüedad.", "Límite Excedido", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            java.time.LocalDateTime inicioLDT = fechaInicio.atStartOfDay();
-            java.time.LocalDateTime finLDT = fechaFin.atTime(23, 59, 59);
-
-            DefaultTableModel modeloTabla = (DefaultTableModel) vistaPrincipal.getTablaReportes().getModel();
-            modeloTabla.setRowCount(0);
-
-            if (tipoReporte == 0) {
-                reporteResumenDiario(inicioLDT, finLDT);
-            } else if (tipoReporte == 1) {
-                reporteTopProductos(inicioLDT, finLDT);
-            } else if (tipoReporte == 2) {
-                String categoriaSeleccionada = vistaPrincipal.getComboCategoriasReporte().getSelectedItem().toString();
-                reporteRendimientoCategoria(inicioLDT, finLDT, categoriaSeleccionada);
-            } else if (tipoReporte == 3) {
-                reporteMejoresClientes(inicioLDT, finLDT);
-            }
-
-        } catch (java.time.format.DateTimeParseException ex) {
-            JOptionPane.showMessageDialog(vistaPrincipal, "La fecha seleccionada no existe en el calendario.", "Fecha Inválida", JOptionPane.ERROR_MESSAGE);
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(vistaPrincipal, "Ocurrió un error al generar el reporte: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
 
     private void reporteResumenDiario(java.time.LocalDateTime inicio, java.time.LocalDateTime fin) {
         StoredProcedureQuery query = em.createStoredProcedureQuery("reporte_resumen_diario");
@@ -268,32 +295,6 @@ public class VendedorController {
             modelo.addRow(new Object[]{producto, categoria, unidades + " u.", String.format("$%.2f", total)});
         }
         vistaPrincipal.getLblTotalReporte().setText(String.format("Ingreso por estos productos: $%.2f", granTotal));
-    }
-
-    private void reporteRendimientoCategoria(java.time.LocalDateTime inicio, java.time.LocalDateTime fin, String categoria) {
-        StoredProcedureQuery query = em.createStoredProcedureQuery("reporte_rendimiento_categoria");
-        query.registerStoredProcedureParameter("p_vendedor_id", Long.class, ParameterMode.IN);
-        query.registerStoredProcedureParameter("p_categoria", String.class, ParameterMode.IN);
-        query.registerStoredProcedureParameter("p_ini", java.time.LocalDateTime.class, ParameterMode.IN);
-        query.registerStoredProcedureParameter("p_fin", java.time.LocalDateTime.class, ParameterMode.IN);
-
-        query.setParameter("p_vendedor_id", this.vendedorLogueado.getId());
-        query.setParameter("p_categoria", categoria);
-        query.setParameter("p_ini", inicio);
-        query.setParameter("p_fin", fin);
-
-        List<Object[]> resultados = query.getResultList();
-        DefaultTableModel modelo = (DefaultTableModel) vistaPrincipal.getTablaReportes().getModel();
-        modelo.setColumnIdentifiers(new String[]{"Producto (" + categoria + ")", "Unidades Vendidas", "Ingresos Generados"});
-        modelo.setRowCount(0);
-
-        double granTotal = 0;
-        for (Object[] fila : resultados) {
-            double ingresos = ((Number) fila[2]).doubleValue();
-            granTotal += ingresos;
-            modelo.addRow(new Object[]{ fila[0], fila[1], String.format("$%.2f", ingresos) });
-        }
-        vistaPrincipal.getLblTotalReporte().setText(String.format("Total en Categoría: $%.2f", granTotal));
     }
 
     private void reporteMejoresClientes(java.time.LocalDateTime inicio, java.time.LocalDateTime fin) {
