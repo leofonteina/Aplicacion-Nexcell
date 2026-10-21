@@ -14,33 +14,29 @@ public class RegistroProductoUI extends JDialog {
     private JComboBox<String> categoriaBox;
     private JComboBox<String> marcaBox;
 
-    // Componentes para la imagen
-    private JTextField rutaImagenField;
-    private JButton btnSeleccionarImagen;
     private JButton btnCancelar;
-
     private JButton btnGuardarProducto;
 
     public RegistroProductoUI(JFrame parent) {
         super(parent, "Registrar Nuevo Producto", true);
-        setSize(450, 450);
-        setLocationRelativeTo(parent);
+        setMinimumSize(new Dimension(420, 380));
         setResizable(false);
 
         JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 10, 5, 10);
+        gbc.insets = new Insets(6, 10, 6, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.anchor = GridBagConstraints.WEST;
 
         // Fila 0: Nombre
         gbc.gridx = 0; gbc.gridy = 0; panel.add(new JLabel("Nombre:"), gbc);
-        gbc.gridx = 1; nombreField = new JTextField(15); panel.add(nombreField, gbc);
+        gbc.gridx = 1; nombreField = new JTextField(18); panel.add(nombreField, gbc);
 
         // Fila 1: Descripción
         gbc.gridx = 0; gbc.gridy = 1; panel.add(new JLabel("Descripción:"), gbc);
         gbc.gridx = 1;
-        descripcionArea = new JTextArea(3, 15);
+        descripcionArea = new JTextArea(3, 18);
         descripcionArea.setLineWrap(true);
         descripcionArea.setWrapStyleWord(true);
         JScrollPane scrollDesc = new JScrollPane(descripcionArea);
@@ -49,7 +45,7 @@ public class RegistroProductoUI extends JDialog {
         // Fila 2: Precio y Descuento
         gbc.gridx = 0; gbc.gridy = 2; panel.add(new JLabel("Precio / Desc. (%):"), gbc);
         gbc.gridx = 1;
-        JPanel panelPrecios = new JPanel(new GridLayout(1, 2, 5, 0));
+        JPanel panelPrecios = new JPanel(new GridLayout(1, 2, 8, 0));
         precioField = new JTextField();
         descuentoField = new JTextField("0");
         panelPrecios.add(precioField);
@@ -58,44 +54,36 @@ public class RegistroProductoUI extends JDialog {
 
         // Fila 3: Stock
         gbc.gridx = 0; gbc.gridy = 3; panel.add(new JLabel("Stock:"), gbc);
-        gbc.gridx = 1; stockField = new JTextField(15); panel.add(stockField, gbc);
+        gbc.gridx = 1; stockField = new JTextField(18); panel.add(stockField, gbc);
 
         // Fila 4: Categoría
         gbc.gridx = 0; gbc.gridy = 4; panel.add(new JLabel("Categoría:"), gbc);
         gbc.gridx = 1;
-        String[] categorias = {"Seleccionar...", "Smartphone", "Accesorio", "SmartWatch", "Parlante", "Auricular"};
+        String[] categorias = {"Smartphone", "Accesorio", "SmartWatch", "Parlante", "Auricular"};
         categoriaBox = new JComboBox<>(categorias);
         panel.add(categoriaBox, gbc);
 
         // Fila 5: Marca
         gbc.gridx = 0; gbc.gridy = 5; panel.add(new JLabel("Marca:"), gbc);
         gbc.gridx = 1;
-        String[] marcas = {"Seleccionar...", "Samsung", "Motorola", "Apple", "Xiaomi", "JBL"};
+        String[] marcas = {"Samsung", "Motorola", "Apple", "Xiaomi", "JBL"};
         marcaBox = new JComboBox<>(marcas);
         panel.add(marcaBox, gbc);
 
-        // Fila 6: Imagen
-        gbc.gridx = 0; gbc.gridy = 6; panel.add(new JLabel("Imagen:"), gbc);
-        gbc.gridx = 1;
-        JPanel panelImagen = new JPanel(new BorderLayout(5, 0));
-        rutaImagenField = new JTextField();
-        rutaImagenField.setEditable(false);
-        btnSeleccionarImagen = new JButton("Buscar...");
-        panelImagen.add(rutaImagenField, BorderLayout.CENTER);
-        panelImagen.add(btnSeleccionarImagen, BorderLayout.EAST);
-        panel.add(panelImagen, gbc);
-
-        // Fila 7: Botones
-        gbc.gridy = 7;
+        // Fila 6: Botones
+        gbc.gridy = 6;
         gbc.gridx = 0;
-        gbc.gridwidth = 2; // Hace que el panel ocupe las dos columnas
-        gbc.insets = new Insets(15, 10, 10, 10);
+        gbc.gridwidth = 2;
+        gbc.insets = new Insets(20, 10, 5, 10);
 
         JPanel panelBotones = new JPanel();
         panelBotones.setLayout(new BoxLayout(panelBotones, BoxLayout.X_AXIS));
 
         btnCancelar = new JButton("Cancelar");
+        btnCancelar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
         btnGuardarProducto = new JButton("Guardar Producto");
+        btnGuardarProducto.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
         panelBotones.add(btnCancelar);
         panelBotones.add(Box.createHorizontalGlue());
@@ -104,9 +92,11 @@ public class RegistroProductoUI extends JDialog {
         panel.add(panelBotones, gbc);
 
         add(panel);
+        getRootPane().setDefaultButton(btnGuardarProducto);
+        pack(); // Ajusta el tamaño automáticamente sin cortar componentes
+        setLocationRelativeTo(parent);
     }
 
-    // --- GETTERS ---
     public JTextField getNombreField() { return nombreField; }
     public JTextArea getDescripcionArea() { return descripcionArea; }
     public JTextField getPrecioField() { return precioField; }
@@ -114,11 +104,6 @@ public class RegistroProductoUI extends JDialog {
     public JTextField getStockField() { return stockField; }
     public JComboBox<String> getCategoriaBox() { return categoriaBox; }
     public JComboBox<String> getMarcaBox() { return marcaBox; }
-
-    // Getters de la imagen
-    public JTextField getRutaImagenField() { return rutaImagenField; }
-    public JButton getBtnSeleccionarImagen() { return btnSeleccionarImagen; }
-
     public JButton getBtnGuardarProducto() { return btnGuardarProducto; }
     public JButton getBtnCancelar() { return btnCancelar; }
 }

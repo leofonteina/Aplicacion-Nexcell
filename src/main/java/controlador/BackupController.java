@@ -21,16 +21,12 @@ public class BackupController {
     private EntityManager em;
     private ScheduledExecutorService planificador;
 
-    // ==============================================================
-    // CONFIGURACIÓN DE BASE DE DATOS (COMPLETA ESTOS 3 DATOS)
-    // ==============================================================
     private final String DB_USER = "root";
-    private final String DB_PASS = "MessiElMasMejor123"; // Aca pones tu contraseña de MYSQLWorkbench
+    private final String DB_PASS = "MessiElMasMejor123";
     private final String DB_NAME = "nexcell_db";
 
-    private final String CMD_MYSQLDUMP = "C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysqldump.exe"; // Cambiar dependiendo de la direccion de tu SGBD
+    private final String CMD_MYSQLDUMP = "C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysqldump.exe";
     private final String CMD_MYSQL = "C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysql.exe";
-    // ==============================================================
 
     public BackupController(BackupUI vista, EntityManager em) {
         this.vista = vista;
@@ -47,7 +43,6 @@ public class BackupController {
         String rutaDestino = vista.seleccionarDestinoGuardar(nombreSugerido);
 
         if (rutaDestino != null) {
-            // --- NUEVO: REGISTRO DE LOG ---
             utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "BACKUP",
                 "Se inició la generación de un backup manual.");
             ejecutarBackup(rutaDestino, true);
@@ -73,7 +68,6 @@ public class BackupController {
             String carpetaDestino = "C:\\backups_nexcell";
             new java.io.File(carpetaDestino).mkdirs();
 
-            // 1. Crear el Script de PowerShell (.ps1) con lógica de Base de Datos y Correo
             String rutaPs1 = carpetaDestino + "\\script_backup_nexcell.ps1";
             java.io.FileWriter writerPs = new java.io.FileWriter(rutaPs1);
 
@@ -81,16 +75,14 @@ public class BackupController {
             writerPs.write("$carpeta = 'C:\\backups_nexcell'\n");
             writerPs.write("$archivo = \"$carpeta\\backup_auto_$fecha.sql\"\n\n");
 
-            // Ejecuta el Backup
             writerPs.write(String.format("& \"%s\" -h 127.0.0.1 -P 3307 -u %s --password=\"%s\" %s -r $archivo\n\n",
                 CMD_MYSQLDUMP, DB_USER, DB_PASS, DB_NAME));
 
-            // Configuración del Correo SMTP
             writerPs.write("$SmtpServer = 'smtp.gmail.com'\n");
             writerPs.write("$SmtpPort = 587\n");
-            writerPs.write("$Username = 'agustin552689@gmail.com' # Correo del usuario\n");
-            writerPs.write("$Password = 'clewkexbrypxmldd' # Contraseña generada por google\n");
-            writerPs.write("$Destino = 'agusagomez19@gmail.com' # correo del gerente\n\n");
+            writerPs.write("$Username = 'agustin552689@gmail.com'\n");
+            writerPs.write("$Password = 'clewkexbrypxmldd'\n");
+            writerPs.write("$Destino = 'agusagomez19@gmail.com'\n\n");
 
             writerPs.write("$Message = New-Object System.Net.Mail.MailMessage\n");
             writerPs.write("$Message.From = $Username\n");
@@ -99,7 +91,6 @@ public class BackupController {
             writerPs.write("$SMTPClient.EnableSsl = $true\n");
             writerPs.write("$SMTPClient.Credentials = New-Object System.Net.NetworkCredential($Username, $Password)\n\n");
 
-            // Lógica de Notificación Inteligente
             writerPs.write("if (Test-Path $archivo) {\n");
             writerPs.write("    $Message.Subject = \"Nexcell - Backup Exitoso ($fecha)\"\n");
             writerPs.write("    $Message.Body = \"El respaldo se realizo correctamente. Se adjunta el archivo de seguridad SQL.\"\n");
@@ -114,7 +105,6 @@ public class BackupController {
             writerPs.write("}\n");
             writerPs.close();
 
-            // 2. Crear el XML de configuración para el Sistema Operativo
             String rutaXml = carpetaDestino + "\\tarea_backup.xml";
             java.io.FileWriter writerXml = new java.io.FileWriter(rutaXml);
             String startBoundary = String.format("%04d-%02d-%02dT%02d:%02d:00", anio, mes, dia, hora, minutos);
@@ -124,33 +114,28 @@ public class BackupController {
             writerXml.write("  <Settings>\n    <StartWhenAvailable>true</StartWhenAvailable>\n    <WakeToRun>true</WakeToRun>\n  </Settings>\n");
             writerXml.write("  <Actions>\n    <Exec>\n");
             writerXml.write("      <Command>powershell.exe</Command>\n");
-            // Ejecuta PowerShell de forma totalmente invisible para el usuario
             writerXml.write("      <Arguments>-ExecutionPolicy Bypass -WindowStyle Hidden -File \"" + rutaPs1 + "\"</Arguments>\n");
             writerXml.write("    </Exec>\n  </Actions>\n");
             writerXml.write("</Task>\n");
             writerXml.close();
 
-            // 3. Registrar la tarea en Windows
             String comandoSchtasks = String.format("schtasks /create /tn \"Nexcell_Backup_Auto\" /xml \"%s\" /f", rutaXml);
             Process proceso = Runtime.getRuntime().exec(comandoSchtasks);
             int exitCode = proceso.waitFor();
 
             if (exitCode == 0) {
                 String fechaVisual = String.format("%02d/%02d/%04d %02d:%02d", dia, mes, anio, hora, minutos);
-                // --- NUEVO: REGISTRO DE LOG ---
                 utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "BACKUP",
                     "El Administrador programó un backup automático para la fecha: " + fechaVisual);
                 vista.mostrarMensaje("Backup Empresarial Configurado: " + fechaVisual +
                     "\n\nSe realizará la copia local y se enviará por correo automáticamente al finalizar.", "Éxito", 1);
             } else {
-                // --- NUEVO: REGISTRO DE LOG ---
                 utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ERROR, "BACKUP",
                     "Fallo al programar backup en Windows. Posible falta de permisos de Administrador.");
                 vista.mostrarMensaje("Windows rechazó la orden. Ejecute su IDE como Administrador.", "Error de Permisos", 0);
             }
 
         } catch (Exception ex) {
-            // --- NUEVO: REGISTRO DE LOG ---
             utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ERROR, "BACKUP",
                 "Error crítico al intentar programar backup: " + ex.getMessage());
             vista.mostrarMensaje("Error crítico: " + ex.getMessage(), "Error", 0);
@@ -160,20 +145,15 @@ public class BackupController {
 
     private void ejecutarBackup(String ruta, boolean mostrarMensaje) {
         try {
-            // Usamos una lista para evitar mandar espacios vacíos si no hay contraseña
             java.util.List<String> comando = new java.util.ArrayList<>();
             comando.add(CMD_MYSQLDUMP);
-
-            // Forzamos la conexión por TCP/IP para evitar el error 2059 ---
             comando.add("-h");
             comando.add("127.0.0.1");
             comando.add("-P");
-            comando.add("3307"); // Aca pones tu puerto en concreto
-
+            comando.add("3307");
             comando.add("-u");
             comando.add(DB_USER);
 
-            // Forma más segura de pasar la contraseña
             if (!DB_PASS.isEmpty()) {
                 comando.add("--password=" + DB_PASS);
             }
@@ -183,34 +163,31 @@ public class BackupController {
             comando.add(ruta);
 
             ProcessBuilder pb = new ProcessBuilder(comando);
-            pb.redirectErrorStream(true); // Une los errores con la salida normal para poder leerlos
+            pb.redirectErrorStream(true);
             Process proceso = pb.start();
 
-            // LECTOR: Captura exactamente qué está diciendo MySQL por detrás
-            java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(proceso.getInputStream()));
-            String linea;
+            // CORRECCIÓN: Cierre automático del flujo con try-with-resources para prevenir fugas de memoria
             StringBuilder errorReal = new StringBuilder();
-            while ((linea = reader.readLine()) != null) {
-                errorReal.append(linea).append("\n");
-                System.out.println("MySQL dice: " + linea); // También lo imprime en la consola de tu IDE
+            try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(proceso.getInputStream()))) {
+                String linea;
+                while ((linea = reader.readLine()) != null) {
+                    errorReal.append(linea).append("\n");
+                    System.out.println("MySQL dice: " + linea);
+                }
             }
 
             int exitCode = proceso.waitFor();
 
             if (exitCode == 0) {
-                // --- NUEVO: REGISTRO DE LOG ---
                 utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "BACKUP",
                     "Backup manual generado con éxito en: " + ruta);
                 if (mostrarMensaje) vista.mostrarMensaje("Backup completado y guardado en:\n" + ruta, "Éxito", 1);
             } else {
-                // Ahora la ventanita nos va a mostrar el error exacto
-                // --- NUEVO: REGISTRO DE LOG ---
                 utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ERROR, "BACKUP",
                     "MySQL rechazó el backup manual. Detalle: " + errorReal.toString());
                 if (mostrarMensaje) vista.mostrarMensaje("MySQL rechazó la orden. Detalle:\n" + errorReal.toString(), "Error de MySQL", 0);
             }
         } catch (Exception e) {
-            // --- NUEVO: REGISTRO DE LOG ---
             utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ERROR, "BACKUP",
                 "Error de sistema al ejecutar mysqldump: " + e.getMessage());
             e.printStackTrace();
@@ -219,24 +196,19 @@ public class BackupController {
     }
 
     private void iniciarRestauracionSegura() {
-        // 0 = YES_OPTION en JOptionPane
         if (vista.pedirConfirmacionRestauracion() != 0) return;
 
-        // Validar doble seguridad
         String[] credenciales = vista.pedirDobleAutorizacion();
 
         if (credenciales == null || !validarCredenciales(credenciales[0], credenciales[1], credenciales[2], credenciales[3])) {
-            // --- NUEVO: REGISTRO DE LOG ---
             utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ALERTA, "SEGURIDAD",
                 "Intento fallido de restauración de base de datos. Credenciales de doble factor incorrectas.");
             vista.mostrarMensaje("Autorización denegada. Credenciales incorrectas o insuficientes.", "Acceso Denegado", 0);
             return;
         }
 
-        // Si es válido, pedir archivo y restaurar
         String rutaArchivo = vista.seleccionarArchivoAbrir();
         if (rutaArchivo != null) {
-            // --- NUEVO: REGISTRO DE LOG ---
             utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ALERTA, "BACKUP",
                 "Se inició una restauración de base de datos desde el archivo: " + rutaArchivo);
             ejecutarRestore(rutaArchivo);
@@ -254,23 +226,17 @@ public class BackupController {
         return adminValido && gerenteValido;
     }
 
-    // Método que permite la ejecución del Restore de la BD
     private void ejecutarRestore(String ruta) {
         try {
-            // Usamos la misma estructura exacta que te funcionó en el backup
             java.util.List<String> comando = new java.util.ArrayList<>();
             comando.add(CMD_MYSQL);
-
-            // Forzamos la conexión por TCP/IP usando TU puerto
             comando.add("-h");
             comando.add("127.0.0.1");
             comando.add("-P");
-            comando.add("3307"); // EL PUERTO CLAVE
-
+            comando.add("3307");
             comando.add("-u");
             comando.add(DB_USER);
 
-            // Forma más segura de pasar la contraseña, igual que en el backup
             if (!DB_PASS.isEmpty()) {
                 comando.add("--password=" + DB_PASS);
             }
@@ -278,39 +244,35 @@ public class BackupController {
             comando.add(DB_NAME);
 
             ProcessBuilder pb = new ProcessBuilder(comando);
-
-            // LA DIFERENCIA: En vez de "-r", hacemos que Java lea el archivo y se lo tire a MySQL
             pb.redirectInput(new java.io.File(ruta));
             pb.redirectErrorStream(true);
 
             Process proceso = pb.start();
 
-            // LECTOR
-            java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(proceso.getInputStream()));
-            String linea;
+            // CORRECCIÓN: Cierre automático del flujo con try-with-resources para prevenir fugas de memoria
             StringBuilder errorReal = new StringBuilder();
-            while ((linea = reader.readLine()) != null) {
-                if (!linea.contains("Using a password on the command line interface can be insecure")) {
-                    errorReal.append(linea).append("\n");
+            try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(proceso.getInputStream()))) {
+                String linea;
+                while ((linea = reader.readLine()) != null) {
+                    if (!linea.contains("Using a password on the command line interface can be insecure")) {
+                        errorReal.append(linea).append("\n");
+                    }
+                    System.out.println("MySQL Restore dice: " + linea);
                 }
-                System.out.println("MySQL Restore dice: " + linea);
             }
 
             int exitCode = proceso.waitFor();
 
             if (exitCode == 0) {
-                // --- NUEVO: REGISTRO DE LOG ---
                 utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "BACKUP",
                     "Base de datos restaurada correctamente desde el archivo: " + ruta);
                 vista.mostrarMensaje("Base de datos restaurada correctamente.\nSe recomienda reiniciar el sistema para refrescar las tablas.", "Éxito", 1);
             } else {
-                // --- NUEVO: REGISTRO DE LOG ---
                 utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ERROR, "BACKUP",
                     "Error al restaurar base de datos. Detalle: " + errorReal.toString());
                 vista.mostrarMensaje("MySQL rechazó la orden. Detalle:\n" + errorReal.toString(), "Error de MySQL", 0);
             }
         } catch (Exception e) {
-            // --- NUEVO: REGISTRO DE LOG ---
             utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ERROR, "BACKUP",
                 "Error crítico al intentar restaurar base de datos: " + e.getMessage());
             e.printStackTrace();

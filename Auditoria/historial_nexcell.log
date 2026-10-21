@@ -122,3 +122,15 @@
 [19/10/2026 18:50:38] [INFO] [SEGURIDAD] - El Vendedor 'pedro' cerró sesión.
 [19/10/2026 18:51:04] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
 [19/10/2026 18:52:33] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[21/10/2026 10:55:33] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[21/10/2026 10:55:48] [INFO] [VENTAS] - El Vendedor 'pedro' registró exitosamente una venta por $2106000.0 al DNI: 36987123
+[21/10/2026 10:56:10] [INFO] [VENTAS] - El Vendedor 'pedro' registró exitosamente una venta por $4.08E7 al DNI: 36987123
+[21/10/2026 10:56:13] [INFO] [SEGURIDAD] - El Vendedor 'pedro' cerró sesión.
+[21/10/2026 11:28:16] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[21/10/2026 11:36:46] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[21/10/2026 11:37:03] [INFO] [SEGURIDAD] - El Vendedor 'pedro' cerró sesión.
+[21/10/2026 11:37:07] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[21/10/2026 11:37:08] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 21/09/2026 hasta 21/10/2026
+[21/10/2026 11:37:11] [INFO] [REPORTES] - El Gerente generó el reporte de rendimiento de vendedores desde 21/09/2026 hasta 21/10/2026
+[21/10/2026 11:37:21] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos...
+[21/10/2026 11:37:24] [INFO] [SEGURIDAD] - El Gerente cerró sesión.

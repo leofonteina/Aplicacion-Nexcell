@@ -51,6 +51,7 @@ public class LoginUI extends JFrame {
         loginButton = new JButton("Ingresar al Sistema");
         loginButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
         loginButton.setPreferredSize(new Dimension(200, 40));
+        loginButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
         JPanel panelBoton = new JPanel(new FlowLayout(FlowLayout.CENTER));
         panelBoton.setOpaque(false);
@@ -61,6 +62,9 @@ public class LoginUI extends JFrame {
 
         getContentPane().setBackground(new Color(10, 25, 47));
         add(panelPrincipal);
+
+        // MEJORA UX: Permite iniciar sesión presionando la tecla ENTER en cualquier campo
+        getRootPane().setDefaultButton(loginButton);
     }
 
     public JTextField getUserField() { return userField; }

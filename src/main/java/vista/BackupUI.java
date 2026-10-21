@@ -5,8 +5,9 @@ import javax.swing.border.TitledBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.io.File;
+import java.time.LocalDateTime;
 
-public class BackupUI extends JFrame {
+public class BackupUI extends JDialog {
 
     private JButton btnGenerarBackup;
     private JButton btnRestaurar;
@@ -19,19 +20,28 @@ public class BackupUI extends JFrame {
     private JComboBox<Integer> cbMinutos;
 
     public BackupUI() {
-        setTitle("Gestión de Respaldo y Restauración - Nexcell");
-        setSize(500, 350);
-        setLocationRelativeTo(null);
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setLayout(new BorderLayout(10, 10));
+        this(null);
+    }
+
+    public BackupUI(JFrame parent) {
+        super(parent, "Gestión de Respaldo y Restauración - Nexcell", true);
+        setMinimumSize(new Dimension(520, 360));
+        setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        setResizable(false);
+
+        JPanel panelContenedor = new JPanel(new BorderLayout(15, 15));
+        panelContenedor.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
         // Panel Superior: Botones Manuales
-        JPanel panelManual = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 20));
+        JPanel panelManual = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 15));
         panelManual.setBorder(BorderFactory.createTitledBorder(null, "Acciones Inmediatas", TitledBorder.LEFT, TitledBorder.TOP));
 
         btnGenerarBackup = new JButton("Generar Backup Ahora");
+        btnGenerarBackup.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
         btnRestaurar = new JButton("Restaurar Sistema");
-        btnRestaurar.setForeground(Color.RED); // Destacar que es peligroso
+        btnRestaurar.setForeground(new Color(224, 82, 82));
+        btnRestaurar.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
         panelManual.add(btnGenerarBackup);
         panelManual.add(btnRestaurar);
@@ -40,11 +50,14 @@ public class BackupUI extends JFrame {
         JPanel panelProgramado = new JPanel(new GridLayout(3, 1, 5, 5));
         panelProgramado.setBorder(BorderFactory.createTitledBorder(null, "Programar Backup Automático", TitledBorder.LEFT, TitledBorder.TOP));
 
+        LocalDateTime ahora = LocalDateTime.now();
+        int anioActual = ahora.getYear();
+
         JPanel panelFecha = new JPanel(new FlowLayout(FlowLayout.CENTER));
         panelFecha.add(new JLabel("Fecha: "));
         cbDia = new JComboBox<>(generarNumeros(1, 31));
         cbMes = new JComboBox<>(generarNumeros(1, 12));
-        cbAnio = new JComboBox<>(generarNumeros(2024, 2030));
+        cbAnio = new JComboBox<>(generarNumeros(anioActual, anioActual + 5)); // CORREGIDO: Años dinámicos hacia el futuro
         panelFecha.add(cbDia); panelFecha.add(new JLabel("/"));
         panelFecha.add(cbMes); panelFecha.add(new JLabel("/"));
         panelFecha.add(cbAnio);
@@ -56,16 +69,29 @@ public class BackupUI extends JFrame {
         panelHora.add(cbHora); panelHora.add(new JLabel(":"));
         panelHora.add(cbMinutos);
 
+        // CORREGIDO: Pre-seleccionar fecha y hora actual (+5 min) por defecto
+        LocalDateTime sugerido = ahora.plusMinutes(5);
+        cbDia.setSelectedItem(sugerido.getDayOfMonth());
+        cbMes.setSelectedItem(sugerido.getMonthValue());
+        cbAnio.setSelectedItem(sugerido.getYear());
+        cbHora.setSelectedItem(sugerido.getHour());
+        cbMinutos.setSelectedItem(sugerido.getMinute());
+
         JPanel panelBotonProg = new JPanel(new FlowLayout(FlowLayout.CENTER));
         btnProgramarBackup = new JButton("Dejar Backup Programado");
+        btnProgramarBackup.setCursor(new Cursor(Cursor.HAND_CURSOR));
         panelBotonProg.add(btnProgramarBackup);
 
         panelProgramado.add(panelFecha);
         panelProgramado.add(panelHora);
         panelProgramado.add(panelBotonProg);
 
-        add(panelManual, BorderLayout.NORTH);
-        add(panelProgramado, BorderLayout.CENTER);
+        panelContenedor.add(panelManual, BorderLayout.NORTH);
+        panelContenedor.add(panelProgramado, BorderLayout.CENTER);
+
+        add(panelContenedor);
+        pack();
+        setLocationRelativeTo(parent);
     }
 
     private Integer[] generarNumeros(int inicio, int fin) {
@@ -74,16 +100,14 @@ public class BackupUI extends JFrame {
         return nums;
     }
 
-    // --- MÉTODOS VISUALES PARA QUE EL CONTROLADOR LOS USE ---
-
     public void mostrarMensaje(String mensaje, String titulo, int tipoMensaje) {
         JOptionPane.showMessageDialog(this, mensaje, titulo, tipoMensaje);
     }
 
     public int pedirConfirmacionRestauracion() {
         return JOptionPane.showConfirmDialog(this,
-                "La restauración sobrescribirá TODOS los datos actuales.\nRequiere autorización de un Administrador y un Gerente.\n¿Desea continuar?",
-                "Advertencia Crítica", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            "La restauración sobrescribirá TODOS los datos actuales.\nRequiere autorización de un Administrador y un Gerente.\n¿Desea continuar?",
+            "Advertencia Crítica", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
     }
 
     public String[] pedirDobleAutorizacion() {
@@ -104,8 +128,8 @@ public class BackupUI extends JFrame {
 
         if (result == JOptionPane.OK_OPTION) {
             return new String[]{
-                    txtUserAdmin.getText().trim(), new String(passAdmin.getPassword()),
-                    txtUserGerente.getText().trim(), new String(passGerente.getPassword())
+                txtUserAdmin.getText().trim(), new String(passAdmin.getPassword()),
+                txtUserGerente.getText().trim(), new String(passGerente.getPassword())
             };
         }
         return null;
@@ -135,7 +159,6 @@ public class BackupUI extends JFrame {
         return null;
     }
 
-    // --- GETTERS ---
     public JButton getBtnGenerarBackup() { return btnGenerarBackup; }
     public JButton getBtnRestaurar() { return btnRestaurar; }
     public JButton getBtnProgramarBackup() { return btnProgramarBackup; }

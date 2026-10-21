@@ -9,6 +9,8 @@ import java.awt.*;
 import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import jakarta.persistence.ParameterMode;
+import jakarta.persistence.StoredProcedureQuery;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -34,10 +36,9 @@ public class GerenteController {
     }
 
     private void generarReporteVentas() {
-        // Leemos las fechas directamente de los combos de la pestaña Ventas (V)
         LocalDate[] fechas = obtenerFechasDesdeUI(
-                vistaPrincipal.getCbDiaInicioV(), vistaPrincipal.getCbMesInicioV(), vistaPrincipal.getCbAnioInicioV(),
-                vistaPrincipal.getCbDiaFinV(), vistaPrincipal.getCbMesFinV(), vistaPrincipal.getCbAnioFinV()
+            vistaPrincipal.getCbDiaInicioV(), vistaPrincipal.getCbMesInicioV(), vistaPrincipal.getCbAnioInicioV(),
+            vistaPrincipal.getCbDiaFinV(), vistaPrincipal.getCbMesFinV(), vistaPrincipal.getCbAnioFinV()
         );
 
         if (fechas == null) return;
@@ -46,12 +47,15 @@ public class GerenteController {
         java.time.LocalDateTime fechaFin = fechas[1].atTime(23, 59, 59);
 
         utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "REPORTES",
-                "El Gerente generó el reporte de ventas desde " + fechas[0].format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + " hasta " + fechas[1].format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+            "El Gerente generó el reporte de ventas desde " + fechas[0].format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + " hasta " + fechas[1].format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
 
-        java.util.List<Object[]> resultados = em.createNativeQuery("CALL reporte_ventas_detallado(:inicio, :fin)")
-                .setParameter("inicio", fechaInicio)
-                .setParameter("fin", fechaFin)
-                .getResultList();
+        StoredProcedureQuery query = em.createStoredProcedureQuery("reporte_ventas_detallado");
+        query.registerStoredProcedureParameter(1, java.time.LocalDateTime.class, ParameterMode.IN);
+        query.registerStoredProcedureParameter(2, java.time.LocalDateTime.class, ParameterMode.IN);
+        query.setParameter(1, fechaInicio);
+        query.setParameter(2, fechaFin);
+
+        java.util.List<Object[]> resultados = query.getResultList();
 
         String[] columnas = {"ID Venta", "Fecha", "DNI Cliente", "Vendedor", "Producto", "Total Ítem"};
         DefaultTableModel modelo = new DefaultTableModel(null, columnas);
@@ -59,19 +63,29 @@ public class GerenteController {
 
         for (Object[] fila : resultados) {
             String idVenta = "V-" + fila[0].toString();
-            java.time.LocalDateTime fechaVenta = ((java.sql.Timestamp) fila[1]).toLocalDateTime();
+
+            // Casteo dinámico seguro para la fecha devuelta por MySQL
+            String fechaFormateada = "";
+            if (fila[1] instanceof java.sql.Timestamp) {
+                fechaFormateada = ((java.sql.Timestamp) fila[1]).toLocalDateTime().format(fmt);
+            } else if (fila[1] instanceof java.time.LocalDateTime) {
+                fechaFormateada = ((java.time.LocalDateTime) fila[1]).format(fmt);
+            } else {
+                fechaFormateada = fila[1].toString();
+            }
+
             String dniCliente = (String) fila[2];
             String vendedor = (String) fila[3];
             String producto = (String) fila[4];
             double subtotal = ((Number) fila[5]).doubleValue();
 
             modelo.addRow(new Object[]{
-                    idVenta,
-                    fechaVenta.format(fmt),
-                    dniCliente,
-                    vendedor,
-                    producto,
-                    String.format("$%.2f", subtotal)
+                idVenta,
+                fechaFormateada,
+                dniCliente,
+                vendedor,
+                producto,
+                String.format("$%.2f", subtotal)
             });
         }
 
@@ -79,10 +93,9 @@ public class GerenteController {
     }
 
     private void calcularRendimiento() {
-        // Leemos las fechas directamente de los combos de la pestaña Rendimiento (R)
         LocalDate[] fechas = obtenerFechasDesdeUI(
-                vistaPrincipal.getCbDiaInicioR(), vistaPrincipal.getCbMesInicioR(), vistaPrincipal.getCbAnioInicioR(),
-                vistaPrincipal.getCbDiaFinR(), vistaPrincipal.getCbMesFinR(), vistaPrincipal.getCbAnioFinR()
+            vistaPrincipal.getCbDiaInicioR(), vistaPrincipal.getCbMesInicioR(), vistaPrincipal.getCbAnioInicioR(),
+            vistaPrincipal.getCbDiaFinR(), vistaPrincipal.getCbMesFinR(), vistaPrincipal.getCbAnioFinR()
         );
 
         if (fechas == null) return;
@@ -91,12 +104,15 @@ public class GerenteController {
         java.time.LocalDateTime fechaFin = fechas[1].atTime(23, 59, 59);
 
         utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "REPORTES",
-                "El Gerente generó el reporte de rendimiento de vendedores desde " + fechas[0].format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + " hasta " + fechas[1].format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+            "El Gerente generó el reporte de rendimiento de vendedores desde " + fechas[0].format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + " hasta " + fechas[1].format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
 
-        java.util.List<Object[]> resultados = em.createNativeQuery("CALL rendimiento_vendedores(:inicio, :fin)")
-                .setParameter("inicio", fechaInicio)
-                .setParameter("fin", fechaFin)
-                .getResultList();
+        StoredProcedureQuery query = em.createStoredProcedureQuery("rendimiento_vendedores");
+        query.registerStoredProcedureParameter(1, java.time.LocalDateTime.class, ParameterMode.IN);
+        query.registerStoredProcedureParameter(2, java.time.LocalDateTime.class, ParameterMode.IN);
+        query.setParameter(1, fechaInicio);
+        query.setParameter(2, fechaFin);
+
+        java.util.List<Object[]> resultados = query.getResultList();
 
         String[] columnas = {"Usuario Vendedor", "Cant. Ventas", "Total Facturado", "Comisión Estimada (5%)"};
         DefaultTableModel modelo = new DefaultTableModel(null, columnas);
@@ -108,10 +124,10 @@ public class GerenteController {
             double comision = ((Number) fila[3]).doubleValue();
 
             modelo.addRow(new Object[]{
-                    vendedor,
-                    cantVentas,
-                    String.format("$%.2f", totalFacturado),
-                    String.format("$%.2f", comision)
+                vendedor,
+                cantVentas,
+                String.format("$%.2f", totalFacturado),
+                String.format("$%.2f", comision)
             });
         }
 
@@ -119,10 +135,9 @@ public class GerenteController {
     }
 
     private void calcularProductosMasVendidos() {
-        // Leemos las fechas directamente de los combos de la pestaña Productos (P)
         LocalDate[] fechas = obtenerFechasDesdeUI(
-                vistaPrincipal.getCbDiaInicioP(), vistaPrincipal.getCbMesInicioP(), vistaPrincipal.getCbAnioInicioP(),
-                vistaPrincipal.getCbDiaFinP(), vistaPrincipal.getCbMesFinP(), vistaPrincipal.getCbAnioFinP()
+            vistaPrincipal.getCbDiaInicioP(), vistaPrincipal.getCbMesInicioP(), vistaPrincipal.getCbAnioInicioP(),
+            vistaPrincipal.getCbDiaFinP(), vistaPrincipal.getCbMesFinP(), vistaPrincipal.getCbAnioFinP()
         );
 
         if (fechas == null) return;
@@ -131,12 +146,15 @@ public class GerenteController {
         java.time.LocalDateTime fechaFin = fechas[1].atTime(23, 59, 59);
 
         utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "REPORTES",
-                "El Gerente generó el reporte de productos más vendidos...");
+            "El Gerente generó el reporte de productos más vendidos...");
 
-        java.util.List<Object[]> resultados = em.createNativeQuery("CALL top_productos_mas_vendidos(:inicio, :fin)")
-                .setParameter("inicio", fechaInicio)
-                .setParameter("fin", fechaFin)
-                .getResultList();
+        StoredProcedureQuery query = em.createStoredProcedureQuery("top_productos_mas_vendidos");
+        query.registerStoredProcedureParameter(1, java.time.LocalDateTime.class, ParameterMode.IN);
+        query.registerStoredProcedureParameter(2, java.time.LocalDateTime.class, ParameterMode.IN);
+        query.setParameter(1, fechaInicio);
+        query.setParameter(2, fechaFin);
+
+        java.util.List<Object[]> resultados = query.getResultList();
 
         String[] columnas = {"Ranking", "Producto", "Categoría", "Cant. Vendida", "Ingresos Generados"};
         DefaultTableModel modelo = new DefaultTableModel(null, columnas);
@@ -155,7 +173,6 @@ public class GerenteController {
         }
 
         vistaPrincipal.getTablaProductosVendidos().setModel(modelo);
-
         vistaPrincipal.getScrollTablaProductos().setVisible(true);
         vistaPrincipal.getBtnGenerarGraficoProductos().setEnabled(true);
         vistaPrincipal.getTabsProductos().setSelectedIndex(0);
@@ -164,7 +181,6 @@ public class GerenteController {
         vistaPrincipal.getPanelGraficoProductos().repaint();
     }
 
-    // --- MÉTODO AUXILIAR PARA EXTRAER FECHAS DE LOS COMBOBOX ---
     private LocalDate[] obtenerFechasDesdeUI(JComboBox<String> cbDiaD, JComboBox<String> cbMesD, JComboBox<String> cbAnioD,
                                              JComboBox<String> cbDiaH, JComboBox<String> cbMesH, JComboBox<String> cbAnioH) {
         try {
@@ -198,12 +214,12 @@ public class GerenteController {
 
     private void cerrarSesion() {
         int confirmacion = JOptionPane.showConfirmDialog(vistaPrincipal,
-                "¿Estás seguro que querés salir del panel de gerencia?", "Cerrar Sesión",
-                JOptionPane.YES_NO_OPTION);
+            "¿Estás seguro que querés salir del panel de gerencia?", "Cerrar Sesión",
+            JOptionPane.YES_NO_OPTION);
 
         if (confirmacion == JOptionPane.YES_OPTION) {
             utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "SEGURIDAD",
-                    "El Gerente cerró sesión.");
+                "El Gerente cerró sesión.");
             vistaPrincipal.dispose();
             LoginUI ventanaLogin = new LoginUI();
             new LoginController(ventanaLogin, em);
@@ -218,10 +234,10 @@ public class GerenteController {
         }
 
         JFreeChart graficoBarras = ChartFactory.createBarChart(
-                "Top Productos Más Vendidos",
-                "Productos",
-                "Cantidad Vendida",
-                datasetGraficoProductos
+            "Top Productos Más Vendidos",
+            "Productos",
+            "Cantidad Vendida",
+            datasetGraficoProductos
         );
         ChartPanel panelBarras = new ChartPanel(graficoBarras);
 

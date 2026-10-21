@@ -34,14 +34,11 @@ public class VendedorController {
             System.err.println("Aviso inicial: " + ex.getMessage());
         }
 
-        // Eventos Generales
         this.vistaPrincipal.getBtnAbrirFormularioCliente().addActionListener(e -> abrirFormularioRegistro(""));
         this.vistaPrincipal.getBtnCerrarSesion().addActionListener(e -> cerrarSesion());
         this.vistaPrincipal.getBtnAbrirFormularioVenta().addActionListener(e -> abrirFormularioVenta());
         this.vistaPrincipal.getBtnBajaCliente().addActionListener(e -> cambiarEstadoCliente(false));
         this.vistaPrincipal.getBtnAltaCliente().addActionListener(e -> cambiarEstadoCliente(true));
-
-        // Evento para editar cliente
         this.vistaPrincipal.getBtnEditarCliente().addActionListener(e -> abrirFormularioEdicionCliente());
 
         this.vistaPrincipal.getTablaClientes().setAutoCreateRowSorter(true);
@@ -57,10 +54,8 @@ public class VendedorController {
         this.vistaPrincipal.getBtnAltaCliente().setVisible(false);
         this.vistaPrincipal.getBtnEditarCliente().setVisible(false);
 
-        // --- EXPORTAR A EXCEL MEDIANTE BOTÓN EXPLICITO ---
         this.vistaPrincipal.getBtnExportarReporte().addActionListener(e -> exportarTablaACSV(this.vistaPrincipal.getTablaReportes()));
 
-        // Eventos de selección de tablas (Deseleccionar al hacer clic afuera)
         java.awt.event.MouseAdapter deseleccionador = new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
@@ -78,7 +73,6 @@ public class VendedorController {
         java.awt.Container parent = this.vistaPrincipal.getTablaClientes().getParent();
         if (parent instanceof javax.swing.JViewport) parent.addMouseListener(deseleccionador);
 
-        // Mostrar botones de acción al seleccionar un cliente
         this.vistaPrincipal.getTablaClientes().getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 int f = this.vistaPrincipal.getTablaClientes().getSelectedRow();
@@ -95,7 +89,6 @@ public class VendedorController {
             }
         });
 
-        // Ver detalle de venta (Doble clic)
         this.vistaPrincipal.getTablaVentas().addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
@@ -108,19 +101,17 @@ public class VendedorController {
             }
         });
 
-        // --- EVENTO DEL BOTÓN REPORTES ---
         this.vistaPrincipal.getBtnGenerarReporte().addActionListener(e -> generarReporte());
     }
 
-    // =======================================================
     private void generarReporte() {
         String strInicio = vistaPrincipal.getCbDiaInicio().getSelectedItem() + "/" +
-                vistaPrincipal.getCbMesInicio().getSelectedItem() + "/" +
-                vistaPrincipal.getCbAnioInicio().getSelectedItem();
+            vistaPrincipal.getCbMesInicio().getSelectedItem() + "/" +
+            vistaPrincipal.getCbAnioInicio().getSelectedItem();
 
         String strFin = vistaPrincipal.getCbDiaFin().getSelectedItem() + "/" +
-                vistaPrincipal.getCbMesFin().getSelectedItem() + "/" +
-                vistaPrincipal.getCbAnioFin().getSelectedItem();
+            vistaPrincipal.getCbMesFin().getSelectedItem() + "/" +
+            vistaPrincipal.getCbAnioFin().getSelectedItem();
 
         try {
             java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -131,7 +122,7 @@ public class VendedorController {
             int tipoReporte = vistaPrincipal.getComboTipoReporte().getSelectedIndex();
 
             if (tipoReporte == 0) {
-                fechaFin = fechaInicio; // Si es resumen diario, inicio y fin son el mismo día
+                fechaFin = fechaInicio;
             }
 
             if (fechaInicio.isAfter(fechaFin)) {
@@ -139,9 +130,6 @@ public class VendedorController {
                 return;
             }
 
-            // --- NUEVA LÓGICA DE VALIDACIÓN ---
-            // Solo validamos que el rango (distancia entre inicio y fin) no supere los 6 meses
-            // Ya no importa qué tan antigua sea la fecha de inicio.
             if (fechaInicio.plusMonths(6).isBefore(fechaFin)) {
                 JOptionPane.showMessageDialog(vistaPrincipal, "El rango seleccionado supera los 6 meses. Por favor, seleccione un periodo más corto para no sobrecargar el sistema.", "Rango Excedido", JOptionPane.WARNING_MESSAGE);
                 return;
@@ -173,15 +161,15 @@ public class VendedorController {
 
     private void reporteRendimientoCategoria(java.time.LocalDateTime inicio, java.time.LocalDateTime fin, String categoria) {
         StoredProcedureQuery query = em.createStoredProcedureQuery("reporte_rendimiento_categoria");
-        query.registerStoredProcedureParameter("p_vendedor_id", Long.class, ParameterMode.IN);
-        query.registerStoredProcedureParameter("p_categoria", String.class, ParameterMode.IN);
-        query.registerStoredProcedureParameter("p_ini", java.time.LocalDateTime.class, ParameterMode.IN);
-        query.registerStoredProcedureParameter("p_fin", java.time.LocalDateTime.class, ParameterMode.IN);
+        query.registerStoredProcedureParameter(1, Long.class, ParameterMode.IN);
+        query.registerStoredProcedureParameter(2, String.class, ParameterMode.IN);
+        query.registerStoredProcedureParameter(3, java.time.LocalDateTime.class, ParameterMode.IN);
+        query.registerStoredProcedureParameter(4, java.time.LocalDateTime.class, ParameterMode.IN);
 
-        query.setParameter("p_vendedor_id", this.vendedorLogueado.getId());
-        query.setParameter("p_categoria", categoria);
-        query.setParameter("p_ini", inicio);
-        query.setParameter("p_fin", fin);
+        query.setParameter(1, this.vendedorLogueado.getId());
+        query.setParameter(2, categoria);
+        query.setParameter(3, inicio);
+        query.setParameter(4, fin);
 
         List<Object[]> resultados = query.getResultList();
         DefaultTableModel modelo = (DefaultTableModel) vistaPrincipal.getTablaReportes().getModel();
@@ -196,8 +184,6 @@ public class VendedorController {
         }
         vistaPrincipal.getLblTotalReporte().setText(String.format("Total en Categoría: $%.2f", granTotal));
     }
-    // EXPORTACIÓN EXCEL / CSV
-    // =======================================================
 
     private void exportarTablaACSV(JTable tabla) {
         if (tabla.getRowCount() == 0) {
@@ -211,14 +197,12 @@ public class VendedorController {
 
         if (fileChooser.showSaveDialog(vistaPrincipal) == JFileChooser.APPROVE_OPTION) {
             try (java.io.PrintWriter writer = new java.io.PrintWriter(fileChooser.getSelectedFile(), "UTF-8")) {
-                // Escribir cabeceras
                 for (int i = 0; i < tabla.getColumnCount(); i++) {
                     writer.print(tabla.getColumnName(i));
                     if (i < tabla.getColumnCount() - 1) writer.print(";");
                 }
                 writer.println();
 
-                // Escribir datos
                 for (int i = 0; i < tabla.getRowCount(); i++) {
                     for (int j = 0; j < tabla.getColumnCount(); j++) {
                         String val = tabla.getValueAt(i, j) != null ? tabla.getValueAt(i, j).toString() : "";
@@ -235,19 +219,16 @@ public class VendedorController {
             }
         }
     }
-    // =======================================================
-    // REPORTES ESTADÍSTICOS
-    // =======================================================
 
     private void reporteResumenDiario(java.time.LocalDateTime inicio, java.time.LocalDateTime fin) {
         StoredProcedureQuery query = em.createStoredProcedureQuery("reporte_resumen_diario");
-        query.registerStoredProcedureParameter("p_vendedor_id", Long.class, ParameterMode.IN);
-        query.registerStoredProcedureParameter("p_ini", java.time.LocalDateTime.class, ParameterMode.IN);
-        query.registerStoredProcedureParameter("p_fin", java.time.LocalDateTime.class, ParameterMode.IN);
+        query.registerStoredProcedureParameter(1, Long.class, ParameterMode.IN);
+        query.registerStoredProcedureParameter(2, java.time.LocalDateTime.class, ParameterMode.IN);
+        query.registerStoredProcedureParameter(3, java.time.LocalDateTime.class, ParameterMode.IN);
 
-        query.setParameter("p_vendedor_id", this.vendedorLogueado.getId());
-        query.setParameter("p_ini", inicio);
-        query.setParameter("p_fin", fin);
+        query.setParameter(1, this.vendedorLogueado.getId());
+        query.setParameter(2, inicio);
+        query.setParameter(3, fin);
 
         List<Object[]> resultados = query.getResultList();
         DefaultTableModel modelo = (DefaultTableModel) vistaPrincipal.getTablaReportes().getModel();
@@ -271,13 +252,13 @@ public class VendedorController {
 
     private void reporteTopProductos(java.time.LocalDateTime inicio, java.time.LocalDateTime fin) {
         StoredProcedureQuery query = em.createStoredProcedureQuery("reporte_top_productos");
-        query.registerStoredProcedureParameter("p_vendedor_id", Long.class, ParameterMode.IN);
-        query.registerStoredProcedureParameter("p_ini", java.time.LocalDateTime.class, ParameterMode.IN);
-        query.registerStoredProcedureParameter("p_fin", java.time.LocalDateTime.class, ParameterMode.IN);
+        query.registerStoredProcedureParameter(1, Long.class, ParameterMode.IN);
+        query.registerStoredProcedureParameter(2, java.time.LocalDateTime.class, ParameterMode.IN);
+        query.registerStoredProcedureParameter(3, java.time.LocalDateTime.class, ParameterMode.IN);
 
-        query.setParameter("p_vendedor_id", this.vendedorLogueado.getId());
-        query.setParameter("p_ini", inicio);
-        query.setParameter("p_fin", fin);
+        query.setParameter(1, this.vendedorLogueado.getId());
+        query.setParameter(2, inicio);
+        query.setParameter(3, fin);
 
         List<Object[]> resultados = query.getResultList();
         DefaultTableModel modelo = (DefaultTableModel) vistaPrincipal.getTablaReportes().getModel();
@@ -299,13 +280,13 @@ public class VendedorController {
 
     private void reporteMejoresClientes(java.time.LocalDateTime inicio, java.time.LocalDateTime fin) {
         StoredProcedureQuery query = em.createStoredProcedureQuery("reporte_mejores_clientes");
-        query.registerStoredProcedureParameter("p_vendedor_id", Long.class, ParameterMode.IN);
-        query.registerStoredProcedureParameter("p_ini", java.time.LocalDateTime.class, ParameterMode.IN);
-        query.registerStoredProcedureParameter("p_fin", java.time.LocalDateTime.class, ParameterMode.IN);
+        query.registerStoredProcedureParameter(1, Long.class, ParameterMode.IN);
+        query.registerStoredProcedureParameter(2, java.time.LocalDateTime.class, ParameterMode.IN);
+        query.registerStoredProcedureParameter(3, java.time.LocalDateTime.class, ParameterMode.IN);
 
-        query.setParameter("p_vendedor_id", this.vendedorLogueado.getId());
-        query.setParameter("p_ini", inicio);
-        query.setParameter("p_fin", fin);
+        query.setParameter(1, this.vendedorLogueado.getId());
+        query.setParameter(2, inicio);
+        query.setParameter(3, fin);
 
         List<Object[]> resultados = query.getResultList();
         DefaultTableModel modelo = (DefaultTableModel) vistaPrincipal.getTablaReportes().getModel();
@@ -320,10 +301,6 @@ public class VendedorController {
         vistaPrincipal.getLblTotalReporte().setText("Ranking de Fidelización (Clientes del Vendedor)");
     }
 
-
-    // =======================================================
-    // MÓDULO DE VENTAS (CARRITO Y CONFIRMACIÓN)
-    // =======================================================
     private void abrirFormularioVenta() {
         try {
             vista.RegistroVentaUI ventanaVenta = new vista.RegistroVentaUI(this.vistaPrincipal);
@@ -366,7 +343,6 @@ public class VendedorController {
                 }
             });
 
-            // Control de visibilidad del botón eliminar producto en el carrito
             ventanaVenta.getTablaCarrito().getSelectionModel().addListSelectionListener(e -> {
                 if (!e.getValueIsAdjusting()) {
                     boolean hayFilaSeleccionada = ventanaVenta.getTablaCarrito().getSelectedRow() != -1;
@@ -374,7 +350,6 @@ public class VendedorController {
                 }
             });
 
-            // Eliminar producto con botón
             ventanaVenta.getBtnEliminarDelCarrito().addActionListener(e -> {
                 int fila = ventanaVenta.getTablaCarrito().getSelectedRow();
                 if (fila != -1) {
@@ -383,7 +358,6 @@ public class VendedorController {
                         DefaultTableModel mod = (DefaultTableModel) ventanaVenta.getTablaCarrito().getModel();
                         mod.removeRow(fila);
 
-                        // Recalcular total
                         double tot = 0;
                         for (int i = 0; i < mod.getRowCount(); i++) tot += (double) mod.getValueAt(i, 4);
                         ventanaVenta.getLblTotalVenta().setText(String.format("Total: $%.2f", tot));
@@ -571,27 +545,20 @@ public class VendedorController {
         ven.setVisible(true);
     }
 
-    // =======================================================
-    // MÓDULO DE EDICIÓN DE CLIENTES
-    // =======================================================
-    // =======================================================
-    // MÓDULO DE EDICIÓN DE CLIENTES
-    // =======================================================
     private void abrirFormularioEdicionCliente() {
         int fila = vistaPrincipal.getTablaClientes().getSelectedRow();
         if (fila == -1) return;
 
-        // Extraemos el DNI de la fila seleccionada y buscamos el cliente real en la Base de Datos
         String dni = vistaPrincipal.getTablaClientes().getValueAt(fila, 0).toString();
-        modelo.Cliente cliente = em.find(modelo.Cliente.class, dni);
+        // CORRECCIÓN: Búsqueda unificada y segura con el repositorio
+        repositorio.ClienteRepository repo = new repositorio.ClienteRepository(this.em);
+        modelo.Cliente cliente = repo.buscarPorDni(dni);
         if (cliente == null) return;
 
-        // Reciclamos la UI de Registro
         vista.RegistroClienteUI ven = new vista.RegistroClienteUI(this.vistaPrincipal);
         ven.setTitle("Actualizando dirección de: " + cliente.getNombre() + " " + cliente.getApellido());
         ven.getBtnGuardarCliente().setText("Actualizar Dirección");
 
-        // --- PRE-CARGAMOS Y BLOQUEAMOS LOS DATOS NO EDITABLES ---
         ven.getTxtDni().setText(cliente.getDni());
         ven.getTxtDni().setEditable(false);
 
@@ -612,12 +579,10 @@ public class VendedorController {
             ven.getCbMes().setSelectedIndex(cliente.getFechaNacimiento().getMonthValue() - 1);
             ven.getCbAnio().setSelectedItem(cliente.getFechaNacimiento().getYear());
         }
-        // Bloqueamos los combos de la fecha
         ven.getCbDia().setEnabled(false);
         ven.getCbMes().setEnabled(false);
         ven.getCbAnio().setEnabled(false);
 
-        // --- PRE-CARGAMOS LA DIRECCIÓN (ÚNICOS CAMPOS EDITABLES) ---
         if (cliente.getDireccion() != null) {
             ven.getTxtCalle().setText(cliente.getDireccion().getCalle());
             ven.getTxtAltura().setText(cliente.getDireccion().getAltura());
@@ -627,7 +592,6 @@ public class VendedorController {
 
         ven.getBtnCancelar().addActionListener(e -> ven.dispose());
 
-        // --- LÓGICA DE ACTUALIZACIÓN (SÓLO DIRECCIÓN) ---
         ven.getBtnGuardarCliente().addActionListener(e -> {
             ven.limpiarErrores();
 
@@ -638,7 +602,6 @@ public class VendedorController {
             try {
                 em.getTransaction().begin();
 
-                // Solo afectamos el objeto Dirección del cliente
                 if (cliente.getDireccion() == null) {
                     cliente.setDireccion(new modelo.Direccion(calle, altura, ciudad, ven.getCbProvincia().getSelectedItem().toString()));
                 } else {
@@ -648,7 +611,6 @@ public class VendedorController {
                     cliente.getDireccion().setProvincia(ven.getCbProvincia().getSelectedItem().toString());
                 }
 
-                // Impactamos los cambios en MySQL
                 em.merge(cliente);
                 em.getTransaction().commit();
 
@@ -888,15 +850,16 @@ public class VendedorController {
 
             StoredProcedureQuery query = em.createStoredProcedureQuery("procesar_venta_integral");
 
-            query.registerStoredProcedureParameter("p_vendedor_id", Long.class, ParameterMode.IN);
-            query.registerStoredProcedureParameter("p_cliente_dni", String.class, ParameterMode.IN);
-            query.registerStoredProcedureParameter("p_total", Double.class, ParameterMode.IN);
-            query.registerStoredProcedureParameter("p_carrito_json", String.class, ParameterMode.IN);
+            // CORRECCIÓN: Uso de parámetros posicionales
+            query.registerStoredProcedureParameter(1, Long.class, ParameterMode.IN);
+            query.registerStoredProcedureParameter(2, String.class, ParameterMode.IN);
+            query.registerStoredProcedureParameter(3, Double.class, ParameterMode.IN);
+            query.registerStoredProcedureParameter(4, String.class, ParameterMode.IN);
 
-            query.setParameter("p_vendedor_id", idVendedor);
-            query.setParameter("p_cliente_dni", dniCliente);
-            query.setParameter("p_total", totalVenta);
-            query.setParameter("p_carrito_json", jsonCarrito.toString());
+            query.setParameter(1, idVendedor);
+            query.setParameter(2, dniCliente);
+            query.setParameter(3, totalVenta);
+            query.setParameter(4, jsonCarrito.toString());
 
             query.execute();
             em.getTransaction().commit();
