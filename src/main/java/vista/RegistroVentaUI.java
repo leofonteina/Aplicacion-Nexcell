@@ -3,6 +3,7 @@ package vista;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.List;
 
 public class RegistroVentaUI extends JDialog {
@@ -130,17 +131,12 @@ public class RegistroVentaUI extends JDialog {
 
         add(panelPrincipal);
 
-        // Comportamiento visual propio de la vista: mostrar/ocultar botón Quitar Producto
         tablaCarrito.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 btnEliminarDelCarrito.setVisible(tablaCarrito.getSelectedRow() != -1);
             }
         });
     }
-
-    // =========================================================================
-    // MÉTODOS DE LA VISTA PARA MANIPULAR SUS PROPIOS COMPONENTES
-    // =========================================================================
 
     public void cargarProductosDisponibles(List<modelo.Producto> productos) {
         productoBox.removeAllItems();
@@ -194,7 +190,7 @@ public class RegistroVentaUI extends JDialog {
                 recalcularYMostrarTotal();
             }
         } else {
-            mostrarMensaje("Seleccione un producto del carrito para eliminarlo.", "Aviso", JOptionPane.WARNING_MESSAGE);
+            mostrarAlerta("Seleccione un producto del carrito para eliminarlo.", "Aviso");
         }
     }
 
@@ -208,16 +204,38 @@ public class RegistroVentaUI extends JDialog {
         return tot;
     }
 
+    public List<Object[]> obtenerItemsCarrito() {
+        List<Object[]> items = new ArrayList<>();
+        for (int i = 0; i < tablaCarrito.getRowCount(); i++) {
+            items.add(new Object[]{
+                tablaCarrito.getValueAt(i, 0), // ID
+                tablaCarrito.getValueAt(i, 1), // Nombre
+                tablaCarrito.getValueAt(i, 2), // Precio
+                tablaCarrito.getValueAt(i, 3), // Cantidad
+                tablaCarrito.getValueAt(i, 4)  // Subtotal
+            });
+        }
+        return items;
+    }
+
     public boolean isCarritoVacio() {
         return tablaCarrito.getRowCount() == 0;
     }
 
-    public void mostrarMensaje(String mensaje, String titulo, int tipo) {
-        JOptionPane.showMessageDialog(this, mensaje, titulo, tipo);
+    public void mostrarExito(String mensaje, String titulo) {
+        JOptionPane.showMessageDialog(this, mensaje, titulo, JOptionPane.INFORMATION_MESSAGE);
     }
 
-    public boolean confirmarAccion(String mensaje, String titulo, int tipoMensaje) {
-        return JOptionPane.showConfirmDialog(this, mensaje, titulo, JOptionPane.YES_NO_OPTION, tipoMensaje) == JOptionPane.YES_OPTION;
+    public void mostrarAlerta(String mensaje, String titulo) {
+        JOptionPane.showMessageDialog(this, mensaje, titulo, JOptionPane.WARNING_MESSAGE);
+    }
+
+    public void mostrarError(String mensaje, String titulo) {
+        JOptionPane.showMessageDialog(this, mensaje, titulo, JOptionPane.ERROR_MESSAGE);
+    }
+
+    public boolean confirmarPregunta(String mensaje, String titulo) {
+        return JOptionPane.showConfirmDialog(this, mensaje, titulo, JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION;
     }
 
     // Getters
@@ -225,7 +243,6 @@ public class RegistroVentaUI extends JDialog {
     public JButton getBtnVerificarCliente() { return btnVerificarCliente; }
     public JTextField getCantidadField() { return cantidadField; }
     public JButton getBtnAgregarProducto() { return btnAgregarProducto; }
-    public JTable getTablaCarrito() { return tablaCarrito; }
     public JButton getBtnConfirmarVenta() { return btnConfirmarVenta; }
     public JButton getBtnEliminarDelCarrito() { return btnEliminarDelCarrito; }
 }

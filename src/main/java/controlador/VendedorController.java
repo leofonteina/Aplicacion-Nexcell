@@ -8,9 +8,6 @@ import vista.LoginUI;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.ParameterMode;
 import jakarta.persistence.StoredProcedureQuery;
-import javax.swing.JOptionPane;
-import javax.swing.JTable;
-import javax.swing.table.TableModel;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
@@ -50,15 +47,8 @@ public class VendedorController {
         this.vistaPrincipal.getBtnGenerarReporte().addActionListener(e -> generarReporte());
         this.vistaPrincipal.getBtnExportarReporte().addActionListener(e -> exportarReporteCSV());
 
-        // Doble clic en tabla de ventas para pedir el detalle
-        this.vistaPrincipal.getTablaVentas().addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override
-            public void mouseClicked(java.awt.event.MouseEvent e) {
-                if (e.getClickCount() == 2 && vistaPrincipal.getIdVentaSeleccionada() != null) {
-                    abrirDetalleVenta();
-                }
-            }
-        });
+        // Doble clic delegado limpiamente desde la vista
+        this.vistaPrincipal.alHacerDobleClicEnVenta(this::abrirDetalleVenta);
     }
 
     // =========================================================================
@@ -74,19 +64,19 @@ public class VendedorController {
             LocalDate fechaInicio = LocalDate.parse(strInicio, fmt);
             LocalDate fechaFin = LocalDate.parse(strFin, fmt);
 
-            int tipoReporte = vistaPrincipal.getComboTipoReporte().getSelectedIndex();
+            int tipoReporte = vistaPrincipal.getIndiceTipoReporte();
 
             if (tipoReporte == 0) {
                 fechaFin = fechaInicio; // Resumen diario es de un solo día
             }
 
             if (fechaInicio.isAfter(fechaFin)) {
-                vistaPrincipal.mostrarMensaje("La fecha de inicio no puede ser mayor a la fecha de fin.", "Fechas Inválidas", JOptionPane.WARNING_MESSAGE);
+                vistaPrincipal.mostrarAlerta("La fecha de inicio no puede ser mayor a la fecha de fin.", "Fechas Inválidas");
                 return;
             }
 
             if (fechaInicio.plusMonths(6).isBefore(fechaFin)) {
-                vistaPrincipal.mostrarMensaje("El rango seleccionado supera los 6 meses. Por favor, seleccione un periodo más corto.", "Rango Excedido", JOptionPane.WARNING_MESSAGE);
+                vistaPrincipal.mostrarAlerta("El rango seleccionado supera los 6 meses. Por favor, seleccione un periodo más corto.", "Rango Excedido");
                 return;
             }
 
@@ -100,7 +90,7 @@ public class VendedorController {
                 List<Object[]> datos = consultarProcedimiento("reporte_top_productos", inicioLDT, finLDT);
                 vistaPrincipal.mostrarReporteTopProductos(datos);
             } else if (tipoReporte == 2) {
-                String categoria = vistaPrincipal.getComboCategoriasReporte().getSelectedItem().toString();
+                String categoria = vistaPrincipal.getCategoriaReporteSeleccionada();
                 List<Object[]> datos = consultarProcedimientoCategoria(inicioLDT, finLDT, categoria);
                 vistaPrincipal.mostrarReporteRendimientoCategoria(datos, categoria);
             } else if (tipoReporte == 3) {
@@ -109,9 +99,9 @@ public class VendedorController {
             }
 
         } catch (DateTimeParseException ex) {
-            vistaPrincipal.mostrarMensaje("La fecha seleccionada no existe en el calendario.", "Fecha Inválida", JOptionPane.ERROR_MESSAGE);
+            vistaPrincipal.mostrarError("La fecha seleccionada no existe en el calendario.", "Fecha Inválida");
         } catch (Exception ex) {
-            vistaPrincipal.mostrarMensaje("Ocurrió un error al generar el reporte: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            vistaPrincipal.mostrarError("Ocurrió un error al generar el reporte: " + ex.getMessage(), "Error");
         }
     }
 
@@ -144,34 +134,32 @@ public class VendedorController {
     }
 
     private void exportarReporteCSV() {
-        JTable tabla = vistaPrincipal.getTablaReportes();
-        if (tabla.getRowCount() == 0) {
-            vistaPrincipal.mostrarMensaje("No hay datos en la tabla para exportar.", "Aviso", JOptionPane.WARNING_MESSAGE);
+        List<String[]> filas = vistaPrincipal.obtenerDatosTablaReportes();
+        if (filas.isEmpty()) {
+            vistaPrincipal.mostrarAlerta("No hay datos en la tabla para exportar.", "Aviso");
             return;
         }
 
         File archivoDestino = vistaPrincipal.seleccionarArchivoCSVGuardar();
         if (archivoDestino != null) {
             try (PrintWriter writer = new PrintWriter(archivoDestino, "UTF-8")) {
-                for (int i = 0; i < tabla.getColumnCount(); i++) {
-                    writer.print(tabla.getColumnName(i));
-                    if (i < tabla.getColumnCount() - 1) writer.print(";");
-                }
-                writer.println();
-
-                for (int i = 0; i < tabla.getRowCount(); i++) {
-                    for (int j = 0; j < tabla.getColumnCount(); j++) {
-                        String val = tabla.getValueAt(i, j) != null ? tabla.getValueAt(i, j).toString() : "";
-                        writer.print("\"" + val.replace("\"", "\"\"") + "\"");
-                        if (j < tabla.getColumnCount() - 1) writer.print(";");
+                for (int i = 0; i < filas.size(); i++) {
+                    String[] fila = filas.get(i);
+                    for (int j = 0; j < fila.length; j++) {
+                        if (i == 0) {
+                            writer.print(fila[j]); // Cabeceras
+                        } else {
+                            writer.print("\"" + fila[j].replace("\"", "\"\"") + "\""); // Datos
+                        }
+                        if (j < fila.length - 1) writer.print(";");
                     }
                     writer.println();
                 }
 
-                vistaPrincipal.mostrarMensaje("Reporte exportado con éxito. Ya puedes abrirlo con Excel.", "Exportación Exitosa", JOptionPane.INFORMATION_MESSAGE);
+                vistaPrincipal.mostrarExito("Reporte exportado con éxito. Ya puedes abrirlo con Excel.", "Exportación Exitosa");
                 utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "REPORTES", "El Vendedor exportó datos a formato CSV.");
             } catch (Exception ex) {
-                vistaPrincipal.mostrarMensaje("Error al guardar el archivo.", "Error Crítico", JOptionPane.ERROR_MESSAGE);
+                vistaPrincipal.mostrarError("Error al guardar el archivo.", "Error Crítico");
             }
         }
     }
@@ -186,7 +174,6 @@ public class VendedorController {
             repositorio.ProductoRepository repoProd = new repositorio.ProductoRepository(this.em);
             repositorio.ClienteRepository repoCli = new repositorio.ClienteRepository(this.em);
 
-            // La vista se encarga de cargar su propio ComboBox
             ventanaVenta.cargarProductosDisponibles(repoProd.listarTodos());
 
             final modelo.Cliente[] clienteActual = {null};
@@ -194,7 +181,7 @@ public class VendedorController {
             ventanaVenta.getBtnVerificarCliente().addActionListener(e -> {
                 String dni = ventanaVenta.getDniClienteField().getText().trim();
                 if (dni.isEmpty()) {
-                    ventanaVenta.mostrarMensaje("Ingrese un DNI primero.", "Atención", JOptionPane.WARNING_MESSAGE);
+                    ventanaVenta.mostrarAlerta("Ingrese un DNI primero.", "Atención");
                     return;
                 }
                 modelo.Cliente c = repoCli.buscarPorDni(dni);
@@ -202,7 +189,7 @@ public class VendedorController {
                     clienteActual[0] = c;
                     ventanaVenta.mostrarClienteValidado(c.getDni(), c.getNombre() + " " + c.getApellido(), false);
                 } else {
-                    if (ventanaVenta.confirmarAccion("Cliente no encontrado. ¿Registrarlo?", "No encontrado", JOptionPane.QUESTION_MESSAGE)) {
+                    if (ventanaVenta.confirmarPregunta("Cliente no encontrado. ¿Registrarlo?", "No encontrado")) {
                         abrirFormularioRegistro(dni);
                         modelo.Cliente nuevoC = repoCli.buscarPorDni(dni);
                         if (nuevoC != null) {
@@ -213,7 +200,6 @@ public class VendedorController {
                 }
             });
 
-            // La vista se encarga de eliminar la fila y recalcular su total
             ventanaVenta.getBtnEliminarDelCarrito().addActionListener(e -> ventanaVenta.eliminarFilaSeleccionadaCarrito());
 
             ventanaVenta.getBtnAgregarProducto().addActionListener(e -> {
@@ -230,34 +216,34 @@ public class VendedorController {
                     int totalRequerido = pedida + cantEnCarro;
 
                     if (totalRequerido > producto.getStock()) {
-                        ventanaVenta.mostrarMensaje("Stock insuficiente. Solo cuentas con " + producto.getStock() + " unidades disponibles.", "Error de Stock", JOptionPane.ERROR_MESSAGE);
+                        ventanaVenta.mostrarError("Stock insuficiente. Solo cuentas con " + producto.getStock() + " unidades disponibles.", "Error de Stock");
                         return;
                     }
 
                     int stockRestante = producto.getStock() - totalRequerido;
                     if (stockRestante <= 5) {
-                        ventanaVenta.mostrarMensaje("Atención: Al confirmar esta venta, solo quedarán " + stockRestante + " unidades de '" + producto.getNombre() + "' en inventario.", "Alerta de Stock Crítico", JOptionPane.WARNING_MESSAGE);
+                        ventanaVenta.mostrarAlerta("Atención: Al confirmar esta venta, solo quedarán " + stockRestante + " unidades de '" + producto.getNombre() + "' en inventario.", "Alerta de Stock Crítico");
                     }
 
                     double sub = pedida * producto.getPrecio();
                     ventanaVenta.agregarFilaCarrito(producto.getId(), producto.getNombre(), producto.getPrecio(), pedida, sub);
 
                 } catch (NumberFormatException ex) {
-                    ventanaVenta.mostrarMensaje("Cantidad inválida.", "Error", JOptionPane.ERROR_MESSAGE);
+                    ventanaVenta.mostrarError("Cantidad inválida.", "Error");
                 }
             });
 
             ventanaVenta.getBtnConfirmarVenta().addActionListener(e -> {
                 if (clienteActual[0] == null) {
-                    ventanaVenta.mostrarMensaje("Debe asociar un cliente antes de facturar.", "Error", JOptionPane.WARNING_MESSAGE);
+                    ventanaVenta.mostrarAlerta("Debe asociar un cliente antes de facturar.", "Error");
                     return;
                 }
                 if (ventanaVenta.isCarritoVacio()) {
-                    ventanaVenta.mostrarMensaje("El carrito está vacío.", "Atención", JOptionPane.WARNING_MESSAGE);
+                    ventanaVenta.mostrarAlerta("El carrito está vacío.", "Atención");
                     return;
                 }
 
-                TableModel mod = ventanaVenta.getTablaCarrito().getModel();
+                List<Object[]> itemsCarrito = ventanaVenta.obtenerItemsCarrito();
                 StringBuilder resumen = new StringBuilder();
                 resumen.append("--- TICKET DE VENTA - NEXCELL ---\n");
                 resumen.append("Fecha: ").append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))).append("\n");
@@ -267,10 +253,10 @@ public class VendedorController {
                 resumen.append("--- DETALLE ---\n");
 
                 double totResumen = 0;
-                for (int i = 0; i < mod.getRowCount(); i++) {
-                    String nombreProd = (String) mod.getValueAt(i, 1);
-                    int cantProd = (int) mod.getValueAt(i, 3);
-                    double subTotalProd = (double) mod.getValueAt(i, 4);
+                for (Object[] fila : itemsCarrito) {
+                    String nombreProd = (String) fila[1];
+                    int cantProd = (int) fila[3];
+                    double subTotalProd = (double) fila[4];
 
                     resumen.append("• ").append(cantProd).append("x ").append(nombreProd)
                         .append(" - $").append(String.format("%.2f", subTotalProd)).append("\n");
@@ -281,47 +267,48 @@ public class VendedorController {
                 resumen.append("TOTAL A COBRAR: $").append(String.format("%.2f", totResumen)).append("\n");
                 resumen.append("---------------------------------\n");
 
-                if (!ventanaVenta.confirmarAccion(resumen.toString() + "\n¿Desea confirmar e impactar esta venta en el sistema?", "Revisión Final de la Venta", JOptionPane.QUESTION_MESSAGE)) {
+                if (!ventanaVenta.confirmarPregunta(resumen.toString() + "\n¿Desea confirmar e impactar esta venta en el sistema?", "Revisión Final de la Venta")) {
                     return;
                 }
 
-                boolean exito = procesarCheckout(vendedorLogueado.getId(), clienteActual[0].getDni(), totResumen, mod);
+                boolean exito = procesarCheckout(vendedorLogueado.getId(), clienteActual[0].getDni(), totResumen, itemsCarrito);
 
                 if (exito) {
                     try (FileWriter writer = new FileWriter("Ticket_Venta_" + System.currentTimeMillis() + ".txt")) {
                         writer.write(resumen.toString());
-                        ventanaVenta.mostrarMensaje("¡Venta registrada exitosamente!\nSe generó el comprobante físico.", "Venta Exitosa", JOptionPane.INFORMATION_MESSAGE);
+                        ventanaVenta.mostrarExito("¡Venta registrada exitosamente!\nSe generó el comprobante físico.", "Venta Exitosa");
                     } catch (Exception exio) {
-                        ventanaVenta.mostrarMensaje("La venta se guardó, pero hubo un error al crear el archivo de texto.", "Aviso", JOptionPane.WARNING_MESSAGE);
+                        ventanaVenta.mostrarAlerta("La venta se guardó, pero hubo un error al crear el archivo de texto.", "Aviso");
                     }
 
                     cargarTablaVentas();
                     cargarTablaProductos();
                     ventanaVenta.dispose();
                 } else {
-                    ventanaVenta.mostrarMensaje("Error interno en la base de datos al procesar la venta.", "Error Crítico", JOptionPane.ERROR_MESSAGE);
+                    ventanaVenta.mostrarError("Error interno en la base de datos al procesar la venta.", "Error Crítico");
                 }
             });
 
             ventanaVenta.setVisible(true);
 
         } catch (Exception ex) {
-            vistaPrincipal.mostrarMensaje("Error al inicializar módulo de ventas: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            vistaPrincipal.mostrarError("Error al inicializar módulo de ventas: " + ex.getMessage(), "Error");
         }
     }
 
-    public boolean procesarCheckout(Long idVendedor, String dniCliente, double totalVenta, TableModel modeloCarrito) {
+    public boolean procesarCheckout(Long idVendedor, String dniCliente, double totalVenta, List<Object[]> itemsCarrito) {
         StringBuilder jsonCarrito = new StringBuilder("[");
 
-        for (int i = 0; i < modeloCarrito.getRowCount(); i++) {
-            Long idProd = (Long) modeloCarrito.getValueAt(i, 0);
-            double precio = (double) modeloCarrito.getValueAt(i, 2);
-            int cantidad = (int) modeloCarrito.getValueAt(i, 3);
+        for (int i = 0; i < itemsCarrito.size(); i++) {
+            Object[] fila = itemsCarrito.get(i);
+            Long idProd = (Long) fila[0];
+            double precio = (double) fila[2];
+            int cantidad = (int) fila[3];
 
             jsonCarrito.append(String.format("{\"id\": %d, \"cantidad\": %d, \"precio\": %s}",
                 idProd, cantidad, String.valueOf(precio).replace(",", ".")));
 
-            if (i < modeloCarrito.getRowCount() - 1) {
+            if (i < itemsCarrito.size() - 1) {
                 jsonCarrito.append(",");
             }
         }
@@ -415,7 +402,7 @@ public class VendedorController {
 
                 cargarTablaClientes();
                 ven.dispose();
-                vistaPrincipal.mostrarMensaje("Cliente registrado con éxito.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                vistaPrincipal.mostrarExito("Cliente registrado con éxito.", "Éxito");
 
             } catch (Exception ex) {
                 if (em.getTransaction().isActive()) em.getTransaction().rollback();
@@ -435,7 +422,6 @@ public class VendedorController {
         if (cliente == null) return;
 
         RegistroClienteUI ven = new RegistroClienteUI(this.vistaPrincipal);
-        // La Vista se encarga de pre-cargar y bloquear los campos que no corresponden a Dirección
         ven.configurarModoEdicionDireccion(cliente);
         ven.getBtnCancelar().addActionListener(e -> ven.dispose());
 
@@ -467,12 +453,12 @@ public class VendedorController {
 
                 cargarTablaClientes();
                 ven.dispose();
-                vistaPrincipal.mostrarMensaje("Dirección actualizada correctamente.", "Edición Exitosa", JOptionPane.INFORMATION_MESSAGE);
+                vistaPrincipal.mostrarExito("Dirección actualizada correctamente.", "Edición Exitosa");
 
             } catch (Exception ex) {
                 if (em.getTransaction().isActive()) em.getTransaction().rollback();
                 utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ERROR, "CLIENTES", "Error al editar cliente: " + ex.getMessage());
-                vistaPrincipal.mostrarMensaje("Error al actualizar la base de datos.", "Error", JOptionPane.ERROR_MESSAGE);
+                vistaPrincipal.mostrarError("Error al actualizar la base de datos.", "Error");
             }
         });
 
@@ -480,7 +466,6 @@ public class VendedorController {
     }
 
     private void cambiarEstadoCliente(boolean act) {
-        int fila = vistaPrincipal.getTablaClientes().getSelectedRow();
         String dniCliente = vistaPrincipal.getDniClienteSeleccionado();
         if (dniCliente == null) return;
 
@@ -495,7 +480,7 @@ public class VendedorController {
                     repo.actualizar(cliente);
                     em.getTransaction().commit();
 
-                    vistaPrincipal.actualizarEstadoClienteEnTabla(fila, act);
+                    vistaPrincipal.actualizarEstadoClienteSeleccionado(act);
 
                     utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ALERTA, "CLIENTES",
                         "El Vendedor '" + vendedorLogueado.getUsername() + "' cambió el estado del cliente DNI " + dniCliente + " a " + (act ? "Activo" : "Inactivo"));
@@ -507,9 +492,8 @@ public class VendedorController {
         }
     }
 
-    // =========================================================================
-    // CARGA DE DATOS E IMPRESIÓN DE COMPROBANTES
-    // =========================================================================
+
+    // CARGA DE DATOS E IMPRESION DE COMPROBANTES
 
     private void cargarTablaClientes() {
         List<modelo.Cliente> cls = new repositorio.ClienteRepository(this.em).listarTodos();
@@ -528,13 +512,9 @@ public class VendedorController {
         } catch (Exception e) {}
     }
 
-    private void abrirDetalleVenta() {
-        Long idVenta = vistaPrincipal.getIdVentaSeleccionada();
-        if (idVenta == null) return;
-
+    private void abrirDetalleVenta(Long idVenta) {
         modelo.Venta venta = em.find(modelo.Venta.class, idVenta);
         if (venta != null) {
-            // Le pasamos la venta a la Vista para que arme el diálogo, y le pasamos el método generarComprobantePDF como callback
             vistaPrincipal.mostrarDialogoDetalleVenta(venta, this::generarComprobantePDF);
         }
     }
@@ -582,10 +562,10 @@ public class VendedorController {
 
             documento.close();
 
-            vistaPrincipal.mostrarMensaje("Comprobante PDF generado y guardado con éxito como:\n" + nombreArchivo, "PDF Generado", JOptionPane.INFORMATION_MESSAGE);
+            vistaPrincipal.mostrarExito("Comprobante PDF generado y guardado con éxito como:\n" + nombreArchivo, "PDF Generado");
 
         } catch (Exception e) {
-            vistaPrincipal.mostrarMensaje("Error al generar el PDF: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            vistaPrincipal.mostrarError("Error al generar el PDF: " + e.getMessage(), "Error");
         }
     }
 

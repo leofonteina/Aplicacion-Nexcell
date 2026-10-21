@@ -7,6 +7,7 @@ import java.awt.*;
 import java.io.File;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
@@ -77,7 +78,6 @@ public class VendedorUI extends JFrame {
 
         add(panelInferior, BorderLayout.SOUTH);
 
-        // Inicializar comportamientos puramente visuales de la Vista
         inicializarComportamientosVisuales();
     }
 
@@ -91,7 +91,6 @@ public class VendedorUI extends JFrame {
         configurarFiltroBusqueda(buscarProductoField, btnBuscarProducto, tablaProductos);
         configurarFiltroBusqueda(buscarVentaField, btnBuscarVenta, tablaVentas);
 
-        // Deseleccionar cliente al hacer clic en el espacio vacío
         java.awt.event.MouseAdapter deseleccionador = new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
@@ -105,7 +104,6 @@ public class VendedorUI extends JFrame {
             tablaClientes.getParent().addMouseListener(deseleccionador);
         }
 
-        // Mostrar/ocultar botones según el cliente seleccionado
         tablaClientes.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 int f = tablaClientes.getSelectedRow();
@@ -124,8 +122,22 @@ public class VendedorUI extends JFrame {
     }
 
     // =========================================================================
-    // MÉTODOS DE RENDERIZADO DE DATOS (Llamados por el Controlador)
+    // EVENTOS DELEGADOS Y RENDERIZADO DE DATOS (Llamados por el Controlador)
     // =========================================================================
+
+    public void alHacerDobleClicEnVenta(Consumer<Long> accion) {
+        tablaVentas.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    Long id = getIdVentaSeleccionada();
+                    if (id != null) {
+                        accion.accept(id);
+                    }
+                }
+            }
+        });
+    }
 
     public void mostrarClientes(List<modelo.Cliente> clientes) {
         DefaultTableModel mod = (DefaultTableModel) tablaClientes.getModel();
@@ -137,9 +149,12 @@ public class VendedorUI extends JFrame {
         }
     }
 
-    public void actualizarEstadoClienteEnTabla(int filaVista, boolean activo) {
-        tablaClientes.setValueAt(activo ? "Activo" : "Inactivo", filaVista, 5);
-        limpiarSeleccionClientes();
+    public void actualizarEstadoClienteSeleccionado(boolean activo) {
+        int filaVista = tablaClientes.getSelectedRow();
+        if (filaVista != -1) {
+            tablaClientes.setValueAt(activo ? "Activo" : "Inactivo", filaVista, 5);
+            limpiarSeleccionClientes();
+        }
     }
 
     public void limpiarSeleccionClientes() {
@@ -239,7 +254,29 @@ public class VendedorUI extends JFrame {
         lblTotalReporte.setText("Ranking de Fidelización (Clientes del Vendedor)");
     }
 
-    // --- SUB-VENTANA DE DETALLE DE VENTA (100% Responsabilidad de la Vista) ---
+    public List<String[]> obtenerDatosTablaReportes() {
+        List<String[]> datos = new ArrayList<>();
+        int cols = tablaReportes.getColumnCount();
+        if (tablaReportes.getRowCount() == 0) return datos;
+
+        String[] headers = new String[cols];
+        for (int i = 0; i < cols; i++) {
+            headers[i] = tablaReportes.getColumnName(i);
+        }
+        datos.add(headers);
+
+        for (int i = 0; i < tablaReportes.getRowCount(); i++) {
+            String[] fila = new String[cols];
+            for (int j = 0; j < cols; j++) {
+                Object val = tablaReportes.getValueAt(i, j);
+                fila[j] = val != null ? val.toString() : "";
+            }
+            datos.add(fila);
+        }
+        return datos;
+    }
+
+    // --- SUB-VENTANA DE DETALLE DE VENTA ---
 
     public void mostrarDialogoDetalleVenta(modelo.Venta venta, Consumer<modelo.Venta> accionDescargarPdf) {
         JDialog dialogo = new JDialog(this, "Detalle de Venta #" + venta.getId(), true);
@@ -292,10 +329,18 @@ public class VendedorUI extends JFrame {
         dialogo.setVisible(true);
     }
 
-    // --- UTILIDADES DE INTERACCIÓN CON EL USUARIO (Diálogos y Selectores) ---
+    // --- UTILIDADES DE INTERACCIÓN CON EL USUARIO (Sin exponer constantes Swing) ---
 
-    public void mostrarMensaje(String mensaje, String titulo, int tipo) {
-        JOptionPane.showMessageDialog(this, mensaje, titulo, tipo);
+    public void mostrarExito(String mensaje, String titulo) {
+        JOptionPane.showMessageDialog(this, mensaje, titulo, JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    public void mostrarAlerta(String mensaje, String titulo) {
+        JOptionPane.showMessageDialog(this, mensaje, titulo, JOptionPane.WARNING_MESSAGE);
+    }
+
+    public void mostrarError(String mensaje, String titulo) {
+        JOptionPane.showMessageDialog(this, mensaje, titulo, JOptionPane.ERROR_MESSAGE);
     }
 
     public boolean confirmarAccion(String mensaje, String titulo) {
@@ -328,6 +373,14 @@ public class VendedorUI extends JFrame {
 
     public String getFechaFinReporteStr() {
         return cbDiaFin.getSelectedItem() + "/" + cbMesFin.getSelectedItem() + "/" + cbAnioFin.getSelectedItem();
+    }
+
+    public int getIndiceTipoReporte() {
+        return comboTipoReporte.getSelectedIndex();
+    }
+
+    public String getCategoriaReporteSeleccionada() {
+        return comboCategoriasReporte.getSelectedItem().toString();
     }
 
     // =========================================================================
@@ -473,7 +526,6 @@ public class VendedorUI extends JFrame {
         cbMesFin.setSelectedIndex(hoy.getMonthValue() - 1);
         cbAnioFin.setSelectedItem(String.valueOf(hoy.getYear()));
 
-        // Por defecto arranca en "Resumen Diario", así que deshabilitamos la fecha Fin al inicio
         cbDiaFin.setEnabled(false);
         cbMesFin.setEnabled(false);
         cbAnioFin.setEnabled(false);
@@ -573,18 +625,13 @@ public class VendedorUI extends JFrame {
         return null;
     }
 
-    // Getters de componentes para eventos
-    public JTable getTablaClientes() { return tablaClientes; }
+    // Getters de botones para vincular acciones
     public JButton getBtnAbrirFormularioCliente() { return btnAbrirFormularioCliente; }
     public JButton getBtnBajaCliente() { return btnBajaCliente; }
     public JButton getBtnAltaCliente() { return btnAltaCliente; }
     public JButton getBtnEditarCliente() { return btnEditarCliente; }
     public JButton getBtnCerrarSesion() { return btnCerrarSesion; }
     public JButton getBtnAbrirFormularioVenta() { return btnAbrirFormularioVenta; }
-    public JTable getTablaVentas() { return tablaVentas; }
-    public JComboBox<String> getComboTipoReporte() { return comboTipoReporte; }
-    public JComboBox<String> getComboCategoriasReporte() { return comboCategoriasReporte; }
     public JButton getBtnGenerarReporte() { return btnGenerarReporte; }
     public JButton getBtnExportarReporte() { return btnExportarReporte; }
-    public JTable getTablaReportes() { return tablaReportes; }
 }
