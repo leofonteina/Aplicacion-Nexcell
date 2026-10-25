@@ -26,8 +26,12 @@ public class GerenteController {
 
         // Listeners para mostrar los diferentes reportes
         this.vistaPrincipal.getBtnGenerarReporte().addActionListener(e -> generarReporteVentas());
-        this.vistaPrincipal.getBtnLimpiarReporte().addActionListener(e -> limpiarReporte());
-        this.vistaPrincipal.getBtnCerrarSesion().addActionListener(e -> cerrarSesion());
+        this.vistaPrincipal.getBtnLimpiarReporte().addActionListener(e -> limpiarReporteVentas());
+        this.vistaPrincipal.getBtnLimpiarRendimiento().addActionListener(e -> limpiarRendimiento());
+        this.vistaPrincipal.getBtnLimpiarProductos().addActionListener(e -> limpiarProductos());
+        this.vistaPrincipal.getBtnExportarExcelVentas().addActionListener(e -> exportarTablaAExcel(vistaPrincipal.getTablaReportesVentas(), "Reporte_Ventas"));
+        this.vistaPrincipal.getBtnExportarExcelRendimiento().addActionListener(e -> exportarTablaAExcel(vistaPrincipal.getTablaRendimiento(), "Rendimiento_Vendedores"));
+        this.vistaPrincipal.getBtnExportarExcelProductos().addActionListener(e -> exportarTablaAExcel(vistaPrincipal.getTablaProductosVendidos(), "Top_Productos"));        this.vistaPrincipal.getBtnCerrarSesion().addActionListener(e -> cerrarSesion());
 
         // Listeners para calcular los diferentes reportes
         this.vistaPrincipal.getBtnCalcularRendimiento().addActionListener(e -> calcularRendimiento());
@@ -85,6 +89,9 @@ public class GerenteController {
         }
 
         vistaPrincipal.getTablaReportesVentas().setModel(modelo);
+        vistaPrincipal.getTablaReportesVentas().setModel(modelo);
+        vistaPrincipal.getBtnExportarExcelVentas().setEnabled(resultados != null && !resultados.isEmpty());
+        actualizarTotalVentas();
     }
 
     private void calcularRendimiento() {
@@ -124,6 +131,9 @@ public class GerenteController {
         }
 
         vistaPrincipal.getTablaRendimiento().setModel(modelo);
+        vistaPrincipal.getTablaRendimiento().setModel(modelo);
+        vistaPrincipal.getBtnExportarExcelRendimiento().setEnabled(resultados != null && !resultados.isEmpty());
+        actualizarTotalRendimiento();
     }
 
     private void calcularProductosMasVendidos() {
@@ -166,6 +176,9 @@ public class GerenteController {
         vistaPrincipal.getScrollTablaProductos().setVisible(true);
         vistaPrincipal.getBtnGenerarGraficoProductos().setEnabled(true);
         vistaPrincipal.getTabsProductos().setSelectedIndex(0);
+        vistaPrincipal.getTablaProductosVendidos().setModel(modelo);
+        vistaPrincipal.getBtnExportarExcelProductos().setEnabled(resultados != null && !resultados.isEmpty());
+        actualizarTotalProductos();
     }
 
     private LocalDate[] obtenerFechasDesdeUI(JComboBox<String> cbDiaD, JComboBox<String> cbMesD, JComboBox<String> cbAnioD,
@@ -195,8 +208,134 @@ public class GerenteController {
         }
     }
 
-    private void limpiarReporte() {
+    private void limpiarReporteVentas() {
         vistaPrincipal.getTablaReportesVentas().setModel(new DefaultTableModel());
+        vistaPrincipal.getBtnExportarExcelVentas().setEnabled(false);
+        actualizarTotalVentas();
+    }
+
+    private void limpiarRendimiento() {
+        vistaPrincipal.getTablaRendimiento().setModel(new DefaultTableModel());
+        vistaPrincipal.getBtnExportarExcelRendimiento().setEnabled(false);
+        actualizarTotalRendimiento();
+    }
+
+    private void limpiarProductos() {
+        // Limpiamos la tabla y deshabilitamos botones
+        vistaPrincipal.getTablaProductosVendidos().setModel(new DefaultTableModel());
+        vistaPrincipal.getBtnExportarExcelProductos().setEnabled(false);
+        vistaPrincipal.getBtnGenerarGraficoProductos().setEnabled(false);
+
+        // Vaciamos el gráfico de la interfaz
+        vistaPrincipal.getPanelGraficoProductos().removeAll();
+        vistaPrincipal.getPanelGraficoProductos().revalidate();
+        vistaPrincipal.getPanelGraficoProductos().repaint();
+
+        // Destruimos los datos en memoria para que no intente graficar nulos
+        datasetGraficoProductos = null;
+
+        // Devolvemos la vista a la pestaña principal de la tabla
+        vistaPrincipal.getTabsProductos().setSelectedIndex(0);
+        actualizarTotalProductos();
+    }
+
+    private void exportarTablaAExcel(JTable tabla, String nombreArchivoPorDefecto) {
+        if (tabla.getRowCount() == 0) {
+            JOptionPane.showMessageDialog(vistaPrincipal, "No hay datos visibles para exportar.", "Aviso", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Guardar Reporte como Excel (.xlsx)");
+        fileChooser.setSelectedFile(new java.io.File(nombreArchivoPorDefecto + ".xlsx"));
+
+        // Filtro para que solo muestre archivos Excel
+        fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("Documento de Excel (*.xlsx)", "xlsx"));
+
+        if (fileChooser.showSaveDialog(vistaPrincipal) == JFileChooser.APPROVE_OPTION) {
+            java.io.File archivo = fileChooser.getSelectedFile();
+
+            if (!archivo.getName().toLowerCase().endsWith(".xlsx")) {
+                archivo = new java.io.File(archivo.getAbsolutePath() + ".xlsx");
+            }
+
+            try (org.apache.poi.ss.usermodel.Workbook workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook()) {
+                org.apache.poi.ss.usermodel.Sheet sheet = workbook.createSheet("Reporte");
+
+                // Estilo para la cabecera (Negrita y fondo gris)
+                org.apache.poi.ss.usermodel.CellStyle estiloCabecera = workbook.createCellStyle();
+                org.apache.poi.ss.usermodel.Font fuenteCabecera = workbook.createFont();
+                fuenteCabecera.setBold(true);
+                estiloCabecera.setFont(fuenteCabecera);
+                estiloCabecera.setFillForegroundColor(org.apache.poi.ss.usermodel.IndexedColors.GREY_25_PERCENT.getIndex());
+                estiloCabecera.setFillPattern(org.apache.poi.ss.usermodel.FillPatternType.SOLID_FOREGROUND);
+
+                // Estilo para la moneda (Formato contable nativo de Excel)
+                org.apache.poi.ss.usermodel.CellStyle estiloMoneda = workbook.createCellStyle();
+                org.apache.poi.ss.usermodel.DataFormat formato = workbook.createDataFormat();
+                estiloMoneda.setDataFormat(formato.getFormat("$#,##0.00"));
+
+                // 1. Escribir Cabeceras
+                org.apache.poi.ss.usermodel.Row filaCabecera = sheet.createRow(0);
+                for (int i = 0; i < tabla.getColumnCount(); i++) {
+                    org.apache.poi.ss.usermodel.Cell celda = filaCabecera.createCell(i);
+                    celda.setCellValue(tabla.getColumnName(i));
+                    celda.setCellStyle(estiloCabecera);
+                }
+
+                // 2. Escribir Datos
+                for (int i = 0; i < tabla.getRowCount(); i++) {
+                    org.apache.poi.ss.usermodel.Row fila = sheet.createRow(i + 1);
+                    for (int j = 0; j < tabla.getColumnCount(); j++) {
+                        org.apache.poi.ss.usermodel.Cell celda = fila.createCell(j);
+                        Object valor = tabla.getValueAt(i, j);
+
+                        if (valor != null) {
+                            String texto = valor.toString();
+
+                            // Si el texto parece moneda (tiene el signo $)
+                            if (texto.trim().startsWith("$")) {
+                                try {
+                                    // Limpiamos el texto para dejar solo el número puro
+                                    String numeroLimpio = texto.replace("$", "").replace(",", "").trim();
+                                    celda.setCellValue(Double.parseDouble(numeroLimpio));
+                                    celda.setCellStyle(estiloMoneda);
+                                } catch (NumberFormatException e) {
+                                    celda.setCellValue(texto);
+                                }
+                            } else {
+                                // Intentamos ver si es un número normal (como Cantidad de Ventas)
+                                try {
+                                    if (texto.matches("-?\\d+")) { // Número entero
+                                        celda.setCellValue(Integer.parseInt(texto));
+                                    } else {
+                                        celda.setCellValue(texto); // Texto normal
+                                    }
+                                } catch (Exception ex) {
+                                    celda.setCellValue(texto);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 3. Autoajustar el ancho de todas las columnas (MÁGICO)
+                for (int i = 0; i < tabla.getColumnCount(); i++) {
+                    sheet.autoSizeColumn(i);
+                }
+
+                // 4. Guardar físicamente el archivo
+                try (java.io.FileOutputStream fileOut = new java.io.FileOutputStream(archivo)) {
+                    workbook.write(fileOut);
+                }
+
+                JOptionPane.showMessageDialog(vistaPrincipal, "El reporte Excel (.xlsx) fue generado exitosamente a:\n" + archivo.getAbsolutePath(), "Exportación Exitosa", JOptionPane.INFORMATION_MESSAGE);
+                utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "REPORTES", "El Gerente exportó un XLSX avanzado: " + archivo.getName());
+
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(vistaPrincipal, "Ocurrió un error al exportar el archivo XLSX:\n" + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
     }
 
     private void cerrarSesion() {
@@ -275,7 +414,6 @@ public class GerenteController {
 
     private java.util.List<Object[]> buscarSugerenciasDinamicas(String parteTexto, String criterio) {
         try {
-            // Cambiamos el comodín para que busque solo los que EMPIECEN con el texto (ej: "4%")
             String formatoBusqueda = parteTexto + "%";
 
             if (criterio.equals("DNI Cliente")) {
@@ -284,7 +422,7 @@ public class GerenteController {
                         .setMaxResults(8)
                         .getResultList();
             } else {
-                return em.createQuery("SELECT u.dni, u.nombre, u.apellido, u.username FROM Usuario u WHERE u.dni LIKE :texto OR u.username LIKE :texto", Object[].class)
+                return em.createQuery("SELECT u.dni, u.nombre, u.apellido, u.username FROM Usuario u WHERE (u.dni LIKE :texto OR u.username LIKE :texto) AND u.rol = 'VENDEDOR'", Object[].class)
                         .setParameter("texto", formatoBusqueda)
                         .setMaxResults(8)
                         .getResultList();
@@ -297,11 +435,17 @@ public class GerenteController {
                             .setParameter("texto", formatoBusqueda)
                             .getResultList();
                 } else {
-                    return em.createNativeQuery("SELECT dni, nombre, apellido, username FROM usuarios WHERE dni LIKE :texto OR username LIKE :texto LIMIT 8")
+                    return em.createNativeQuery("SELECT dni, nombre, apellido, username FROM usuarios WHERE (dni LIKE :texto OR username LIKE :texto) AND rol = 'VENDEDOR' LIMIT 8")
                             .setParameter("texto", formatoBusqueda)
                             .getResultList();
                 }
             } catch (Exception ex) {
+                // Ventana emergente que informa si ha ocurrido un error
+                javax.swing.JOptionPane.showMessageDialog(vistaPrincipal,
+                        "Error al consultar la base de datos:\n" + ex.getMessage(),
+                        "Error de Búsqueda",
+                        javax.swing.JOptionPane.ERROR_MESSAGE);
+
                 return java.util.Collections.emptyList();
             }
         }
@@ -320,6 +464,8 @@ public class GerenteController {
 
                 sorter.setRowFilter(javax.swing.RowFilter.regexFilter("(?i)" + java.util.regex.Pattern.quote(textoBusqueda), columnaFiltro));
             }
+
+            actualizarTotalVentas();
         }
     }
 
@@ -404,5 +550,38 @@ public class GerenteController {
         vistaPrincipal.getPanelGraficoProductos().repaint();
 
         vistaPrincipal.getTabsProductos().setSelectedIndex(1);
+    }
+
+    private double calcularTotalColumnaVisual(JTable tabla, int indiceColumna) {
+        double total = 0.0;
+        for (int i = 0; i < tabla.getRowCount(); i++) {
+            Object valor = tabla.getValueAt(i, indiceColumna);
+            if (valor != null) {
+                String strValor = valor.toString();
+                // Elimina símbolos de moneda y comas para parsear a double
+                strValor = strValor.replace("$", "").replace(",", "").trim();
+                try {
+                    total += Double.parseDouble(strValor);
+                } catch (NumberFormatException e) {
+                    // Ignora valores que no sean numéricos
+                }
+            }
+        }
+        return total;
+    }
+
+    private void actualizarTotalVentas() {
+        double total = calcularTotalColumnaVisual(vistaPrincipal.getTablaReportesVentas(), 5);
+        vistaPrincipal.getLblTotalReporteVentas().setText(String.format("Total Reporte: $%.2f", total));
+    }
+
+    private void actualizarTotalRendimiento() {
+        double total = calcularTotalColumnaVisual(vistaPrincipal.getTablaRendimiento(), 2);
+        vistaPrincipal.getLblTotalRendimiento().setText(String.format("Total Facturado: $%.2f", total));
+    }
+
+    private void actualizarTotalProductos() {
+        double total = calcularTotalColumnaVisual(vistaPrincipal.getTablaProductosVendidos(), 4);
+        vistaPrincipal.getLblTotalProductos().setText(String.format("Total Ingresos Generados: $%.2f", total));
     }
 }
