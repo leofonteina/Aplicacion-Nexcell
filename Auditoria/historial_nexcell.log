@@ -193,3 +193,27 @@
 [25/10/2026 22:40:00] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
 [25/10/2026 22:41:36] [INFO] [SEGURIDAD] - El Vendedor 'pedro' cerró sesión.
 [25/10/2026 22:41:47] [INFO] [SEGURIDAD] - El usuario 'juan' (Admin) inició sesión exitosamente.
+[26/10/2026 10:07:22] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[26/10/2026 10:17:15] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[26/10/2026 10:17:25] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 26/09/2026 hasta 26/10/2026
+[26/10/2026 10:17:34] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 26/09/2026 hasta 26/10/2026
+[26/10/2026 10:17:41] [INFO] [REPORTES] - El Gerente generó el reporte de rendimiento de vendedores desde 26/09/2026 hasta 26/10/2026
+[26/10/2026 10:18:37] [INFO] [SEGURIDAD] - El Gerente cerró sesión.
+[26/10/2026 10:18:42] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[26/10/2026 10:39:23] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[26/10/2026 10:39:42] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 26/09/2026
+[26/10/2026 10:39:51] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 26/09/2026
+[26/10/2026 10:39:56] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 26/09/2026
+[26/10/2026 10:40:05] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 26/09/2026
+[26/10/2026 10:40:27] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 26/09/2026
+[26/10/2026 10:40:42] [INFO] [REPORTES] - El Gerente generó el reporte de rendimiento de vendedores
+[26/10/2026 10:40:55] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos
+[26/10/2026 10:43:15] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[26/10/2026 10:43:39] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos
+[26/10/2026 10:45:03] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[26/10/2026 10:47:50] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[26/10/2026 10:51:15] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[26/10/2026 10:51:31] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos
+[26/10/2026 10:52:15] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[26/10/2026 10:52:22] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos
+[26/10/2026 10:53:30] [INFO] [REPORTES] - El Gerente exportó: Top_Productos_2.xlsx

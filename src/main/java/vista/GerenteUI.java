@@ -4,48 +4,40 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.time.LocalDate;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.data.category.DefaultCategoryDataset;
 
 public class GerenteUI extends JFrame {
 
-    // Componentes de Reportes de Ventas
+    // Variables Globales
+
+    // -- Reportes de Ventas --
     private JTextField buscarVentaField;
-    private JButton btnBuscarVenta;
-    private JButton btnGenerarReporte;
-    private JButton btnLimpiarReporte;
-    private JButton btnLimpiarRendimiento;
-    private JButton btnLimpiarProductos;
-    private JButton btnExportarExcelRendimiento;
-    private JButton btnExportarExcelProductos;
-    private JButton btnExportarExcelVentas;
+    private JButton btnBuscarVenta, btnGenerarReporte, btnLimpiarReporte, btnExportarExcelVentas;
     private JTable tablaReportesVentas;
     private JLabel lblTotalReporteVentas;
-    private JComboBox<String> cbDiaInicioV, cbMesInicioV, cbAnioInicioV;
-    private JComboBox<String> cbDiaFinV, cbMesFinV, cbAnioFinV;
+    private JComboBox<String> cbDiaInicioV, cbMesInicioV, cbAnioInicioV, cbDiaFinV, cbMesFinV, cbAnioFinV;
 
-    // Componentes de Rendimiento de Vendedores
-    private JButton btnCalcularRendimiento;
+    // -- Rendimiento de Vendedores --
+    private JButton btnCalcularRendimiento, btnLimpiarRendimiento, btnExportarExcelRendimiento;
     private JLabel lblTotalRendimiento;
     private JTable tablaRendimiento;
-    private JComboBox<String> cbDiaInicioR, cbMesInicioR, cbAnioInicioR;
-    private JComboBox<String> cbDiaFinR, cbMesFinR, cbAnioFinR;
+    private JComboBox<String> cbDiaInicioR, cbMesInicioR, cbAnioInicioR, cbDiaFinR, cbMesFinR, cbAnioFinR;
 
-    // Componentes de Productos Más Vendidos
-    private JButton btnCalcularProductosVendidos;
+    // -- Productos Más Vendidos --
+    private JButton btnCalcularProductosVendidos, btnLimpiarProductos, btnExportarExcelProductos,
+                    btnGenerarGraficoProductos;
     private JLabel lblTotalProductos;
-    private JButton btnGenerarGraficoProductos;
     private JTable tablaProductosVendidos;
     private JScrollPane scrollTablaProductos;
     private JTabbedPane tabsProductos;
     private JPanel panelGraficoProductos;
-    private JComboBox<String> cbDiaInicioP, cbMesInicioP, cbAnioInicioP;
-    private JComboBox<String> cbDiaFinP, cbMesFinP, cbAnioFinP;
+    private JComboBox<String> cbDiaInicioP, cbMesInicioP, cbAnioInicioP, cbDiaFinP, cbMesFinP, cbAnioFinP;
 
-    // Componentes para la busqueda de un vendedor o compras de un cliente
-    private JLabel lblInfoNombre;
-    private JLabel lblInfoApellido;
-    private JLabel lblInfoDni;
-    private JLabel lblInfoExtra;
-
+    // -- Autocompletado y Búsqueda --
+    private JLabel lblInfoNombre, lblInfoApellido, lblInfoDni, lblInfoExtra;
     private JPopupMenu popupBusqueda;
     private DefaultListModel<String> modeloListaBusqueda;
     private JList<String> listaBusqueda;
@@ -53,8 +45,8 @@ public class GerenteUI extends JFrame {
     private boolean ignorarEventosBusqueda = false;
     private JComboBox<String> comboCriterioBusqueda;
 
+    // -- Extras --
     private JButton btnCerrarSesion;
-
     private static final int ALTO_FILA_TABLA = 35;
 
     public GerenteUI() {
@@ -66,48 +58,40 @@ public class GerenteUI extends JFrame {
         setLayout(new BorderLayout());
 
         JTabbedPane sistemaPestanas = new JTabbedPane(JTabbedPane.LEFT);
-        sistemaPestanas.addTab("  Reportes de Ventas  ", cargarIcono("/iconos/icono_ventas.png"), crearPanelReportesVentas());
-        sistemaPestanas.addTab("  Rendimiento Vendedores  ", cargarIcono("/iconos/icono_usuarios.png"), crearPanelRendimiento());
-        sistemaPestanas.addTab("  Productos Más Vendidos  ", cargarIcono("/iconos/icono_reportes.png"), crearPanelProductosMasVendidos());
+        sistemaPestanas.addTab("  Reportes de Ventas  ", cargarIcono("/iconos/icono_ventas.png"),
+                               crearPanelReportesVentas());
+        sistemaPestanas.addTab("  Rendimiento Vendedores  ", cargarIcono("/iconos/icono_usuarios.png"),
+                               crearPanelRendimiento());
+        sistemaPestanas.addTab("  Productos Más Vendidos  ", cargarIcono("/iconos/icono_reportes.png"),
+                               crearPanelProductosMasVendidos());
 
         add(sistemaPestanas, BorderLayout.CENTER);
 
         JPanel panelInferior = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         panelInferior.setBorder(BorderFactory.createEmptyBorder(10, 30, 20, 30));
         btnCerrarSesion = crearBotonEstilizado("Cerrar Sesión");
-        btnCerrarSesion.setForeground(new Color(224, 82, 82)); // Color coral consistente con VendedorUI
+        btnCerrarSesion.setForeground(new Color(224, 82, 82));
         panelInferior.add(btnCerrarSesion);
         add(panelInferior, BorderLayout.SOUTH);
     }
 
+    // Metodos para la construccion de paneles
     private JPanel crearPanelReportesVentas() {
         JPanel panel = new JPanel(new BorderLayout(15, 15));
         panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        // Contenedor superior para apilar los elementos verticalmente
         JPanel panelSuperior = new JPanel(new BorderLayout(10, 10));
-
         JPanel panelBusqueda = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
 
         comboCriterioBusqueda = new JComboBox<>(new String[]{"DNI Cliente", "Usuario Vendedor"});
         comboCriterioBusqueda.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
         buscarVentaField = new JTextField(15);
         btnBuscarVenta = crearBotonEstilizado("Buscar");
 
-        // 4 JLabels informativos
-        lblInfoNombre = new JLabel("Nombre: -");
-        lblInfoApellido = new JLabel("Apellido: -");
-        lblInfoDni = new JLabel("DNI: -");
-        lblInfoExtra = new JLabel("Atendido por: -");
-
-        Font fontInfo = new Font("Segoe UI", Font.ITALIC, 13);
-        Color colorInfo = new Color(120, 120, 120);
-
-        lblInfoNombre.setFont(fontInfo); lblInfoNombre.setForeground(colorInfo);
-        lblInfoApellido.setFont(fontInfo); lblInfoApellido.setForeground(colorInfo);
-        lblInfoDni.setFont(fontInfo); lblInfoDni.setForeground(colorInfo);
-        lblInfoExtra.setFont(fontInfo); lblInfoExtra.setForeground(colorInfo);
+        lblInfoNombre = crearLabelInformativo("Nombre: -");
+        lblInfoApellido = crearLabelInformativo("Apellido: -");
+        lblInfoDni = crearLabelInformativo("DNI: -");
+        lblInfoExtra = crearLabelInformativo("Atendido por: -");
 
         comboCriterioBusqueda.addActionListener(e -> {
             ignorarEventosBusqueda = true;
@@ -121,23 +105,23 @@ public class GerenteUI extends JFrame {
         panelBusqueda.add(buscarVentaField);
         panelBusqueda.add(btnBuscarVenta);
         panelBusqueda.add(Box.createHorizontalStrut(15));
-        panelBusqueda.add(lblInfoNombre);
-        panelBusqueda.add(Box.createHorizontalStrut(10));
-        panelBusqueda.add(lblInfoApellido);
-        panelBusqueda.add(Box.createHorizontalStrut(10));
-        panelBusqueda.add(lblInfoDni);
-        panelBusqueda.add(Box.createHorizontalStrut(10));
+        panelBusqueda.add(lblInfoNombre); panelBusqueda.add(Box.createHorizontalStrut(10));
+        panelBusqueda.add(lblInfoApellido); panelBusqueda.add(Box.createHorizontalStrut(10));
+        panelBusqueda.add(lblInfoDni); panelBusqueda.add(Box.createHorizontalStrut(10));
         panelBusqueda.add(lblInfoExtra);
 
-        cbDiaInicioV = new JComboBox<>(obtenerDias()); cbMesInicioV = new JComboBox<>(obtenerMeses()); cbAnioInicioV = new JComboBox<>(obtenerAnios());
-        cbDiaFinV = new JComboBox<>(obtenerDias()); cbMesFinV = new JComboBox<>(obtenerMeses()); cbAnioFinV = new JComboBox<>(obtenerAnios());
+        cbDiaInicioV = new JComboBox<>(obtenerDias());
+        cbMesInicioV = new JComboBox<>(obtenerMeses());
+        cbAnioInicioV = new JComboBox<>(obtenerAnios());
+        cbDiaFinV = new JComboBox<>(obtenerDias());
+        cbMesFinV = new JComboBox<>(obtenerMeses());
+        cbAnioFinV = new JComboBox<>(obtenerAnios());
         setearFechasPorDefecto(cbDiaInicioV, cbMesInicioV, cbAnioInicioV, cbDiaFinV, cbMesFinV, cbAnioFinV);
 
         JPanel panelFiltros = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         btnGenerarReporte = crearBotonEstilizado("Generar Reporte");
         btnLimpiarReporte = crearBotonEstilizado("Limpiar");
 
-        // CORRECCIÓN: Botón correcto de Excel instanciado con su variable correspondiente
         btnExportarExcelVentas = crearBotonEstilizado("Exportar a Excel");
         btnExportarExcelVentas.setBackground(new Color(33, 115, 70));
         btnExportarExcelVentas.setForeground(Color.WHITE);
@@ -145,13 +129,13 @@ public class GerenteUI extends JFrame {
 
         panelFiltros.add(new JLabel("Desde:"));
         panelFiltros.add(crearAgrupacionFecha(cbDiaInicioV, cbMesInicioV, cbAnioInicioV));
+
         panelFiltros.add(new JLabel("Hasta:"));
         panelFiltros.add(crearAgrupacionFecha(cbDiaFinV, cbMesFinV, cbAnioFinV));
         panelFiltros.add(btnGenerarReporte);
         panelFiltros.add(btnLimpiarReporte);
         panelFiltros.add(btnExportarExcelVentas);
 
-        // Colocamos la búsqueda arriba y los filtros abajo
         panelSuperior.add(panelBusqueda, BorderLayout.NORTH);
         panelSuperior.add(panelFiltros, BorderLayout.CENTER);
 
@@ -180,8 +164,12 @@ public class GerenteUI extends JFrame {
 
         JPanel panelSuperior = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
 
-        cbDiaInicioR = new JComboBox<>(obtenerDias()); cbMesInicioR = new JComboBox<>(obtenerMeses()); cbAnioInicioR = new JComboBox<>(obtenerAnios());
-        cbDiaFinR = new JComboBox<>(obtenerDias()); cbMesFinR = new JComboBox<>(obtenerMeses()); cbAnioFinR = new JComboBox<>(obtenerAnios());
+        cbDiaInicioR = new JComboBox<>(obtenerDias());
+        cbMesInicioR = new JComboBox<>(obtenerMeses());
+        cbAnioInicioR = new JComboBox<>(obtenerAnios());
+        cbDiaFinR = new JComboBox<>(obtenerDias());
+        cbMesFinR = new JComboBox<>(obtenerMeses());
+        cbAnioFinR = new JComboBox<>(obtenerAnios());
         setearFechasPorDefecto(cbDiaInicioR, cbMesInicioR, cbAnioInicioR, cbDiaFinR, cbMesFinR, cbAnioFinR);
 
         btnCalcularRendimiento = crearBotonEstilizado("Calcular Rendimiento por Fecha");
@@ -205,7 +193,6 @@ public class GerenteUI extends JFrame {
             @Override public boolean isCellEditable(int row, int column) { return false; }
         };
         configurarTabla(tablaRendimiento);
-        JScrollPane scrollTabla = new JScrollPane(tablaRendimiento);
 
         JPanel panelTotales = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         lblTotalRendimiento = new JLabel("Total Facturado: $0.00");
@@ -214,7 +201,7 @@ public class GerenteUI extends JFrame {
         panelTotales.add(lblTotalRendimiento);
 
         panel.add(panelSuperior, BorderLayout.NORTH);
-        panel.add(scrollTabla, BorderLayout.CENTER);
+        panel.add(new JScrollPane(tablaRendimiento), BorderLayout.CENTER);
         panel.add(panelTotales, BorderLayout.SOUTH);
 
         return panel;
@@ -224,11 +211,14 @@ public class GerenteUI extends JFrame {
         JPanel panel = new JPanel(new BorderLayout(15, 15));
         panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        JPanel panelSuperior = new JPanel(new BorderLayout());
-        JPanel panelIzquierda = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        JPanel panelSuperior = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
 
-        cbDiaInicioP = new JComboBox<>(obtenerDias()); cbMesInicioP = new JComboBox<>(obtenerMeses()); cbAnioInicioP = new JComboBox<>(obtenerAnios());
-        cbDiaFinP = new JComboBox<>(obtenerDias()); cbMesFinP = new JComboBox<>(obtenerMeses()); cbAnioFinP = new JComboBox<>(obtenerAnios());
+        cbDiaInicioP = new JComboBox<>(obtenerDias());
+        cbMesInicioP = new JComboBox<>(obtenerMeses());
+        cbAnioInicioP = new JComboBox<>(obtenerAnios());
+        cbDiaFinP = new JComboBox<>(obtenerDias());
+        cbMesFinP = new JComboBox<>(obtenerMeses());
+        cbAnioFinP = new JComboBox<>(obtenerAnios());
         setearFechasPorDefecto(cbDiaInicioP, cbMesInicioP, cbAnioInicioP, cbDiaFinP, cbMesFinP, cbAnioFinP);
 
         btnCalcularProductosVendidos = crearBotonEstilizado("Calcular por Fecha");
@@ -236,25 +226,20 @@ public class GerenteUI extends JFrame {
 
         btnExportarExcelProductos = crearBotonEstilizado("Excel");
         btnExportarExcelProductos.setBackground(new Color(33, 115, 70));
-        btnExportarExcelProductos.setPreferredSize(new Dimension(90, 30));
         btnExportarExcelProductos.setForeground(Color.WHITE);
         btnExportarExcelProductos.setEnabled(false);
 
-        panelIzquierda.add(new JLabel("Desde:"));
-        panelIzquierda.add(crearAgrupacionFecha(cbDiaInicioP, cbMesInicioP, cbAnioInicioP));
-        panelIzquierda.add(new JLabel("Hasta:"));
-        panelIzquierda.add(crearAgrupacionFecha(cbDiaFinP, cbMesFinP, cbAnioFinP));
-        panelIzquierda.add(btnCalcularProductosVendidos);
-        panelIzquierda.add(btnLimpiarProductos);
-        panelIzquierda.add(btnExportarExcelProductos);
-
-        JPanel panelDerecha = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
         btnGenerarGraficoProductos = crearBotonEstilizado("Generar Gráfico");
         btnGenerarGraficoProductos.setEnabled(false);
-        panelDerecha.add(btnGenerarGraficoProductos);
 
-        panelSuperior.add(panelIzquierda, BorderLayout.WEST);
-        panelSuperior.add(panelDerecha, BorderLayout.EAST);
+        panelSuperior.add(new JLabel("Desde:"));
+        panelSuperior.add(crearAgrupacionFecha(cbDiaInicioP, cbMesInicioP, cbAnioInicioP));
+        panelSuperior.add(new JLabel("Hasta:"));
+        panelSuperior.add(crearAgrupacionFecha(cbDiaFinP, cbMesFinP, cbAnioFinP));
+        panelSuperior.add(btnCalcularProductosVendidos);
+        panelSuperior.add(btnLimpiarProductos);
+        panelSuperior.add(btnExportarExcelProductos);
+        panelSuperior.add(btnGenerarGraficoProductos);
 
         String[] columnas = {"Ranking", "Producto", "Categoría", "Cant. Vendida", "Ingresos Generados"};
         tablaProductosVendidos = new JTable(new DefaultTableModel(null, columnas)) {
@@ -283,6 +268,60 @@ public class GerenteUI extends JFrame {
         return panel;
     }
 
+    // Metodos varios para la creacion de la vista
+    public void renderizarGraficoBarras(DefaultCategoryDataset dataset, String tituloGrafico) {
+        JFreeChart graficoBarras = ChartFactory.createBarChart(
+                tituloGrafico, "Productos", "Cantidad Vendida", dataset
+        );
+        graficoBarras.setBackgroundPaint(java.awt.Color.WHITE);
+
+        org.jfree.chart.plot.CategoryPlot plot = graficoBarras.getCategoryPlot();
+        plot.setBackgroundPaint(java.awt.Color.WHITE);
+        plot.setOutlineVisible(false);
+        plot.setRangeGridlinePaint(new java.awt.Color(170, 170, 170));
+        plot.setRangeGridlineStroke(new java.awt.BasicStroke(
+                1.2f, java.awt.BasicStroke.CAP_ROUND, java.awt.BasicStroke.JOIN_ROUND,
+                1.0f, new float[]{6.0f, 4.0f}, 0.0f));
+
+        org.jfree.chart.renderer.category.BarRenderer renderer = new org.jfree.chart.renderer.category.BarRenderer() {
+            @Override
+            public java.awt.Paint getItemPaint(int row, int column) {
+                double max = 0;
+                for (int i = 0; i < dataset.getColumnCount(); i++) {
+                    Number val = dataset.getValue(0, i);
+                    if (val != null && val.doubleValue() > max) {
+                        max = val.doubleValue();
+                    }
+                }
+                Number valorActual = dataset.getValue(row, column);
+                double val = valorActual != null ? valorActual.doubleValue() : 0;
+                int alpha = (max > 0) ? (int) ((val / max) * 200) + 55 : 55;
+                alpha = Math.min(alpha, 255);
+
+                java.awt.Color[] coloresBase = {
+                        new java.awt.Color(204, 0, 0), new java.awt.Color(0, 153, 51),
+                        new java.awt.Color(0, 102, 204), new java.awt.Color(255, 128, 0),
+                        new java.awt.Color(102, 0, 204), new java.awt.Color(0, 153, 153)
+                };
+                java.awt.Color colorElegido = coloresBase[column % coloresBase.length];
+                return new java.awt.Color(
+                        colorElegido.getRed(), colorElegido.getGreen(), colorElegido.getBlue(), alpha
+                );
+            }
+        };
+
+        renderer.setBarPainter(new org.jfree.chart.renderer.category.StandardBarPainter());
+        renderer.setDrawBarOutline(false);
+        plot.setRenderer(renderer);
+
+        ChartPanel panelBarras = new ChartPanel(graficoBarras);
+        panelGraficoProductos.removeAll();
+        panelGraficoProductos.add(panelBarras, java.awt.BorderLayout.CENTER);
+        panelGraficoProductos.revalidate();
+        panelGraficoProductos.repaint();
+        tabsProductos.setSelectedIndex(1);
+    }
+
     private void configurarTabla(JTable tabla) {
         tabla.setRowHeight(ALTO_FILA_TABLA);
         tabla.setShowVerticalLines(false);
@@ -298,11 +337,16 @@ public class GerenteUI extends JFrame {
         return btn;
     }
 
+    private JLabel crearLabelInformativo(String texto) {
+        JLabel label = new JLabel(texto);
+        label.setFont(new Font("Segoe UI", Font.ITALIC, 13));
+        label.setForeground(new Color(120, 120, 120));
+        return label;
+    }
+
     private ImageIcon cargarIcono(String ruta) {
         java.net.URL imgURL = getClass().getResource(ruta);
-        if (imgURL != null) {
-            return new ImageIcon(new ImageIcon(imgURL).getImage().getScaledInstance(32, 32, Image.SCALE_SMOOTH));
-        }
+        if (imgURL != null) return new ImageIcon(new ImageIcon(imgURL).getImage().getScaledInstance(32, 32, Image.SCALE_SMOOTH));
         return null;
     }
 
@@ -310,6 +354,13 @@ public class GerenteUI extends JFrame {
         JPanel p = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
         p.add(dia); p.add(new JLabel("/")); p.add(mes); p.add(new JLabel("/")); p.add(anio);
         return p;
+    }
+
+    private void setearFechasPorDefecto(JComboBox<String> dI, JComboBox<String> mI, JComboBox<String> aI, JComboBox<String> dF, JComboBox<String> mF, JComboBox<String> aF) {
+        LocalDate hoy = LocalDate.now();
+        LocalDate haceUnMes = hoy.minusMonths(1);
+        dI.setSelectedIndex(haceUnMes.getDayOfMonth() - 1); mI.setSelectedIndex(haceUnMes.getMonthValue() - 1); aI.setSelectedItem(String.valueOf(haceUnMes.getYear()));
+        dF.setSelectedIndex(hoy.getDayOfMonth() - 1); mF.setSelectedIndex(hoy.getMonthValue() - 1); aF.setSelectedItem(String.valueOf(hoy.getYear()));
     }
 
     private String[] obtenerDias() {
@@ -331,46 +382,35 @@ public class GerenteUI extends JFrame {
         return anios;
     }
 
-    private void setearFechasPorDefecto(JComboBox<String> dI, JComboBox<String> mI, JComboBox<String> aI,
-                                        JComboBox<String> dF, JComboBox<String> mF, JComboBox<String> aF) {
-        LocalDate hoy = LocalDate.now();
-        LocalDate haceUnMes = hoy.minusMonths(1);
+    // Metodos de dialogos que informan al usuario
 
-        dI.setSelectedIndex(haceUnMes.getDayOfMonth() - 1);
-        mI.setSelectedIndex(haceUnMes.getMonthValue() - 1);
-        aI.setSelectedItem(String.valueOf(haceUnMes.getYear()));
+    // Estos métodos evitan que el Controlador toque librerías Swing (JFileChooser / JOptionPane)
+    public java.io.File solicitarArchivoParaGuardar(String nombrePorDefecto) {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Guardar Reporte como Excel (.xlsx)");
+        fileChooser.setSelectedFile(new java.io.File(nombrePorDefecto + ".xlsx"));
+        fileChooser.setFileFilter(
+                new javax.swing.filechooser.FileNameExtensionFilter(
+                        "Documento de Excel (*.xlsx)", "xlsx"
+                )
+        );
 
-        dF.setSelectedIndex(hoy.getDayOfMonth() - 1);
-        mF.setSelectedIndex(hoy.getMonthValue() - 1);
-        aF.setSelectedItem(String.valueOf(hoy.getYear()));
-    }
-
-    public void alHacerDobleClicEnVenta(java.util.function.Consumer<Long> accion) {
-        tablaReportesVentas.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override
-            public void mouseClicked(java.awt.event.MouseEvent e) {
-                if (e.getClickCount() == 2) {
-                    Long id = getIdVentaSeleccionada();
-                    if (id != null) {
-                        accion.accept(id);
-                    }
-                }
+        if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            java.io.File archivo = fileChooser.getSelectedFile();
+            if (!archivo.getName().toLowerCase().endsWith(".xlsx")) {
+                return new java.io.File(archivo.getAbsolutePath() + ".xlsx");
             }
-        });
-    }
-
-    public Long getIdVentaSeleccionada() {
-        int fila = tablaReportesVentas.getSelectedRow();
-        if (fila != -1) {
-            // Se obtiene el valor y se remueve el prefijo "V-" agregado en el controlador
-            String idStr = tablaReportesVentas.getValueAt(fila, 0).toString().replace("V-", "");
-            try {
-                return Long.parseLong(idStr);
-            } catch (NumberFormatException ex) {
-                return null;
-            }
+            return archivo;
         }
-        return null;
+        return null; // El usuario canceló
+    }
+
+    public void mostrarMensaje(String mensaje, String titulo, int tipoMensaje) {
+        JOptionPane.showMessageDialog(this, mensaje, titulo, tipoMensaje);
+    }
+
+    public boolean pedirConfirmacion(String mensaje, String titulo) {
+        return JOptionPane.showConfirmDialog(this, mensaje, titulo, JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION;
     }
 
     public void mostrarDialogoDetalleVenta(modelo.Venta venta, java.util.function.Consumer<modelo.Venta> accionDescargarPdf) {
@@ -381,10 +421,18 @@ public class GerenteUI extends JFrame {
 
         JPanel panelInfo = new JPanel(new GridLayout(4, 1, 5, 5));
         panelInfo.setBorder(BorderFactory.createEmptyBorder(15, 15, 5, 15));
-        panelInfo.add(new JLabel("Cliente: " + venta.getCliente().getNombre() + " " + venta.getCliente().getApellido() + " (DNI: " + venta.getCliente().getDni() + ")"));
+        panelInfo.add(new JLabel(
+                "Cliente: " + venta.getCliente().getNombre() +
+                        " " + venta.getCliente().getApellido() + " (DNI: " +
+                        venta.getCliente().getDni() + ")"
+                )
+        );
         panelInfo.add(new JLabel("Atendido por: " + venta.getVendedor().getUsername()));
-        panelInfo.add(new JLabel("Fecha de operación: " + venta.getFecha().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))));
-
+        panelInfo.add(new JLabel(
+                "Fecha: " +
+                        venta.getFecha().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
+                )
+        );
         dialogo.add(panelInfo, BorderLayout.NORTH);
 
         String[] columnas = {"Producto", "Cantidad", "Subtotal"};
@@ -393,11 +441,7 @@ public class GerenteUI extends JFrame {
         };
 
         for (modelo.DetalleVenta dv : venta.getDetalles()) {
-            modDetalle.addRow(new Object[]{
-                    dv.getProducto().getNombre(),
-                    dv.getCantidad() + " u.",
-                    String.format("$%.2f", dv.getSubtotal())
-            });
+            modDetalle.addRow(new Object[]{ dv.getProducto().getNombre(), dv.getCantidad() + " u.", String.format("$%.2f", dv.getSubtotal()) });
         }
 
         JTable tablaDetalles = new JTable(modDetalle);
@@ -424,6 +468,20 @@ public class GerenteUI extends JFrame {
         dialogo.setVisible(true);
     }
 
+    // Listeners y logica para la barra de busqueda
+
+    public void alHacerDobleClicEnVenta(java.util.function.Consumer<Long> accion) {
+        tablaReportesVentas.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    Long id = getIdVentaSeleccionada();
+                    if (id != null) accion.accept(id);
+                }
+            }
+        });
+    }
+
     public void inicializarAutocompletadoDni(java.util.function.Function<String, java.util.List<Object[]>> buscador) {
         popupBusqueda = new JPopupMenu();
         popupBusqueda.setFocusable(false);
@@ -439,7 +497,6 @@ public class GerenteUI extends JFrame {
         scrollAutocompletado.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
         popupBusqueda.add(scrollAutocompletado);
 
-        // Listener para cuando el usuario escribe para traer sugerencias
         buscarVentaField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
             public void insertUpdate(javax.swing.event.DocumentEvent e) { actualizarResultados(); }
             public void removeUpdate(javax.swing.event.DocumentEvent e) { actualizarResultados(); }
@@ -447,7 +504,6 @@ public class GerenteUI extends JFrame {
 
             private void actualizarResultados() {
                 if (ignorarEventosBusqueda) return;
-
                 SwingUtilities.invokeLater(() -> {
                     String texto = buscarVentaField.getText().trim();
                     if (texto.length() > 0) {
@@ -457,16 +513,11 @@ public class GerenteUI extends JFrame {
                         if (datosActualesBusqueda != null && !datosActualesBusqueda.isEmpty()) {
                             boolean esCliente = comboCriterioBusqueda.getSelectedItem().equals("DNI Cliente");
                             for (Object[] fila : datosActualesBusqueda) {
-                                if (esCliente) {
-                                    modeloListaBusqueda.addElement(" " + fila[0].toString() + " - " + fila[1].toString() + " " + fila[2].toString());
-                                } else {
-                                    modeloListaBusqueda.addElement(" " + fila[3].toString() + " - " + fila[0].toString());
-                                }
+                                if (esCliente) modeloListaBusqueda.addElement(" " + fila[0] + " - " + fila[1] + " " + fila[2]);
+                                else modeloListaBusqueda.addElement(" " + fila[3] + " - " + fila[0]);
                             }
 
-                            int cantidadResultados = datosActualesBusqueda.size();
-                            int alturaDinamica = Math.min(cantidadResultados * 25 + 6, 130);
-
+                            int alturaDinamica = Math.min(datosActualesBusqueda.size() * 25 + 6, 130);
                             scrollAutocompletado.setPreferredSize(new Dimension(buscarVentaField.getWidth(), alturaDinamica));
                             scrollAutocompletado.revalidate();
 
@@ -474,11 +525,8 @@ public class GerenteUI extends JFrame {
                                 popupBusqueda.show(buscarVentaField, 0, buscarVentaField.getHeight());
                                 buscarVentaField.requestFocusInWindow();
                             }
-
-                            // Seleccionar automáticamente el primer elemento al buscar
                             listaBusqueda.setSelectedIndex(0);
                             actualizarLabelsInfoDesdeLista(0);
-
                         } else {
                             popupBusqueda.setVisible(false);
                             restablecerLabelsInfo();
@@ -491,39 +539,29 @@ public class GerenteUI extends JFrame {
             }
         });
 
-        // 2. NUEVO: Navegación con el teclado (Flechas y Enter)
         buscarVentaField.addKeyListener(new java.awt.event.KeyAdapter() {
-            @Override
-            public void keyPressed(java.awt.event.KeyEvent e) {
+            @Override public void keyPressed(java.awt.event.KeyEvent e) {
                 if (popupBusqueda.isVisible()) {
                     int indiceActual = listaBusqueda.getSelectedIndex();
                     int maxIndice = modeloListaBusqueda.getSize() - 1;
 
-                    if (e.getKeyCode() == java.awt.event.KeyEvent.VK_DOWN) {
-                        if (indiceActual < maxIndice) {
-                            listaBusqueda.setSelectedIndex(indiceActual + 1);
-                            listaBusqueda.ensureIndexIsVisible(indiceActual + 1);
-                            actualizarLabelsInfoDesdeLista(indiceActual + 1);
-                        }
-                    } else if (e.getKeyCode() == java.awt.event.KeyEvent.VK_UP) {
-                        if (indiceActual > 0) {
-                            listaBusqueda.setSelectedIndex(indiceActual - 1);
-                            listaBusqueda.ensureIndexIsVisible(indiceActual - 1);
-                            actualizarLabelsInfoDesdeLista(indiceActual - 1);
-                        }
-                    } else if (e.getKeyCode() == java.awt.event.KeyEvent.VK_ENTER) {
-                        if (indiceActual >= 0 && datosActualesBusqueda != null) {
-                            ejecutarSeleccion(indiceActual);
-                        }
+                    if (e.getKeyCode() == java.awt.event.KeyEvent.VK_DOWN && indiceActual < maxIndice) {
+                        listaBusqueda.setSelectedIndex(indiceActual + 1);
+                        listaBusqueda.ensureIndexIsVisible(indiceActual + 1);
+                        actualizarLabelsInfoDesdeLista(indiceActual + 1);
+                    } else if (e.getKeyCode() == java.awt.event.KeyEvent.VK_UP && indiceActual > 0) {
+                        listaBusqueda.setSelectedIndex(indiceActual - 1);
+                        listaBusqueda.ensureIndexIsVisible(indiceActual - 1);
+                        actualizarLabelsInfoDesdeLista(indiceActual - 1);
+                    } else if (e.getKeyCode() == java.awt.event.KeyEvent.VK_ENTER && indiceActual >= 0 && datosActualesBusqueda != null) {
+                        ejecutarSeleccion(indiceActual);
                     }
                 }
             }
         });
 
-        // 3. Navegación con el mouse
         listaBusqueda.addMouseMotionListener(new java.awt.event.MouseAdapter() {
-            @Override
-            public void mouseMoved(java.awt.event.MouseEvent e) {
+            @Override public void mouseMoved(java.awt.event.MouseEvent e) {
                 int index = listaBusqueda.locationToIndex(e.getPoint());
                 if (index >= 0 && datosActualesBusqueda != null && index < datosActualesBusqueda.size()) {
                     listaBusqueda.setSelectedIndex(index);
@@ -533,44 +571,30 @@ public class GerenteUI extends JFrame {
         });
 
         listaBusqueda.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override
-            public void mouseClicked(java.awt.event.MouseEvent e) {
+            @Override public void mouseClicked(java.awt.event.MouseEvent e) {
                 if (e.getClickCount() == 1) {
                     int index = listaBusqueda.locationToIndex(e.getPoint());
-                    if (index >= 0 && datosActualesBusqueda != null) {
-                        ejecutarSeleccion(index);
-                    }
+                    if (index >= 0 && datosActualesBusqueda != null) ejecutarSeleccion(index);
                 }
             }
         });
     }
 
-    // Metodo auxiliar para actualizar los labels grises al mover las flechas o el mouse
     private void actualizarLabelsInfoDesdeLista(int index) {
         if (datosActualesBusqueda != null && index < datosActualesBusqueda.size()) {
             Object[] seleccionado = datosActualesBusqueda.get(index);
-            lblInfoDni.setText("DNI: " + seleccionado[0].toString());
-            lblInfoNombre.setText("Nombre: " + seleccionado[1].toString());
-            lblInfoApellido.setText("Apellido: " + seleccionado[2].toString());
-
-            if (comboCriterioBusqueda.getSelectedItem().equals("DNI Cliente")) {
-                lblInfoExtra.setText("Atendido por: " + seleccionado[3].toString());
-            } else {
-                lblInfoExtra.setText("Usuario: " + seleccionado[3].toString());
-            }
+            lblInfoDni.setText("DNI: " + seleccionado[0]);
+            lblInfoNombre.setText("Nombre: " + seleccionado[1]);
+            lblInfoApellido.setText("Apellido: " + seleccionado[2]);
+            lblInfoExtra.setText((comboCriterioBusqueda.getSelectedItem().equals("DNI Cliente") ? "Atendido por: " : "Usuario: ") + seleccionado[3]);
         }
     }
 
-    // Método auxiliar para procesar la selección (sea por Enter o Clic)
     private void ejecutarSeleccion(int index) {
         Object[] seleccionado = datosActualesBusqueda.get(index);
         SwingUtilities.invokeLater(() -> {
             ignorarEventosBusqueda = true;
-            if (comboCriterioBusqueda.getSelectedItem().equals("Usuario Vendedor")) {
-                buscarVentaField.setText(seleccionado[3].toString());
-            } else {
-                buscarVentaField.setText(seleccionado[0].toString());
-            }
+            buscarVentaField.setText(comboCriterioBusqueda.getSelectedItem().equals("Usuario Vendedor") ? seleccionado[3].toString() : seleccionado[0].toString());
             popupBusqueda.setVisible(false);
             btnBuscarVenta.doClick();
             ignorarEventosBusqueda = false;
@@ -578,36 +602,48 @@ public class GerenteUI extends JFrame {
     }
 
     private void restablecerLabelsInfo() {
-        lblInfoNombre.setText("Nombre: -");
-        lblInfoApellido.setText("Apellido: -");
-        lblInfoDni.setText("DNI: -");
-        if (comboCriterioBusqueda != null && comboCriterioBusqueda.getSelectedItem() != null) {
-            if (comboCriterioBusqueda.getSelectedItem().equals("DNI Cliente")) {
-                lblInfoExtra.setText("Atendido por: -");
-            } else {
-                lblInfoExtra.setText("Usuario: -");
-            }
+        lblInfoNombre.setText("Nombre: -"); lblInfoApellido.setText("Apellido: -"); lblInfoDni.setText("DNI: -");
+        lblInfoExtra.setText(comboCriterioBusqueda != null && comboCriterioBusqueda.getSelectedItem().equals("DNI Cliente") ? "Atendido por: -" : "Usuario: -");
+    }
+
+    public Long getIdVentaSeleccionada() {
+        int fila = tablaReportesVentas.getSelectedRow();
+        if (fila != -1) {
+            try {
+                return Long.parseLong(tablaReportesVentas.getValueAt(fila, 0).toString().replace("V-", ""));
+            } catch (NumberFormatException ex) { return null; }
         }
+        return null;
     }
 
     // Getters
+
     public JButton getBtnGenerarReporte() { return btnGenerarReporte; }
     public JButton getBtnLimpiarReporte() { return btnLimpiarReporte; }
     public JTable getTablaReportesVentas() { return tablaReportesVentas; }
     public JLabel getLblTotalReporteVentas() { return lblTotalReporteVentas; }
-    public JButton getBtnCerrarSesion() { return btnCerrarSesion; }
-    public JTextField getBuscarVentaField() { return buscarVentaField; }
-    public JButton getBtnBuscarVenta() { return btnBuscarVenta; }
 
     public JButton getBtnCalcularRendimiento() { return btnCalcularRendimiento; }
     public JTable getTablaRendimiento() { return tablaRendimiento; }
+    public JButton getBtnLimpiarRendimiento() { return btnLimpiarRendimiento; }
+    public JLabel getLblTotalRendimiento() { return lblTotalRendimiento; }
 
     public JButton getBtnCalcularProductosVendidos() { return btnCalcularProductosVendidos; }
     public JTable getTablaProductosVendidos() { return tablaProductosVendidos; }
+    public JButton getBtnLimpiarProductos() { return btnLimpiarProductos; }
+    public JLabel getLblTotalProductos() { return lblTotalProductos; }
     public JPanel getPanelGraficoProductos() { return panelGraficoProductos; }
     public JButton getBtnGenerarGraficoProductos() { return btnGenerarGraficoProductos; }
-    public JScrollPane getScrollTablaProductos() { return scrollTablaProductos; }
     public JTabbedPane getTabsProductos() { return tabsProductos; }
+
+    public JTextField getBuscarVentaField() { return buscarVentaField; }
+    public JButton getBtnBuscarVenta() { return btnBuscarVenta; }
+    public JComboBox<String> getComboCriterioBusqueda() { return comboCriterioBusqueda; }
+
+    public JButton getBtnExportarExcelVentas() { return btnExportarExcelVentas; }
+    public JButton getBtnExportarExcelRendimiento() { return btnExportarExcelRendimiento; }
+    public JButton getBtnExportarExcelProductos() { return btnExportarExcelProductos; }
+    public JButton getBtnCerrarSesion() { return btnCerrarSesion; }
 
     public JComboBox<String> getCbDiaInicioV() { return cbDiaInicioV; }
     public JComboBox<String> getCbMesInicioV() { return cbMesInicioV; }
@@ -615,26 +651,16 @@ public class GerenteUI extends JFrame {
     public JComboBox<String> getCbDiaFinV() { return cbDiaFinV; }
     public JComboBox<String> getCbMesFinV() { return cbMesFinV; }
     public JComboBox<String> getCbAnioFinV() { return cbAnioFinV; }
-
     public JComboBox<String> getCbDiaInicioR() { return cbDiaInicioR; }
     public JComboBox<String> getCbMesInicioR() { return cbMesInicioR; }
     public JComboBox<String> getCbAnioInicioR() { return cbAnioInicioR; }
     public JComboBox<String> getCbDiaFinR() { return cbDiaFinR; }
     public JComboBox<String> getCbMesFinR() { return cbMesFinR; }
     public JComboBox<String> getCbAnioFinR() { return cbAnioFinR; }
-
     public JComboBox<String> getCbDiaInicioP() { return cbDiaInicioP; }
     public JComboBox<String> getCbMesInicioP() { return cbMesInicioP; }
     public JComboBox<String> getCbAnioInicioP() { return cbAnioInicioP; }
     public JComboBox<String> getCbDiaFinP() { return cbDiaFinP; }
     public JComboBox<String> getCbMesFinP() { return cbMesFinP; }
     public JComboBox<String> getCbAnioFinP() { return cbAnioFinP; }
-    public JComboBox<String> getComboCriterioBusqueda() { return comboCriterioBusqueda; }
-    public JButton getBtnExportarExcelVentas() { return btnExportarExcelVentas; }
-    public JButton getBtnExportarExcelRendimiento() { return btnExportarExcelRendimiento; }
-    public JButton getBtnExportarExcelProductos() { return btnExportarExcelProductos; }
-    public JButton getBtnLimpiarRendimiento() { return btnLimpiarRendimiento; }
-    public JButton getBtnLimpiarProductos() { return btnLimpiarProductos; }
-    public JLabel getLblTotalRendimiento() { return lblTotalRendimiento; }
-    public JLabel getLblTotalProductos() { return lblTotalProductos; }
 }
