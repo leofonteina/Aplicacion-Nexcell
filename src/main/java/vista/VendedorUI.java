@@ -121,9 +121,7 @@ public class VendedorUI extends JFrame {
         });
     }
 
-    // =========================================================================
     // EVENTOS DELEGADOS Y RENDERIZADO DE DATOS (Llamados por el Controlador)
-    // =========================================================================
 
     public void alHacerDobleClicEnVenta(Consumer<Long> accion) {
         tablaVentas.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -279,7 +277,7 @@ public class VendedorUI extends JFrame {
     // --- SUB-VENTANA DE DETALLE DE VENTA ---
 
     public void mostrarDialogoDetalleVenta(modelo.Venta venta, Consumer<modelo.Venta> accionDescargarPdf) {
-        JDialog dialogo = new JDialog(this, "Detalle de Venta #" + venta.getId(), true);
+        JDialog dialogo = new JDialog(this, "Detalle de Factura #" + venta.getId(), true);
         dialogo.setSize(550, 450);
         dialogo.setLocationRelativeTo(this);
         dialogo.setLayout(new BorderLayout(15, 15));
@@ -460,12 +458,12 @@ public class VendedorUI extends JFrame {
         JPanel panel = crearPanelBase();
         buscarVentaField = new JTextField(20);
         btnBuscarVenta = crearBotonWeb("Buscar");
-        JPanel panelBusqueda = crearBarraBusqueda("Buscar ID Venta:", buscarVentaField, btnBuscarVenta);
+        JPanel panelBusqueda = crearBarraBusqueda("Buscar Factura ID:", buscarVentaField, btnBuscarVenta);
 
         btnAbrirFormularioVenta = crearBotonWeb("Nueva Venta");
         JPanel panelAcciones = crearBarraAcciones(btnAbrirFormularioVenta);
 
-        String[] columnas = {"ID Venta", "Fecha", "DNI Cliente", "Producto", "Total"};
+        String[] columnas = {"Factura ID", "Fecha", "DNI Cliente", "Producto", "Total"};
         tablaVentas = new JTable(new DefaultTableModel(new Object[][]{}, columnas) {
             @Override public boolean isCellEditable(int row, int col) { return false; }
         });

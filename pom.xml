@@ -34,10 +34,18 @@
             <version>5.5.13.3</version>
         </dependency>
 
+        <!-- Librería para gráficos estadísticos (JFreeChart) -->
         <dependency>
             <groupId>org.jfree</groupId>
             <artifactId>jfreechart</artifactId>
             <version>1.5.3</version>
+        </dependency>
+
+        <!-- Librería para generar archivos Excel reales .xlsx (Apache POI) -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>5.2.3</version>
         </dependency>
     </dependencies>
 </project>
