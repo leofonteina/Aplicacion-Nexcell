@@ -217,3 +217,7 @@
 [26/10/2026 10:52:15] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
 [26/10/2026 10:52:22] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos
 [26/10/2026 10:53:30] [INFO] [REPORTES] - El Gerente exportó: Top_Productos_2.xlsx
+[06/11/2026 20:44:14] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[06/11/2026 20:44:49] [INFO] [VENTAS] - El Vendedor 'pedro' registró exitosamente una venta por $5.28024E7 al DNI: 42111333
+[06/11/2026 21:00:23] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[06/11/2026 21:00:36] [INFO] [VENTAS] - El Vendedor 'pedro' registró exitosamente una venta por $180000.0 al DNI: 42111333

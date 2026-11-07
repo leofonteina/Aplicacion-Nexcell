@@ -238,44 +238,24 @@ public class VendedorController {
                     return;
                 }
 
+                // Calculamos el total directamente de los ítems del carrito
                 List<Object[]> itemsCarrito = ventanaVenta.obtenerItemsCarrito();
-                StringBuilder resumen = new StringBuilder();
-                resumen.append("--- TICKET DE VENTA - NEXCELL ---\n");
-                resumen.append("Fecha: ").append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))).append("\n");
-                resumen.append("Atendido por: ").append(this.vendedorLogueado.getUsername()).append("\n");
-                resumen.append("Cliente: ").append(clienteActual[0].getNombre()).append(" ").append(clienteActual[0].getApellido()).append("\n");
-                resumen.append("DNI: ").append(clienteActual[0].getDni()).append("\n\n");
-                resumen.append("--- DETALLE ---\n");
-
                 double totResumen = 0;
                 for (Object[] fila : itemsCarrito) {
-                    String nombreProd = (String) fila[1];
-                    int cantProd = (int) fila[3];
-                    double subTotalProd = (double) fila[4];
-
-                    resumen.append("• ").append(cantProd).append("x ").append(nombreProd)
-                        .append(" - $").append(String.format("%.2f", subTotalProd)).append("\n");
-                    totResumen += subTotalProd;
+                    totResumen += (double) fila[4];
                 }
 
-                resumen.append("---------------------------------\n");
-                resumen.append("TOTAL A COBRAR: $").append(String.format("%.2f", totResumen)).append("\n");
-                resumen.append("---------------------------------\n");
-
-                if (!ventanaVenta.confirmarPregunta(resumen.toString() + "\n¿Desea confirmar e impactar esta venta en el sistema?", "Revisión Final de la Venta")) {
+                if (!ventanaVenta.confirmarPregunta(
+                    String.format("¿Desea confirmar y registrar esta venta por un total de $%.2f?", totResumen),
+                    "Confirmar Venta")) {
                     return;
                 }
 
-                boolean exito = procesarCheckout(vendedorLogueado.getId(), clienteActual[0].getDni(), totResumen, itemsCarrito);
+                // Impacto transaccional en la base de datos
+                boolean exito = procesarCheckout(clienteActual[0], totResumen, itemsCarrito);
 
                 if (exito) {
-                    try (FileWriter writer = new FileWriter("Ticket_Venta_" + System.currentTimeMillis() + ".txt")) {
-                        writer.write(resumen.toString());
-                        ventanaVenta.mostrarExito("¡Venta registrada exitosamente!\nSe generó el comprobante físico.", "Venta Exitosa");
-                    } catch (Exception exio) {
-                        ventanaVenta.mostrarAlerta("La venta se guardó, pero hubo un error al crear el archivo de texto.", "Aviso");
-                    }
-
+                    ventanaVenta.mostrarExito("¡Venta registrada exitosamente!", "Venta Exitosa");
                     cargarTablaVentas();
                     cargarTablaProductos();
                     ventanaVenta.dispose();
@@ -291,52 +271,62 @@ public class VendedorController {
         }
     }
 
-    public boolean procesarCheckout(Long idVendedor, String dniCliente, double totalVenta, List<Object[]> itemsCarrito) {
-        StringBuilder jsonCarrito = new StringBuilder("[");
-
-        for (int i = 0; i < itemsCarrito.size(); i++) {
-            Object[] fila = itemsCarrito.get(i);
-            Long idProd = (Long) fila[0];
-            double precio = (double) fila[2];
-            int cantidad = (int) fila[3];
-
-            jsonCarrito.append(String.format("{\"id\": %d, \"cantidad\": %d, \"precio\": %s}",
-                idProd, cantidad, String.valueOf(precio).replace(",", ".")));
-
-            if (i < itemsCarrito.size() - 1) {
-                jsonCarrito.append(",");
-            }
-        }
-        jsonCarrito.append("]");
-
+    public boolean procesarCheckout(modelo.Cliente cliente, double totalVenta, List<Object[]> itemsCarrito) {
         try {
+            // 1. Iniciamos la transaccion en la base de datos
             em.getTransaction().begin();
 
-            StoredProcedureQuery query = em.createStoredProcedureQuery("procesar_venta_integral");
-            query.registerStoredProcedureParameter(1, Long.class, ParameterMode.IN);
-            query.registerStoredProcedureParameter(2, String.class, ParameterMode.IN);
-            query.registerStoredProcedureParameter(3, Double.class, ParameterMode.IN);
-            query.registerStoredProcedureParameter(4, String.class, ParameterMode.IN);
+            // 2. Creamos la cabecera de la Venta
+            modelo.Venta nuevaVenta = new modelo.Venta();
+            nuevaVenta.setCliente(cliente);
+            nuevaVenta.setVendedor(this.vendedorLogueado);
+            nuevaVenta.setFecha(LocalDateTime.now());
+            nuevaVenta.setTotal(totalVenta);
 
-            query.setParameter(1, idVendedor);
-            query.setParameter(2, dniCliente);
-            query.setParameter(3, totalVenta);
-            query.setParameter(4, jsonCarrito.toString());
+            // 3. Recorremos los items del carrito para crear los detalles y descontar stock
+            for (Object[] fila : itemsCarrito) {
+                Long idProd = (Long) fila[0];
+                int cantidadComprada = (int) fila[3];
+                double subtotalItem = (double) fila[4];
 
-            query.execute();
+                // Buscamos el producto administrado por el EntityManager
+                modelo.Producto producto = em.find(modelo.Producto.class, idProd);
+
+                if (producto == null || producto.getStock() < cantidadComprada) {
+                    throw new IllegalStateException("Stock insuficiente o producto inexistente para el ID: " + idProd);
+                }
+
+                // Descontamos el stock y actualizamos el producto en la BD
+                producto.setStock(producto.getStock() - cantidadComprada);
+                em.merge(producto);
+
+                // Creamos el detalle de la venta y lo vinculamos a la factura
+                modelo.DetalleVenta detalle = new modelo.DetalleVenta();
+                detalle.setProducto(producto);
+                detalle.setCantidad(cantidadComprada);
+                detalle.setSubtotal(subtotalItem);
+
+                nuevaVenta.agregarDetalle(detalle);
+            }
+
+            // 4. Guardamos toda la venta
+            new repositorio.VentaRepository(this.em).guardar(nuevaVenta);
+
+            // 5. Confirmamos todos los cambios juntos, aca es donde impacta en la base de datos
             em.getTransaction().commit();
 
             utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "VENTAS",
-                "El Vendedor '" + vendedorLogueado.getUsername() + "' registró exitosamente una venta por $" + totalVenta + " al DNI: " + dniCliente);
+                "El Vendedor '" + vendedorLogueado.getUsername() + "' registró exitosamente una venta por $" + totalVenta + " al DNI: " + cliente.getDni());
 
             return true;
 
         } catch (Exception e) {
+            // 6. Si cualquier paso falla, deshacemos absolutamente todo (ni se cobra ni se resta stock)
             if (em.getTransaction().isActive()) {
                 em.getTransaction().rollback();
             }
             utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ERROR, "VENTAS",
-                "Fallo al registrar venta del Vendedor '" + vendedorLogueado.getUsername() + "'. Motivo: " + e.getMessage());
+                "Fallo en la transacción de venta del Vendedor '" + vendedorLogueado.getUsername() + "'. Motivo: " + e.getMessage());
             return false;
         }
     }
