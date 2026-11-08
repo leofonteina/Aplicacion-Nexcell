@@ -36,24 +36,22 @@ public class VendedorController {
             System.err.println("Aviso inicial: " + ex.getMessage());
         }
 
-        // Vinculación de Eventos de Negocio
+        // vinculacion de eventos de la vista principal
+        // Se extraen los botones de la vista mediante getters y se les asigna la logica del controlador
         this.vistaPrincipal.getBtnAbrirFormularioCliente().addActionListener(e -> abrirFormularioRegistro(""));
         this.vistaPrincipal.getBtnCerrarSesion().addActionListener(e -> cerrarSesion());
         this.vistaPrincipal.getBtnAbrirFormularioVenta().addActionListener(e -> abrirFormularioVenta());
         this.vistaPrincipal.getBtnBajaCliente().addActionListener(e -> cambiarEstadoCliente(false));
         this.vistaPrincipal.getBtnAltaCliente().addActionListener(e -> cambiarEstadoCliente(true));
         this.vistaPrincipal.getBtnEditarCliente().addActionListener(e -> abrirFormularioEdicionCliente());
-
         this.vistaPrincipal.getBtnGenerarReporte().addActionListener(e -> generarReporte());
         this.vistaPrincipal.getBtnExportarReporte().addActionListener(e -> exportarReporteCSV());
 
-        // Doble clic delegado limpiamente desde la vista
+        // Se pasa la referencia del metodo abrirDetalleVenta a la vista para que esta lo ejecute al hacer doble clic
         this.vistaPrincipal.alHacerDobleClicEnVenta(this::abrirDetalleVenta);
     }
 
-    // =========================================================================
-    // CONSULTAS DE REPORTES (Ejecuta en BD y delega el dibujo a VendedorUI)
-    // =========================================================================
+    // modulo de reportes estadisticos
 
     private void generarReporte() {
         String strInicio = vistaPrincipal.getFechaInicioReporteStr();
@@ -67,17 +65,24 @@ public class VendedorController {
             int tipoReporte = vistaPrincipal.getIndiceTipoReporte();
 
             if (tipoReporte == 0) {
-                fechaFin = fechaInicio; // Resumen diario es de un solo día
+                fechaFin = fechaInicio;
             }
 
+            // Validaciones de negocio sobre las fechas antes de consultar a la base de datos
             if (fechaInicio.isAfter(fechaFin)) {
                 vistaPrincipal.mostrarAlerta("La fecha de inicio no puede ser mayor a la fecha de fin.", "Fechas Inválidas");
+                return;
+            }
+
+            if (fechaInicio.plusMonths(6).isBefore(fechaFin)) {
+                vistaPrincipal.mostrarAlerta("El rango seleccionado supera los 6 meses. Por favor, seleccione un periodo más corto.", "Rango Excedido");
                 return;
             }
 
             LocalDateTime inicioLDT = fechaInicio.atStartOfDay();
             LocalDateTime finLDT = fechaFin.atTime(23, 59, 59);
 
+            // Segun el indice del ComboBox de la vista, se llama a un Stored Procedure distinto y se envian los datos a la vista
             if (tipoReporte == 0) {
                 List<Object[]> datos = consultarProcedimiento("reporte_resumen_diario", inicioLDT, finLDT);
                 vistaPrincipal.mostrarReporteResumenDiario(datos);
@@ -101,6 +106,7 @@ public class VendedorController {
     }
 
     private List<Object[]> consultarProcedimiento(String nombreSp, LocalDateTime inicio, LocalDateTime fin) {
+        // Se utiliza StoredProcedureQuery de JPA para ejecutar procedimientos almacenados en MySQL
         StoredProcedureQuery query = em.createStoredProcedureQuery(nombreSp);
         query.registerStoredProcedureParameter(1, Long.class, ParameterMode.IN);
         query.registerStoredProcedureParameter(2, LocalDateTime.class, ParameterMode.IN);
@@ -129,6 +135,7 @@ public class VendedorController {
     }
 
     private void exportarReporteCSV() {
+        // Se obtienen los datos directamente desde la vista en formato de texto puro
         List<String[]> filas = vistaPrincipal.obtenerDatosTablaReportes();
         if (filas.isEmpty()) {
             vistaPrincipal.mostrarAlerta("No hay datos en la tabla para exportar.", "Aviso");
@@ -142,9 +149,9 @@ public class VendedorController {
                     String[] fila = filas.get(i);
                     for (int j = 0; j < fila.length; j++) {
                         if (i == 0) {
-                            writer.print(fila[j]); // Cabeceras
+                            writer.print(fila[j]);
                         } else {
-                            writer.print("\"" + fila[j].replace("\"", "\"\"") + "\""); // Datos
+                            writer.print("\"" + fila[j].replace("\"", "\"\"") + "\"");
                         }
                         if (j < fila.length - 1) writer.print(";");
                     }
@@ -159,9 +166,7 @@ public class VendedorController {
         }
     }
 
-    // =========================================================================
-    // LÓGICA DE VENTAS Y CHECKOUT
-    // =========================================================================
+    // modulo de ventas y checkout
 
     private void abrirFormularioVenta() {
         try {
@@ -171,6 +176,7 @@ public class VendedorController {
 
             ventanaVenta.cargarProductosDisponibles(repoProd.listarTodos());
 
+            // Se utiliza un array de 1 posicion para poder modificar la referencia del cliente dentro de las expresiones lambda
             final modelo.Cliente[] clienteActual = {null};
 
             ventanaVenta.getBtnVerificarCliente().addActionListener(e -> {
@@ -207,6 +213,7 @@ public class VendedorController {
                     int pedida = Integer.parseInt(ventanaVenta.getCantidadField().getText().trim());
                     if (pedida <= 0) throw new NumberFormatException();
 
+                    // Control de stock en tiempo real calculando lo que ya esta en el carrito visual
                     int cantEnCarro = ventanaVenta.obtenerCantidadEnCarritoParaProducto(idProducto);
                     int totalRequerido = pedida + cantEnCarro;
 
@@ -238,7 +245,6 @@ public class VendedorController {
                     return;
                 }
 
-                // Calculamos el total directamente de los ítems del carrito
                 List<Object[]> itemsCarrito = ventanaVenta.obtenerItemsCarrito();
                 double totResumen = 0;
                 for (Object[] fila : itemsCarrito) {
@@ -251,7 +257,7 @@ public class VendedorController {
                     return;
                 }
 
-                // Impacto transaccional en la base de datos
+                // Se envian los objetos limpios a procesarCheckout para impactar en BD
                 boolean exito = procesarCheckout(clienteActual[0], totResumen, itemsCarrito);
 
                 if (exito) {
@@ -273,67 +279,48 @@ public class VendedorController {
 
     public boolean procesarCheckout(modelo.Cliente cliente, double totalVenta, List<Object[]> itemsCarrito) {
         try {
-            // 1. Iniciamos la transaccion en la base de datos
-            em.getTransaction().begin();
-
-            // 2. Creamos la cabecera de la Venta
-            modelo.Venta nuevaVenta = new modelo.Venta();
-            nuevaVenta.setCliente(cliente);
-            nuevaVenta.setVendedor(this.vendedorLogueado);
-            nuevaVenta.setFecha(LocalDateTime.now());
-            nuevaVenta.setTotal(totalVenta);
-
-            // 3. Recorremos los items del carrito para crear los detalles y descontar stock
-            for (Object[] fila : itemsCarrito) {
-                Long idProd = (Long) fila[0];
-                int cantidadComprada = (int) fila[3];
-                double subtotalItem = (double) fila[4];
-
-                // Buscamos el producto administrado por el EntityManager
-                modelo.Producto producto = em.find(modelo.Producto.class, idProd);
-
-                if (producto == null || producto.getStock() < cantidadComprada) {
-                    throw new IllegalStateException("Stock insuficiente o producto inexistente para el ID: " + idProd);
-                }
-
-                // Descontamos el stock y actualizamos el producto en la BD
-                producto.setStock(producto.getStock() - cantidadComprada);
-                em.merge(producto);
-
-                // Creamos el detalle de la venta y lo vinculamos a la factura
-                modelo.DetalleVenta detalle = new modelo.DetalleVenta();
-                detalle.setProducto(producto);
-                detalle.setCantidad(cantidadComprada);
-                detalle.setSubtotal(subtotalItem);
-
-                nuevaVenta.agregarDetalle(detalle);
+            // Arma el JSON: [{"id":1,"cantidad":2,"precio":1500.0}, ...]
+            StringBuilder json = new StringBuilder("[");
+            for (int i = 0; i < itemsCarrito.size(); i++) {
+                Object[] fila = itemsCarrito.get(i);
+                if (i > 0) json.append(",");
+                json.append("{\"id\":").append(fila[0])
+                    .append(",\"cantidad\":").append(fila[3])
+                    .append(",\"precio\":").append(fila[2]).append("}");
             }
+            json.append("]");
 
-            // 4. Guardamos toda la venta
-            new repositorio.VentaRepository(this.em).guardar(nuevaVenta);
+            // Orden de parámetros = orden del SP: usuario_id, cliente_dni, total, items_json
+            StoredProcedureQuery query = em.createStoredProcedureQuery("procesar_registro_venta");
+            query.registerStoredProcedureParameter(1, Long.class, ParameterMode.IN);
+            query.registerStoredProcedureParameter(2, String.class, ParameterMode.IN);
+            query.registerStoredProcedureParameter(3, Double.class, ParameterMode.IN);
+            query.registerStoredProcedureParameter(4, String.class, ParameterMode.IN);
 
-            // 5. Confirmamos todos los cambios juntos, aca es donde impacta en la base de datos
-            em.getTransaction().commit();
+            query.setParameter(1, this.vendedorLogueado.getId());
+            query.setParameter(2, cliente.getDni());
+            query.setParameter(3, totalVenta);
+            query.setParameter(4, json.toString());
+
+            query.execute();
+
+            // El SP tocó el stock por fuera de JPA: limpiamos la caché para no ver datos viejos
+            em.clear();
 
             utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "VENTAS",
-                "El Vendedor '" + vendedorLogueado.getUsername() + "' registró exitosamente una venta por $" + totalVenta + " al DNI: " + cliente.getDni());
-
+                "El Vendedor '" + vendedorLogueado.getUsername() + "' registró exitosamente una venta por $"
+                    + totalVenta + " al DNI: " + cliente.getDni());
             return true;
 
         } catch (Exception e) {
-            // 6. Si cualquier paso falla, deshacemos absolutamente todo (ni se cobra ni se resta stock)
-            if (em.getTransaction().isActive()) {
-                em.getTransaction().rollback();
-            }
             utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ERROR, "VENTAS",
-                "Fallo en la transacción de venta del Vendedor '" + vendedorLogueado.getUsername() + "'. Motivo: " + e.getMessage());
+                "Fallo en la transacción de venta del Vendedor '" + vendedorLogueado.getUsername()
+                    + "'. Motivo: " + e.getMessage());
             return false;
         }
     }
 
-    // =========================================================================
-    // GESTIÓN DE CLIENTES (ABM)
-    // =========================================================================
+    // gestion de clientes (abm)
 
     private void abrirFormularioRegistro(String dniPreCargado) {
         RegistroClienteUI ven = new RegistroClienteUI(this.vistaPrincipal);
@@ -378,6 +365,7 @@ public class VendedorController {
 
                 modelo.Direccion dir = new modelo.Direccion(calle, altura, ciudad, ven.getCbProvincia().getSelectedItem().toString());
 
+                // Transaccion explicita de JPA para alta de entidad
                 em.getTransaction().begin();
                 repo.guardar(new modelo.Cliente(dni, nombre, apellido, tel, email, fechaNac, dir));
                 em.getTransaction().commit();
@@ -421,6 +409,7 @@ public class VendedorController {
             try {
                 em.getTransaction().begin();
 
+                // Logica de persistencia: se modifica el objeto asociado y el EntityManager lo detecta al hacer merge
                 if (cliente.getDireccion() == null) {
                     cliente.setDireccion(new modelo.Direccion(calle, altura, ciudad, provincia));
                 } else {
@@ -460,6 +449,7 @@ public class VendedorController {
                 modelo.Cliente cliente = repo.buscarPorDni(dniCliente);
 
                 if (cliente != null) {
+                    // Baja o alta logica: solo cambia un flag booleano sin eliminar fisicamente el registro
                     em.getTransaction().begin();
                     cliente.setActivo(act);
                     repo.actualizar(cliente);
@@ -477,7 +467,7 @@ public class VendedorController {
         }
     }
 
-    // CARGA DE DATOS E IMPRESION DE COMPROBANTES
+    // extraccion de datos y presentacion (impresion pdf)
 
     private void cargarTablaClientes() {
         List<modelo.Cliente> cls = new repositorio.ClienteRepository(this.em).listarTodos();
@@ -497,6 +487,7 @@ public class VendedorController {
     }
 
     private void abrirDetalleVenta(Long idVenta) {
+        // Al hacer doble clic en la vista, este metodo recibe el ID y busca el objeto entero en la BD
         modelo.Venta venta = em.find(modelo.Venta.class, idVenta);
         if (venta != null) {
             vistaPrincipal.mostrarDialogoDetalleVenta(venta, this::generarComprobantePDF);
@@ -505,6 +496,7 @@ public class VendedorController {
 
     private void generarComprobantePDF(modelo.Venta venta) {
         try {
+            // Se utiliza iTextPDF. Los datos viajan desde el objeto Venta (traido de la BD) hacia un Documento en el disco duro.
             String nombreArchivo = "Nexcell_Comprobante_Venta_" + venta.getId() + ".pdf";
 
             com.itextpdf.text.Document documento = new com.itextpdf.text.Document();

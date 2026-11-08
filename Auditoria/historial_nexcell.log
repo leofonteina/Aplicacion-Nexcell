@@ -221,3 +221,11 @@
 [06/11/2026 20:44:49] [INFO] [VENTAS] - El Vendedor 'pedro' registró exitosamente una venta por $5.28024E7 al DNI: 42111333
 [06/11/2026 21:00:23] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
 [06/11/2026 21:00:36] [INFO] [VENTAS] - El Vendedor 'pedro' registró exitosamente una venta por $180000.0 al DNI: 42111333
+[08/11/2026 18:35:45] [INFO] [SEGURIDAD] - El usuario 'PEDRO' (Vendedor) inició sesión exitosamente.
+[08/11/2026 18:36:04] [INFO] [VENTAS] - El Vendedor 'pedro' registró la venta #67 al DNI: 42111333
+[08/11/2026 18:39:15] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[08/11/2026 19:07:08] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[08/11/2026 20:36:15] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[08/11/2026 20:36:26] [INFO] [VENTAS] - El Vendedor 'pedro' registró exitosamente una venta por $700000.0 al DNI: 42111333
+[08/11/2026 20:37:19] [INFO] [VENTAS] - El Vendedor 'pedro' registró exitosamente una venta por $8348300.0 al DNI: 36987123
+[08/11/2026 20:39:45] [INFO] [SEGURIDAD] - El Vendedor 'pedro' cerró sesión.

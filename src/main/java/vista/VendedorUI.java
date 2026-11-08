@@ -121,8 +121,9 @@ public class VendedorUI extends JFrame {
         });
     }
 
-    // EVENTOS DELEGADOS Y RENDERIZADO DE DATOS (Llamados por el Controlador)
+    // EVENTOS DELEGADOS Y RENDERIZADO DE DATOS
 
+    // Delega el doble clic a VendedorController enviandole el idVenta mediante un Consumer
     public void alHacerDobleClicEnVenta(Consumer<Long> accion) {
         tablaVentas.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
@@ -137,6 +138,7 @@ public class VendedorUI extends JFrame {
         });
     }
 
+    // VendedorController consulta la bd, devuelve la List<Cliente> y esta funcion extrae los datos para volcarlos en DefaultTableModel
     public void mostrarClientes(List<modelo.Cliente> clientes) {
         DefaultTableModel mod = (DefaultTableModel) tablaClientes.getModel();
         mod.setRowCount(0);
@@ -185,8 +187,9 @@ public class VendedorUI extends JFrame {
         }
     }
 
-    // --- RENDERIZADO DE REPORTES EN LA VISTA ---
+    // RENDERIZADO DE REPORTES
 
+    // VendedorController consulta el stored procedure, devuelve un List<Object[]> y esta funcion le da formato para mostrarlo
     public void mostrarReporteResumenDiario(List<Object[]> resultados) {
         DefaultTableModel modelo = (DefaultTableModel) tablaReportes.getModel();
         modelo.setColumnIdentifiers(new String[]{"Fecha de Operación", "Tickets Emitidos", "Monto Facturado"});
@@ -252,6 +255,9 @@ public class VendedorUI extends JFrame {
         lblTotalReporte.setText("Ranking de Fidelización (Clientes del Vendedor)");
     }
 
+    // EXPORTACION A CSV
+
+    // Genera un List<String[]> extrayendo headers y filas, asi VendedorController lo convierte en txt separado por comas o punto y comas
     public List<String[]> obtenerDatosTablaReportes() {
         List<String[]> datos = new ArrayList<>();
         int cols = tablaReportes.getColumnCount();
@@ -274,7 +280,7 @@ public class VendedorUI extends JFrame {
         return datos;
     }
 
-    // --- SUB-VENTANA DE DETALLE DE VENTA ---
+    // SUB-VENTANA DE DETALLE DE VENTA
 
     public void mostrarDialogoDetalleVenta(modelo.Venta venta, Consumer<modelo.Venta> accionDescargarPdf) {
         JDialog dialogo = new JDialog(this, "Detalle de Factura #" + venta.getId(), true);
@@ -327,7 +333,7 @@ public class VendedorUI extends JFrame {
         dialogo.setVisible(true);
     }
 
-    // --- UTILIDADES DE INTERACCIÓN CON EL USUARIO (Sin exponer constantes Swing) ---
+    // UTILIDADES DE INTERACCIÓN CON EL USUARIO
 
     public void mostrarExito(String mensaje, String titulo) {
         JOptionPane.showMessageDialog(this, mensaje, titulo, JOptionPane.INFORMATION_MESSAGE);
@@ -381,10 +387,9 @@ public class VendedorUI extends JFrame {
         return comboCategoriasReporte.getSelectedItem().toString();
     }
 
-    // =========================================================================
     // CONSTRUCCIÓN DE PANELES INTERNOS Y FILTROS VISUALES
-    // =========================================================================
 
+    // Utiliza expresiones regulares (regex) en TableRowSorter para realizar busquedas in-memory instantaneas, sin saturar MySQL
     private void configurarFiltroBusqueda(JTextField campo, JButton boton, JTable tabla) {
         Runnable accionFiltrar = () -> {
             String texto = campo.getText().trim();
@@ -623,7 +628,8 @@ public class VendedorUI extends JFrame {
         return null;
     }
 
-    // Getters de botones para vincular acciones
+    // GETTERS PARA CONTROLADORES
+
     public JButton getBtnAbrirFormularioCliente() { return btnAbrirFormularioCliente; }
     public JButton getBtnBajaCliente() { return btnBajaCliente; }
     public JButton getBtnAltaCliente() { return btnAltaCliente; }
