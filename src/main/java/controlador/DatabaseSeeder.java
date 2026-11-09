@@ -83,7 +83,6 @@ public class DatabaseSeeder {
             try {
                 em.getTransaction().begin();
 
-                // Direcciones únicas para cada usuario
                 Direccion dir1 = new Direccion("San Martin", "1050", "Corrientes", "Corrientes");
                 Direccion dir2 = new Direccion("Junin", "1423", "Corrientes", "Corrientes");
                 Direccion dir3 = new Direccion("Av. 3 de Abril", "850", "Corrientes", "Corrientes");
@@ -118,8 +117,6 @@ public class DatabaseSeeder {
                 if (em.getTransaction().isActive()) em.getTransaction().rollback();
                 e.printStackTrace();
             }
-        } else {
-            System.out.println("La base de datos ya tiene usuarios. Seeder omitido.");
         }
     }
 
@@ -131,21 +128,15 @@ public class DatabaseSeeder {
             try {
                 em.getTransaction().begin();
 
-                // Creamos una dirección genérica de prueba para los clientes
                 Direccion dirPrueba = new Direccion("San Martin", "1000", "Corrientes", "Corrientes");
 
-                // Ahora les pasamos los 7 parámetros: DNI, Nombre, Apellido, Teléfono, Email, Fecha Nacimiento, Dirección
                 Cliente c1 = new Cliente("34567890", "Lucas", "Fernández", "3794123456", "lucas.fernandez@gmail.com", LocalDate.of(1990, 5, 14), dirPrueba);
                 Cliente c2 = new Cliente("41234567", "María", "Giménez", "3794654321", "maria.gimenez@hotmail.com", LocalDate.of(1995, 8, 21), dirPrueba);
                 Cliente c3 = new Cliente("29876543", "Javier", "Romero", "3794987654", "jromero_82@yahoo.com", LocalDate.of(1982, 11, 2), dirPrueba);
                 Cliente c4 = new Cliente("36987123", "Florencia", "Acosta", "3794112233", "flor.acosta@gmail.com", LocalDate.of(1992, 3, 10), dirPrueba);
                 Cliente c5 = new Cliente("42111333", "Gonzalo", "Díaz", "3794559988", "gonza.diaz@gmail.com", LocalDate.of(1998, 7, 25), dirPrueba);
 
-                em.persist(c1);
-                em.persist(c2);
-                em.persist(c3);
-                em.persist(c4);
-                em.persist(c5);
+                em.persist(c1); em.persist(c2); em.persist(c3); em.persist(c4); em.persist(c5);
 
                 em.getTransaction().commit();
                 System.out.println("Seeder completado: Clientes de prueba creados.");
@@ -153,8 +144,6 @@ public class DatabaseSeeder {
                 if (em.getTransaction().isActive()) em.getTransaction().rollback();
                 e.printStackTrace();
             }
-        } else {
-            System.out.println("La base de datos ya tiene clientes. Seeder omitido.");
         }
     }
 
@@ -162,48 +151,56 @@ public class DatabaseSeeder {
         Long cantidadVentas = em.createQuery("SELECT COUNT(v) FROM Venta v", Long.class).getSingleResult();
 
         if (cantidadVentas == 0) {
-            System.out.println("Ejecutando Seeder de Ventas (Generando historial de 50 ventas para reportes)...");
+            int ventasAGenerar = 100; // Reducido a 100 ventas para mayor agilidad
+            System.out.println("Ejecutando Seeder de Ventas (Generando historial de " + ventasAGenerar + " ventas para reportes)...");
+
             try {
                 em.getTransaction().begin();
 
-                // EXTRAEMOS CLIENTES Y VENDEDORES EXISTENTES DIRECTO DE LA BD
                 List<Cliente> clientes = em.createQuery("SELECT c FROM Cliente c", Cliente.class).getResultList();
                 List<Producto> productos = em.createQuery("SELECT p FROM Producto p", Producto.class).getResultList();
-
-                // Buscamos específicamente a los usuarios que son vendedores
                 List<modelo.Usuario> vendedores = em.createQuery("SELECT u FROM Usuario u WHERE TYPE(u) = Vendedor", modelo.Usuario.class).getResultList();
 
                 if (!clientes.isEmpty() && !productos.isEmpty() && !vendedores.isEmpty()) {
                     Random random = new Random();
+                    LocalDateTime hoy = LocalDateTime.now();
 
-                    // Generamos 50 ventas para nutrir bien las estadísticas
-                    for (int i = 0; i < 50; i++) {
+                    for (int i = 0; i < ventasAGenerar; i++) {
                         Venta venta = new Venta();
+                        venta.setCliente(clientes.get(random.nextInt(clientes.size())));
+                        venta.setVendedor(vendedores.get(random.nextInt(vendedores.size())));
 
-                        // Seleccionamos un cliente al azar
-                        Cliente clienteAzar = clientes.get(random.nextInt(clientes.size()));
-                        venta.setCliente(clienteAzar);
+                        // Lógica de fechas para crear "picos de ventas" realistas
+                        int diasAtras;
+                        int prob = random.nextInt(100);
+                        if (prob < 20) {
+                            diasAtras = random.nextInt(30); // 20% de las ventas en el último mes (Alta demanda reciente)
+                        } else if (prob < 35) {
+                            diasAtras = random.nextInt(60) + 330; // 15% hace ~11-12 meses (Boom del año pasado)
+                        } else {
+                            diasAtras = random.nextInt(365); // El resto distribuido en todo el año
+                        }
 
-                        // Seleccionamos un vendedor al azar y se lo asignamos
-                        modelo.Usuario vendedorAzar = vendedores.get(random.nextInt(vendedores.size()));
-                        venta.setVendedor(vendedorAzar);
-
-                        // Fecha al azar dentro de los últimos 6 meses (180 días)
-                        int diasAtras = random.nextInt(180);
-                        int horasAtras = random.nextInt(24);
-                        venta.setFecha(LocalDateTime.now().minusDays(diasAtras).minusHours(horasAtras));
+                        venta.setFecha(hoy.minusDays(diasAtras).minusHours(random.nextInt(14) + 8)); // Ventas entre las 8am y 10pm
 
                         double totalVenta = 0;
-                        int cantidadArticulosDiferentes = random.nextInt(4) + 1; // 1 a 4 productos distintos por venta
+                        int cantidadArticulos = random.nextInt(3) + 1; // 1 a 3 productos por ticket
 
-                        for (int j = 0; j < cantidadArticulosDiferentes; j++) {
-                            Producto productoAzar = productos.get(random.nextInt(productos.size()));
-                            int cantidadComprada = random.nextInt(3) + 1; // 1 a 3 unidades
+                        for (int j = 0; j < cantidadArticulos; j++) {
+                            Producto prodAzar = productos.get(random.nextInt(productos.size()));
+                            int cantidadComprada;
+
+                            // Si es un producto barato (Accesorio/Auricular), compran más unidades. Si es caro (Celular), compran 1.
+                            if (prodAzar.getCategoria().equals("Accesorio") || prodAzar.getPrecio() < 50000) {
+                                cantidadComprada = random.nextInt(4) + 1; // 1 a 4 unidades
+                            } else {
+                                cantidadComprada = 1; // Celulares casi siempre se compran de a 1
+                            }
 
                             DetalleVenta detalle = new DetalleVenta();
-                            detalle.setProducto(productoAzar);
+                            detalle.setProducto(prodAzar);
                             detalle.setCantidad(cantidadComprada);
-                            detalle.setSubtotal(productoAzar.getPrecio() * cantidadComprada);
+                            detalle.setSubtotal(prodAzar.getPrecio() * cantidadComprada);
 
                             venta.agregarDetalle(detalle);
                             totalVenta += detalle.getSubtotal();
@@ -215,7 +212,7 @@ public class DatabaseSeeder {
                 }
 
                 em.getTransaction().commit();
-                System.out.println("Seeder completado: 50 ventas de prueba generadas exitosamente para los reportes.");
+                System.out.println("Seeder completado: " + ventasAGenerar + " ventas realistas generadas (1 año de historial).");
             } catch (Exception e) {
                 if (em.getTransaction().isActive()) em.getTransaction().rollback();
                 e.printStackTrace();
@@ -225,7 +222,6 @@ public class DatabaseSeeder {
         }
     }
 
-    // Método auxiliar para Productos
     private static void registrarProducto(EntityManager em, String nombre, String descripcion, int stock, double descuento, double precio, String marca, String categoria, boolean estado, LocalDateTime fechaCreacion, LocalDateTime fechaModificacion) {
         Producto p = new Producto();
         p.setNombre(nombre);
@@ -241,7 +237,6 @@ public class DatabaseSeeder {
         em.persist(p);
     }
 
-    // Método auxiliar para Usuarios
     private static void registrarUsuario(EntityManager em, modelo.Usuario usuario, String nombre, String apellido, String dni, String email, Direccion direccion, LocalDate fechaNac) {
         usuario.setNombre(nombre);
         usuario.setApellido(apellido);
