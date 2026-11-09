@@ -109,9 +109,12 @@ public class VendedorUI extends JFrame {
 
         tablaClientes.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
-                int f = tablaClientes.getSelectedRow();
-                if (f != -1) {
-                    boolean activo = tablaClientes.getValueAt(f, 5).toString().equalsIgnoreCase("Activo");
+                int fVista = tablaClientes.getSelectedRow();
+                if (fVista != -1) {
+                    int fModelo = tablaClientes.convertRowIndexToModel(fVista);
+                    Object estadoObj = tablaClientes.getModel().getValueAt(fModelo, 5);
+                    boolean activo = estadoObj != null && estadoObj.toString().equalsIgnoreCase("Activo");
+
                     btnBajaCliente.setVisible(activo);
                     btnAltaCliente.setVisible(!activo);
                     btnEditarCliente.setVisible(true);
@@ -355,8 +358,11 @@ public class VendedorUI extends JFrame {
     }
 
     public String getDniClienteSeleccionado() {
-        int fila = tablaClientes.getSelectedRow();
-        return fila != -1 ? tablaClientes.getValueAt(fila, 0).toString() : null;
+        int filaVista = tablaClientes.getSelectedRow();
+        if (filaVista == -1) return null;
+        int filaModelo = tablaClientes.convertRowIndexToModel(filaVista);
+        Object val = tablaClientes.getModel().getValueAt(filaModelo, 0);
+        return val != null ? val.toString() : null;
     }
 
     public Long getIdVentaSeleccionada() {

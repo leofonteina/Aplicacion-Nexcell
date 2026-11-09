@@ -97,7 +97,10 @@ public class VendedorController {
                 return;
             }
 
-            // SE ELIMINÓ LA RESTRICCIÓN DE LOS 6 MESES
+            if (fechaInicio.plusMonths(6).isBefore(fechaFin)) {
+                vistaPrincipal.mostrarAlerta("El rango seleccionado supera los 6 meses. Por favor, seleccione un periodo más corto.", "Rango Excedido");
+                return;
+            }
 
             LocalDateTime inicioLDT = fechaInicio.atStartOfDay();
             LocalDateTime finLDT = fechaFin.atTime(23, 59, 59);
@@ -568,11 +571,15 @@ public class VendedorController {
                     vistaPrincipal.actualizarEstadoClienteSeleccionado(act);
 
                     utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ALERTA, "CLIENTES",
-                        "El Vendedor '" + vendedorLogueado.getUsername() + "' cambió el estado del cliente DNI " + dniCliente + " a " + (act ? "Activo" : "Inactivo"));
+                        "El Vendedor '" + vendedorLogueado.getUsername() + "' cambió el estado del cliente DNI "
+                            + dniCliente + " a " + (act ? "Activo" : "Inactivo"));
                 }
             } catch (Exception ex) {
                 if (em.getTransaction().isActive()) em.getTransaction().rollback();
-                utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ERROR, "CLIENTES", "Error al cambiar estado: " + ex.getMessage());
+                ex.printStackTrace();
+                utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ERROR, "CLIENTES",
+                    "Error al cambiar estado: " + ex.getMessage());
+                vistaPrincipal.mostrarError("No se pudo cambiar el estado del cliente.", "Error");
             }
         }
     }

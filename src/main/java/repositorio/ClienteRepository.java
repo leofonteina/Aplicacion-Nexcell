@@ -19,9 +19,7 @@ public class ClienteRepository {
 
     // UPDATE: Actualizar datos de un cliente existente
     public void actualizar(Cliente cliente) {
-        em.getTransaction().begin();
         em.merge(cliente); // MERGE equivale a un UPDATE
-        em.getTransaction().commit();
     }
 
     // READ: Traer todos los clientes para llenar la tabla

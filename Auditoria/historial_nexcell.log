@@ -227,6 +227,7 @@
 [09/11/2026 18:33:49] [INFO] [REPORTES] - El Vendedor 'pedro' exportó: Reporte_Categoria_Smartphone.xlsx
 [09/11/2026 18:37:59] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
 [09/11/2026 18:40:43] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+<<<<<<< Updated upstream
 [09/11/2026 19:03:26] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
 [09/11/2026 19:05:57] [ERROR] [CLIENTES] - Error al cambiar estado: Transaction already active
 [09/11/2026 19:06:02] [ERROR] [CLIENTES] - Error al cambiar estado: Transaction already active
@@ -252,3 +253,32 @@
 [09/11/2026 19:14:05] [INFO] [SEGURIDAD] - El Administrador cerró sesión.
 [09/11/2026 19:14:07] [ALERTA] [SEGURIDAD] - Intento de acceso bloqueado: Usuario inactivo (pedro)
 [09/11/2026 19:14:17] [INFO] [SEGURIDAD] - El usuario 'juan' (Admin) inició sesión exitosamente.
+=======
+[09/11/2026 18:53:21] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[09/11/2026 18:56:06] [INFO] [SEGURIDAD] - El Vendedor 'pedro' cerró sesión.
+[09/11/2026 18:56:09] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[09/11/2026 18:56:14] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos
+[09/11/2026 18:56:39] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 09/10/2026
+[09/11/2026 18:56:49] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos
+[09/11/2026 18:56:52] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos
+[09/11/2026 18:56:59] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos
+[09/11/2026 18:57:04] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos
+[09/11/2026 18:57:06] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos
+[09/11/2026 18:57:07] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos
+[09/11/2026 18:57:09] [INFO] [REPORTES] - El Gerente generó el reporte de rendimiento de vendedores
+[09/11/2026 18:57:23] [INFO] [SEGURIDAD] - El Gerente cerró sesión.
+[09/11/2026 18:58:26] [INFO] [SEGURIDAD] - El usuario 'juan' (Admin) inició sesión exitosamente.
+[09/11/2026 19:00:20] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[09/11/2026 19:06:33] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[09/11/2026 19:06:38] [ERROR] [CLIENTES] - Error al cambiar estado: Transaction already active
+[09/11/2026 19:06:40] [ERROR] [CLIENTES] - Error al cambiar estado: Transaction already active
+[09/11/2026 19:12:40] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[09/11/2026 19:12:44] [ERROR] [CLIENTES] - Error al cambiar estado: Transaction already active
+[09/11/2026 19:12:47] [ERROR] [CLIENTES] - Error al cambiar estado: Transaction already active
+[09/11/2026 19:12:49] [ERROR] [CLIENTES] - Error al cambiar estado: Transaction already active
+[09/11/2026 19:18:30] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[09/11/2026 19:18:35] [ALERTA] [CLIENTES] - El Vendedor 'pedro' cambió el estado del cliente DNI 41234567 a Inactivo
+[09/11/2026 19:18:38] [ALERTA] [CLIENTES] - El Vendedor 'pedro' cambió el estado del cliente DNI 41234567 a Activo
+[09/11/2026 19:20:03] [ALERTA] [CLIENTES] - El Vendedor 'pedro' cambió el estado del cliente DNI 29876543 a Inactivo
+[09/11/2026 19:20:11] [ALERTA] [CLIENTES] - El Vendedor 'pedro' cambió el estado del cliente DNI 29876543 a Activo
+>>>>>>> Stashed changes
