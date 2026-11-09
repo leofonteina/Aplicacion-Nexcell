@@ -544,16 +544,25 @@ public class VendedorUI extends JFrame {
         btnExportarReporte.setOpaque(true);
         btnExportarReporte.setEnabled(false);
 
-        JPanel panelFiltros = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
-        panelFiltros.add(new JLabel("Métrica:"));
-        panelFiltros.add(comboTipoReporte);
-        panelFiltros.add(comboCategoriasReporte);
-        panelFiltros.add(new JLabel("Desde:"));
-        panelFiltros.add(crearAgrupacionFecha(cbDiaInicio, cbMesInicio, cbAnioInicio));
-        panelFiltros.add(new JLabel("Hasta:"));
-        panelFiltros.add(crearAgrupacionFecha(cbDiaFin, cbMesFin, cbAnioFin));
-        panelFiltros.add(btnGenerarReporte);
-        panelFiltros.add(btnExportarReporte);
+        // --- FILA DE ARRIBA (Filtros de búsqueda y botón generar) ---
+        JPanel panelFiltrosArriba = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        panelFiltrosArriba.add(new JLabel("Métrica:"));
+        panelFiltrosArriba.add(comboTipoReporte);
+        panelFiltrosArriba.add(comboCategoriasReporte);
+        panelFiltrosArriba.add(new JLabel("Desde:"));
+        panelFiltrosArriba.add(crearAgrupacionFecha(cbDiaInicio, cbMesInicio, cbAnioInicio));
+        panelFiltrosArriba.add(new JLabel("Hasta:"));
+        panelFiltrosArriba.add(crearAgrupacionFecha(cbDiaFin, cbMesFin, cbAnioFin));
+        panelFiltrosArriba.add(btnGenerarReporte);
+
+        // --- FILA DE ABAJO (Botón de Excel) ---
+        JPanel panelFiltrosAbajo = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        panelFiltrosAbajo.add(btnExportarReporte);
+
+        // --- CONTENEDOR AGRUPADO ---
+        JPanel panelContenedorFiltros = new JPanel(new BorderLayout(0, 10)); // 10px de separación entre renglones
+        panelContenedorFiltros.add(panelFiltrosArriba, BorderLayout.NORTH);
+        panelContenedorFiltros.add(panelFiltrosAbajo, BorderLayout.SOUTH);
 
         tablaReportes = new JTable(new DefaultTableModel(new Object[][]{}, new String[]{"-"})) {
             @Override public boolean isCellEditable(int row, int col) { return false; }
@@ -569,7 +578,8 @@ public class VendedorUI extends JFrame {
         JPanel panelInferior = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         panelInferior.add(lblTotalReporte);
 
-        panel.add(crearEncabezado("Mis Estadísticas", panelFiltros, null), BorderLayout.NORTH);
+        // Pasamos el panelContenedorFiltros al encabezado en lugar del panelFiltros de una sola línea
+        panel.add(crearEncabezado("Mis Estadísticas", panelContenedorFiltros, null), BorderLayout.NORTH);
         panel.add(scroll, BorderLayout.CENTER);
         panel.add(panelInferior, BorderLayout.SOUTH);
 

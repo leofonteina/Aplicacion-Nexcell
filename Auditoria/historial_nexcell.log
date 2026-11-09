@@ -227,3 +227,18 @@
 [09/11/2026 18:33:49] [INFO] [REPORTES] - El Vendedor 'pedro' exportó: Reporte_Categoria_Smartphone.xlsx
 [09/11/2026 18:37:59] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
 [09/11/2026 18:40:43] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[09/11/2026 18:53:21] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[09/11/2026 18:56:06] [INFO] [SEGURIDAD] - El Vendedor 'pedro' cerró sesión.
+[09/11/2026 18:56:09] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[09/11/2026 18:56:14] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos
+[09/11/2026 18:56:39] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 09/10/2026
+[09/11/2026 18:56:49] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos
+[09/11/2026 18:56:52] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos
+[09/11/2026 18:56:59] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos
+[09/11/2026 18:57:04] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos
+[09/11/2026 18:57:06] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos
+[09/11/2026 18:57:07] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos
+[09/11/2026 18:57:09] [INFO] [REPORTES] - El Gerente generó el reporte de rendimiento de vendedores
+[09/11/2026 18:57:23] [INFO] [SEGURIDAD] - El Gerente cerró sesión.
+[09/11/2026 18:58:26] [INFO] [SEGURIDAD] - El usuario 'juan' (Admin) inició sesión exitosamente.
+[09/11/2026 19:00:20] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
