@@ -111,25 +111,53 @@ public class BackupUI extends JDialog {
     }
 
     public String[] pedirDobleAutorizacion() {
-        JTextField txtUserAdmin = new JTextField(15);
-        JPasswordField passAdmin = new JPasswordField(15);
-        JTextField txtUserGerente = new JTextField(15);
-        JPasswordField passGerente = new JPasswordField(15);
+        JTextField txtUserAdmin = new JTextField(12);
+        JPasswordField passAdmin = new JPasswordField(12);
+        JTextField txtUserGerente = new JTextField(12);
+        JPasswordField passGerente = new JPasswordField(12);
 
-        JPanel panel = new JPanel(new GridLayout(5, 2, 5, 5));
-        panel.add(new JLabel("--- CREDENCIALES ADMINISTRADOR ---")); panel.add(new JLabel(""));
-        panel.add(new JLabel("Usuario Admin:")); panel.add(txtUserAdmin);
-        panel.add(new JLabel("Contraseña:")); panel.add(passAdmin);
-        panel.add(new JLabel("--- CREDENCIALES GERENTE ---")); panel.add(new JLabel(""));
-        panel.add(new JLabel("Usuario Gerente:")); panel.add(txtUserGerente);
-        panel.add(new JLabel("Contraseña:")); panel.add(passGerente);
+        // Panel principal que contendrá los dos recuadros
+        JPanel panelPrincipal = new JPanel(new BorderLayout(0, 15));
+        panelPrincipal.setPreferredSize(new Dimension(290, 180));
 
-        int result = JOptionPane.showConfirmDialog(this, panel, "Validación Cruzada de Seguridad", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        // --- PANEL ADMINISTRADOR ---
+        JPanel panelAdmin = new JPanel(new GridLayout(2, 2, 10, 10));
+        panelAdmin.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(Color.GRAY),
+                "Credenciales Administrador",
+                TitledBorder.LEFT, TitledBorder.TOP,
+                new Font("Segoe UI", Font.BOLD, 12), Color.WHITE
+        ));
+
+        panelAdmin.add(new JLabel("Usuario Admin:"));
+        panelAdmin.add(txtUserAdmin);
+        panelAdmin.add(new JLabel("Contraseña:"));
+        panelAdmin.add(passAdmin);
+
+        // --- PANEL GERENTE ---
+        JPanel panelGerente = new JPanel(new GridLayout(2, 2, 10, 10));
+        panelGerente.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(Color.GRAY),
+                "Credenciales Gerente",
+                TitledBorder.LEFT, TitledBorder.TOP,
+                new Font("Segoe UI", Font.BOLD, 12), Color.WHITE
+        ));
+
+        panelGerente.add(new JLabel("Usuario Gerente:"));
+        panelGerente.add(txtUserGerente);
+        panelGerente.add(new JLabel("Contraseña:"));
+        panelGerente.add(passGerente);
+
+        // Ensamblar los paneles
+        panelPrincipal.add(panelAdmin, BorderLayout.NORTH);
+        panelPrincipal.add(panelGerente, BorderLayout.CENTER);
+
+        int result = JOptionPane.showConfirmDialog(this, panelPrincipal, "Validación Cruzada de Seguridad", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 
         if (result == JOptionPane.OK_OPTION) {
             return new String[]{
-                txtUserAdmin.getText().trim(), new String(passAdmin.getPassword()),
-                txtUserGerente.getText().trim(), new String(passGerente.getPassword())
+                    txtUserAdmin.getText().trim(), new String(passAdmin.getPassword()),
+                    txtUserGerente.getText().trim(), new String(passGerente.getPassword())
             };
         }
         return null;

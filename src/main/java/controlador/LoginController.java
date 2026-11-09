@@ -26,7 +26,6 @@ public class LoginController {
         vista.getLoginButton().setEnabled(false);
         vista.getLoginButton().setText("Conectando...");
 
-
         SwingWorker<Usuario, Void> worker = new SwingWorker<Usuario, Void>() {
 
             @Override
@@ -41,22 +40,40 @@ public class LoginController {
                     Usuario usuarioAutenticado = get(); // Recibimos la respuesta de doInBackground
 
                     if (usuarioAutenticado != null) {
-                        // --- NUEVO: REGISTRO DE LOG ---
+
+                        // Validacion de estado de usuario
+                        if (usuarioAutenticado.getEstado() != null && !usuarioAutenticado.getEstado()) {
+                            utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ALERTA, "SEGURIDAD",
+                                    "Intento de acceso bloqueado: Usuario inactivo (" + user + ")");
+
+                            JOptionPane.showMessageDialog(vista,
+                                    "Acceso denegado.\nTu cuenta ha sido dada de baja o suspendida.\nComunicate con un Administrador.",
+                                    "Cuenta Inactiva",
+                                    JOptionPane.ERROR_MESSAGE);
+
+                            restaurarBoton();
+                            return; // Corta la ejecución y evita que se abra la interfaz
+                        }
+                        // =====================================================================
+
+                        // --- REGISTRO DE LOG EXITOSO ---
                         utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "SEGURIDAD",
-                            "El usuario '" + user + "' (" + usuarioAutenticado.getClass().getSimpleName() + ") inició sesión exitosamente.");
+                                "El usuario '" + user + "' (" + usuarioAutenticado.getClass().getSimpleName() + ") inició sesión exitosamente.");
+
                         usuarioAutenticado.mostrarInterfaz(em);
                         vista.dispose();
+
                     } else {
-                        // --- NUEVO: REGISTRO DE LOG ---
+                        // --- REGISTRO DE LOG FALLIDO ---
                         utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ALERTA, "SEGURIDAD",
-                            "Intento de acceso fallido para el usuario: " + user);
+                                "Intento de acceso fallido para el usuario: " + user);
                         JOptionPane.showMessageDialog(vista, "Credenciales incorrectas", "Error de Acceso", JOptionPane.ERROR_MESSAGE);
                         restaurarBoton();
                     }
                 } catch (Exception ex) {
-                    // --- NUEVO: REGISTRO DE LOG ---
+                    // --- REGISTRO DE LOG DE ERROR ---
                     utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ERROR, "BASE DE DATOS",
-                        "Fallo de conexión en el login: " + ex.getMessage());
+                            "Fallo de conexión en el login: " + ex.getMessage());
                     JOptionPane.showMessageDialog(vista, "Error de conexión con la base de datos.", "Error Fatal", JOptionPane.ERROR_MESSAGE);
                     System.err.println("Error en hilo de login: " + ex.getMessage());
                     restaurarBoton();
@@ -81,10 +98,10 @@ public class LoginController {
             em.clear();
 
             List<Usuario> resultados = em.createQuery(
-                    "SELECT u FROM Usuario u WHERE u.username = :user AND u.password = :pass", Usuario.class)
-                .setParameter("user", user)
-                .setParameter("pass", pass)
-                .getResultList();
+                            "SELECT u FROM Usuario u WHERE u.username = :user AND u.password = :pass", Usuario.class)
+                    .setParameter("user", user)
+                    .setParameter("pass", pass)
+                    .getResultList();
 
             if (!resultados.isEmpty()) {
                 return resultados.get(0);
@@ -96,5 +113,4 @@ public class LoginController {
 
         return null;
     }
-
 }

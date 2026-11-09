@@ -227,18 +227,28 @@
 [09/11/2026 18:33:49] [INFO] [REPORTES] - El Vendedor 'pedro' exportó: Reporte_Categoria_Smartphone.xlsx
 [09/11/2026 18:37:59] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
 [09/11/2026 18:40:43] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
-[09/11/2026 18:53:21] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
-[09/11/2026 18:56:06] [INFO] [SEGURIDAD] - El Vendedor 'pedro' cerró sesión.
-[09/11/2026 18:56:09] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
-[09/11/2026 18:56:14] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos
-[09/11/2026 18:56:39] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 09/10/2026
-[09/11/2026 18:56:49] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos
-[09/11/2026 18:56:52] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos
-[09/11/2026 18:56:59] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos
-[09/11/2026 18:57:04] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos
-[09/11/2026 18:57:06] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos
-[09/11/2026 18:57:07] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos
-[09/11/2026 18:57:09] [INFO] [REPORTES] - El Gerente generó el reporte de rendimiento de vendedores
-[09/11/2026 18:57:23] [INFO] [SEGURIDAD] - El Gerente cerró sesión.
-[09/11/2026 18:58:26] [INFO] [SEGURIDAD] - El usuario 'juan' (Admin) inició sesión exitosamente.
-[09/11/2026 19:00:20] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[09/11/2026 19:03:26] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[09/11/2026 19:05:57] [ERROR] [CLIENTES] - Error al cambiar estado: Transaction already active
+[09/11/2026 19:06:02] [ERROR] [CLIENTES] - Error al cambiar estado: Transaction already active
+[09/11/2026 19:06:05] [ERROR] [CLIENTES] - Error al cambiar estado: Transaction already active
+[09/11/2026 19:06:16] [ERROR] [CLIENTES] - Error al cambiar estado: Transaction already active
+[09/11/2026 19:06:17] [ERROR] [CLIENTES] - Error al cambiar estado: Transaction already active
+[09/11/2026 19:06:26] [INFO] [SEGURIDAD] - El Vendedor 'pedro' cerró sesión.
+[09/11/2026 19:06:34] [INFO] [SEGURIDAD] - El usuario 'juan' (Admin) inició sesión exitosamente.
+[09/11/2026 19:06:44] [ALERTA] [USUARIOS] - El Administrador cambió el estado del usuario pedro a Inactivo
+[09/11/2026 19:06:47] [INFO] [SEGURIDAD] - El Administrador cerró sesión.
+[09/11/2026 19:06:49] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[09/11/2026 19:06:52] [INFO] [SEGURIDAD] - El Vendedor 'pedro' cerró sesión.
+[09/11/2026 19:08:00] [INFO] [SEGURIDAD] - El usuario 'juan' (Admin) inició sesión exitosamente.
+[09/11/2026 19:08:09] [ALERTA] [USUARIOS] - El Administrador cambió el estado del usuario ana a Inactivo
+[09/11/2026 19:08:11] [INFO] [SEGURIDAD] - El Administrador cerró sesión.
+[09/11/2026 19:08:13] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[09/11/2026 19:08:16] [INFO] [SEGURIDAD] - El Gerente cerró sesión.
+[09/11/2026 19:08:19] [INFO] [SEGURIDAD] - El usuario 'juan' (Admin) inició sesión exitosamente.
+[09/11/2026 19:08:25] [ALERTA] [USUARIOS] - El Administrador cambió el estado del usuario ana a Activo
+[09/11/2026 19:08:28] [ALERTA] [USUARIOS] - El Administrador cambió el estado del usuario pedro a Activo
+[09/11/2026 19:13:29] [INFO] [SEGURIDAD] - El usuario 'juan' (Admin) inició sesión exitosamente.
+[09/11/2026 19:14:03] [ALERTA] [USUARIOS] - El Administrador cambió el estado del usuario pedro a Inactivo
+[09/11/2026 19:14:05] [INFO] [SEGURIDAD] - El Administrador cerró sesión.
+[09/11/2026 19:14:07] [ALERTA] [SEGURIDAD] - Intento de acceso bloqueado: Usuario inactivo (pedro)
+[09/11/2026 19:14:17] [INFO] [SEGURIDAD] - El usuario 'juan' (Admin) inició sesión exitosamente.
