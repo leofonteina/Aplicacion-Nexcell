@@ -8,13 +8,16 @@ import vista.LoginUI;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.ParameterMode;
 import jakarta.persistence.StoredProcedureQuery;
+import javax.swing.JTable;
 import java.io.File;
-import java.io.PrintWriter;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Locale;
 
 public class VendedorController {
 
@@ -43,7 +46,9 @@ public class VendedorController {
         this.vistaPrincipal.getBtnAltaCliente().addActionListener(e -> cambiarEstadoCliente(true));
         this.vistaPrincipal.getBtnEditarCliente().addActionListener(e -> abrirFormularioEdicionCliente());
         this.vistaPrincipal.getBtnGenerarReporte().addActionListener(e -> generarReporte());
-        this.vistaPrincipal.getBtnExportarReporte().addActionListener(e -> exportarReporteCSV());
+        this.vistaPrincipal.getBtnExportarReporte().addActionListener(e ->
+            exportarTablaAExcel(vistaPrincipal.getTablaReportes(), obtenerNombreDefectoReporte())
+        );
 
         // Busqueda en vivo de productos estilo Gerente
         this.vistaPrincipal.inicializarAutocompletadoProductos(texto ->
@@ -56,6 +61,21 @@ public class VendedorController {
     }
 
     // modulo de reportes estadisticos
+
+    private String obtenerNombreDefectoReporte() {
+        switch (vistaPrincipal.getIndiceTipoReporte()) {
+            case 0:
+                return "Reporte_Resumen_Diario";
+            case 1:
+                return "Reporte_Top_Productos";
+            case 2:
+                return "Reporte_Categoria_" + vistaPrincipal.getCategoriaReporteSeleccionada();
+            case 3:
+                return "Reporte_Mejores_Clientes";
+            default:
+                return "Reporte_Vendedor";
+        }
+    }
 
     private void generarReporte() {
         String strInicio = vistaPrincipal.getFechaInicioReporteStr();
@@ -77,28 +97,30 @@ public class VendedorController {
                 return;
             }
 
-            if (fechaInicio.plusMonths(6).isBefore(fechaFin)) {
-                vistaPrincipal.mostrarAlerta("El rango seleccionado supera los 6 meses. Por favor, seleccione un periodo más corto.", "Rango Excedido");
-                return;
-            }
+            // SE ELIMINÓ LA RESTRICCIÓN DE LOS 6 MESES
 
             LocalDateTime inicioLDT = fechaInicio.atStartOfDay();
             LocalDateTime finLDT = fechaFin.atTime(23, 59, 59);
 
+            List<Object[]> datos = null;
+
             if (tipoReporte == 0) {
-                List<Object[]> datos = consultarProcedimiento("reporte_resumen_diario", inicioLDT, finLDT);
+                datos = consultarProcedimiento("reporte_resumen_diario", inicioLDT, finLDT);
                 vistaPrincipal.mostrarReporteResumenDiario(datos);
             } else if (tipoReporte == 1) {
-                List<Object[]> datos = consultarProcedimiento("reporte_top_productos", inicioLDT, finLDT);
+                datos = consultarProcedimiento("reporte_top_productos", inicioLDT, finLDT);
                 vistaPrincipal.mostrarReporteTopProductos(datos);
             } else if (tipoReporte == 2) {
                 String categoria = vistaPrincipal.getCategoriaReporteSeleccionada();
-                List<Object[]> datos = consultarProcedimientoCategoria(inicioLDT, finLDT, categoria);
+                datos = consultarProcedimientoCategoria(inicioLDT, finLDT, categoria);
                 vistaPrincipal.mostrarReporteRendimientoCategoria(datos, categoria);
             } else if (tipoReporte == 3) {
-                List<Object[]> datos = consultarProcedimiento("reporte_mejores_clientes", inicioLDT, finLDT);
+                datos = consultarProcedimiento("reporte_mejores_clientes", inicioLDT, finLDT);
                 vistaPrincipal.mostrarReporteMejoresClientes(datos);
             }
+
+            boolean hayDatos = datos != null && !datos.isEmpty();
+            vistaPrincipal.getBtnExportarReporte().setEnabled(hayDatos);
 
         } catch (DateTimeParseException ex) {
             vistaPrincipal.mostrarError("La fecha seleccionada no existe en el calendario.", "Fecha Inválida");
@@ -135,34 +157,96 @@ public class VendedorController {
         return query.getResultList();
     }
 
-    private void exportarReporteCSV() {
-        List<String[]> filas = vistaPrincipal.obtenerDatosTablaReportes();
-        if (filas.isEmpty()) {
-            vistaPrincipal.mostrarAlerta("No hay datos en la tabla para exportar.", "Aviso");
+    private void exportarTablaAExcel(JTable tabla, String nombreArchivoPorDefecto) {
+        if (tabla.getRowCount() == 0) {
+            vistaPrincipal.mostrarAlerta("No hay datos visibles para exportar.", "Aviso");
             return;
         }
 
-        File archivoDestino = vistaPrincipal.seleccionarArchivoCSVGuardar();
-        if (archivoDestino != null) {
-            try (PrintWriter writer = new PrintWriter(archivoDestino, "UTF-8")) {
-                for (int i = 0; i < filas.size(); i++) {
-                    String[] fila = filas.get(i);
-                    for (int j = 0; j < fila.length; j++) {
-                        if (i == 0) {
-                            writer.print(fila[j]);
-                        } else {
-                            writer.print("\"" + fila[j].replace("\"", "\"\"") + "\"");
-                        }
-                        if (j < fila.length - 1) writer.print(";");
-                    }
-                    writer.println();
-                }
+        File archivo = vistaPrincipal.solicitarArchivoParaGuardar(nombreArchivoPorDefecto);
+        if (archivo == null) return;
 
-                vistaPrincipal.mostrarExito("Reporte exportado con éxito. Ya puedes abrirlo con Excel.", "Exportación Exitosa");
-                utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "REPORTES", "El Vendedor exportó datos a formato CSV.");
-            } catch (Exception ex) {
-                vistaPrincipal.mostrarError("Error al guardar el archivo.", "Error Crítico");
+        try (org.apache.poi.ss.usermodel.Workbook workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook()) {
+            org.apache.poi.ss.usermodel.Sheet sheet = workbook.createSheet("Reporte");
+
+            org.apache.poi.ss.usermodel.CellStyle estiloCabecera = workbook.createCellStyle();
+            org.apache.poi.ss.usermodel.Font fuenteCabecera = workbook.createFont();
+            fuenteCabecera.setBold(true);
+            estiloCabecera.setFont(fuenteCabecera);
+            estiloCabecera.setFillForegroundColor(org.apache.poi.ss.usermodel.IndexedColors.GREY_25_PERCENT.getIndex());
+            estiloCabecera.setFillPattern(org.apache.poi.ss.usermodel.FillPatternType.SOLID_FOREGROUND);
+
+            org.apache.poi.ss.usermodel.CellStyle estiloMoneda = workbook.createCellStyle();
+            estiloMoneda.setDataFormat(workbook.createDataFormat().getFormat("$ #,##0.00"));
+
+            org.apache.poi.ss.usermodel.Row filaCabecera = sheet.createRow(0);
+            for (int i = 0; i < tabla.getColumnCount(); i++) {
+                org.apache.poi.ss.usermodel.Cell celda = filaCabecera.createCell(i);
+                celda.setCellValue(tabla.getColumnName(i));
+                celda.setCellStyle(estiloCabecera);
             }
+
+            for (int i = 0; i < tabla.getRowCount(); i++) {
+                org.apache.poi.ss.usermodel.Row fila = sheet.createRow(i + 1);
+                for (int j = 0; j < tabla.getColumnCount(); j++) {
+                    org.apache.poi.ss.usermodel.Cell celda = fila.createCell(j);
+                    Object valor = tabla.getValueAt(i, j);
+
+                    if (valor != null) {
+                        String texto = valor.toString();
+                        if (texto.trim().startsWith("$")) {
+                            try {
+                                celda.setCellValue(parsearMoneda(texto));
+                                celda.setCellStyle(estiloMoneda);
+                            } catch (Exception e) {
+                                celda.setCellValue(texto);
+                            }
+                        } else {
+                            try {
+                                if (texto.matches("-?\\d+")) {
+                                    celda.setCellValue(Integer.parseInt(texto));
+                                } else {
+                                    celda.setCellValue(texto);
+                                }
+                            } catch (Exception ex) {
+                                celda.setCellValue(texto);
+                            }
+                        }
+                    }
+                }
+            }
+
+            for (int i = 0; i < tabla.getColumnCount(); i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            try (java.io.FileOutputStream fileOut = new java.io.FileOutputStream(archivo)) {
+                workbook.write(fileOut);
+            }
+
+            vistaPrincipal.mostrarExito("El reporte fue exportado a:\n" + archivo.getAbsolutePath(), "Exportación Exitosa");
+            utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "REPORTES",
+                "El Vendedor '" + vendedorLogueado.getUsername() + "' exportó: " + archivo.getName());
+
+        } catch (Exception ex) {
+            vistaPrincipal.mostrarError("Error al exportar XLSX:\n" + ex.getMessage(), "Error");
+        }
+    }
+
+    private String formatearMoneda(double monto) {
+        DecimalFormatSymbols simbolos = new DecimalFormatSymbols(new Locale("es", "AR"));
+        simbolos.setGroupingSeparator('.');
+        simbolos.setDecimalSeparator(',');
+        DecimalFormat df = new DecimalFormat("$ #,##0.00", simbolos);
+        return df.format(monto);
+    }
+
+    private double parsearMoneda(String texto) {
+        try {
+            String limpio = texto.replace("$", "").replace(" ", "").replace(".", "").replace(",", ".").trim();
+            return Double.parseDouble(limpio);
+        } catch (Exception e) {
+            return 0.0;
         }
     }
 
@@ -250,7 +334,7 @@ public class VendedorController {
                 }
 
                 if (!ventanaVenta.confirmarPregunta(
-                    String.format("¿Desea confirmar y registrar esta venta por un total de $%.2f?", totResumen),
+                    "¿Desea confirmar y registrar esta venta por un total de " + formatearMoneda(totResumen) + "?",
                     "Confirmar Venta")) {
                     return;
                 }
@@ -302,8 +386,8 @@ public class VendedorController {
             em.clear();
 
             utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "VENTAS",
-                "El Vendedor '" + vendedorLogueado.getUsername() + "' registró exitosamente una venta por $"
-                    + totalVenta + " al DNI: " + cliente.getDni());
+                "El Vendedor '" + vendedorLogueado.getUsername() + "' registró exitosamente una venta por "
+                    + formatearMoneda(totalVenta) + " al DNI: " + cliente.getDni());
             return true;
 
         } catch (Exception e) {
@@ -551,11 +635,11 @@ public class VendedorController {
             for (modelo.DetalleVenta d : venta.getDetalles()) {
                 tabla.addCell(new com.itextpdf.text.Phrase(d.getProducto().getNombre(), fontNormal));
                 tabla.addCell(new com.itextpdf.text.Phrase(d.getCantidad() + " u.", fontNormal));
-                tabla.addCell(new com.itextpdf.text.Phrase(String.format("$%.2f", d.getSubtotal()), fontNormal));
+                tabla.addCell(new com.itextpdf.text.Phrase(formatearMoneda(d.getSubtotal()), fontNormal));
             }
             documento.add(tabla);
 
-            com.itextpdf.text.Paragraph total = new com.itextpdf.text.Paragraph("\nTOTAL ABONADO: $" + String.format("%.2f", venta.getTotal()), fontTitulo);
+            com.itextpdf.text.Paragraph total = new com.itextpdf.text.Paragraph("\nTOTAL ABONADO: " + formatearMoneda(venta.getTotal()), fontTitulo);
             total.setAlignment(com.itextpdf.text.Element.ALIGN_RIGHT);
             documento.add(total);
             documento.add(new com.itextpdf.text.Paragraph("\n\n*** Gracias por su compra en Nexcell ***", fontNormal));

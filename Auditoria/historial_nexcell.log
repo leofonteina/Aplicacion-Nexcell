@@ -223,3 +223,7 @@
 [06/11/2026 21:00:36] [INFO] [VENTAS] - El Vendedor 'pedro' registró exitosamente una venta por $180000.0 al DNI: 42111333
 [09/11/2026 17:32:46] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
 [09/11/2026 17:32:51] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 09/10/2026
+[09/11/2026 18:33:35] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[09/11/2026 18:33:49] [INFO] [REPORTES] - El Vendedor 'pedro' exportó: Reporte_Categoria_Smartphone.xlsx
+[09/11/2026 18:37:59] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[09/11/2026 18:40:43] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.

@@ -5,10 +5,12 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.io.File;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
@@ -122,6 +124,16 @@ public class VendedorUI extends JFrame {
         });
     }
 
+    // FORMATEADOR DE MONEDA CON PUNTOS PARA MILES Y COMA PARA DECIMALES
+
+    private String formatearMonedaUI(double monto) {
+        DecimalFormatSymbols simbolos = new DecimalFormatSymbols(new Locale("es", "AR"));
+        simbolos.setGroupingSeparator('.');
+        simbolos.setDecimalSeparator(',');
+        DecimalFormat df = new DecimalFormat("$ #,##0.00", simbolos);
+        return df.format(monto);
+    }
+
     // EVENTOS DELEGADOS Y RENDERIZADO DE DATOS
 
     public void alHacerDobleClicEnVenta(Consumer<Long> accion) {
@@ -168,7 +180,7 @@ public class VendedorUI extends JFrame {
         mod.setRowCount(0);
         for (modelo.Producto p : productos) {
             mod.addRow(new Object[]{
-                p.getId(), p.getCategoria(), p.getNombre(), p.getStock(), String.format("$%.2f", p.getPrecio())
+                p.getId(), p.getCategoria(), p.getNombre(), p.getStock(), formatearMonedaUI(p.getPrecio())
             });
         }
     }
@@ -181,7 +193,7 @@ public class VendedorUI extends JFrame {
             int cant = v.getDetalles().size();
             String desc = cant == 1 ? v.getDetalles().get(0).getProducto().getNombre() : cant + " art. (Varios)";
             mod.addRow(new Object[]{
-                v.getId(), v.getFecha().format(fmt), v.getCliente().getDni(), desc, String.format("$%.2f", v.getTotal())
+                v.getId(), v.getFecha().format(fmt), v.getCliente().getDni(), desc, formatearMonedaUI(v.getTotal())
             });
         }
     }
@@ -203,9 +215,9 @@ public class VendedorUI extends JFrame {
             double total = ((Number) fila[2]).doubleValue();
 
             granTotal += total;
-            modelo.addRow(new Object[]{fechaStr, tickets + " ventas", String.format("$%.2f", total)});
+            modelo.addRow(new Object[]{fechaStr, tickets + " ventas", formatearMonedaUI(total)});
         }
-        lblTotalReporte.setText(String.format("Facturación Periodo: $%.2f", granTotal));
+        lblTotalReporte.setText("Facturación Periodo: " + formatearMonedaUI(granTotal));
     }
 
     public void mostrarReporteTopProductos(List<Object[]> resultados) {
@@ -221,9 +233,9 @@ public class VendedorUI extends JFrame {
             double total = ((Number) fila[3]).doubleValue();
 
             granTotal += total;
-            modelo.addRow(new Object[]{producto, categoria, unidades + " u.", String.format("$%.2f", total)});
+            modelo.addRow(new Object[]{producto, categoria, unidades, formatearMonedaUI(total)});
         }
-        lblTotalReporte.setText(String.format("Ingreso por estos productos: $%.2f", granTotal));
+        lblTotalReporte.setText("Ingreso por estos productos: " + formatearMonedaUI(granTotal));
     }
 
     public void mostrarReporteRendimientoCategoria(List<Object[]> resultados, String categoria) {
@@ -233,11 +245,12 @@ public class VendedorUI extends JFrame {
 
         double granTotal = 0;
         for (Object[] fila : resultados) {
+            int unidades = ((Number) fila[1]).intValue();
             double ingresos = ((Number) fila[2]).doubleValue();
             granTotal += ingresos;
-            modelo.addRow(new Object[]{fila[0], fila[1], String.format("$%.2f", ingresos)});
+            modelo.addRow(new Object[]{fila[0], unidades, formatearMonedaUI(ingresos)});
         }
-        lblTotalReporte.setText(String.format("Total en Categoría: $%.2f", granTotal));
+        lblTotalReporte.setText("Total en Categoría: " + formatearMonedaUI(granTotal));
     }
 
     public void mostrarReporteMejoresClientes(List<Object[]> resultados) {
@@ -247,34 +260,11 @@ public class VendedorUI extends JFrame {
 
         for (Object[] fila : resultados) {
             String nombreCompleto = fila[1] + " " + fila[2];
+            int compras = ((Number) fila[3]).intValue();
             double gastado = ((Number) fila[4]).doubleValue();
-            modelo.addRow(new Object[]{fila[0], nombreCompleto, fila[3], String.format("$%.2f", gastado)});
+            modelo.addRow(new Object[]{fila[0], nombreCompleto, compras, formatearMonedaUI(gastado)});
         }
         lblTotalReporte.setText("Ranking de Fidelización (Clientes del Vendedor)");
-    }
-
-    // EXPORTACION A CSV
-
-    public List<String[]> obtenerDatosTablaReportes() {
-        List<String[]> datos = new ArrayList<>();
-        int cols = tablaReportes.getColumnCount();
-        if (tablaReportes.getRowCount() == 0) return datos;
-
-        String[] headers = new String[cols];
-        for (int i = 0; i < cols; i++) {
-            headers[i] = tablaReportes.getColumnName(i);
-        }
-        datos.add(headers);
-
-        for (int i = 0; i < tablaReportes.getRowCount(); i++) {
-            String[] fila = new String[cols];
-            for (int j = 0; j < cols; j++) {
-                Object val = tablaReportes.getValueAt(i, j);
-                fila[j] = val != null ? val.toString() : "";
-            }
-            datos.add(fila);
-        }
-        return datos;
     }
 
     // SUB-VENTANA DE DETALLE DE VENTA
@@ -302,7 +292,7 @@ public class VendedorUI extends JFrame {
             modDetalle.addRow(new Object[]{
                 dv.getProducto().getNombre(),
                 dv.getCantidad() + " u.",
-                String.format("$%.2f", dv.getSubtotal())
+                formatearMonedaUI(dv.getSubtotal())
             });
         }
 
@@ -315,7 +305,7 @@ public class VendedorUI extends JFrame {
         JPanel panelInferior = new JPanel(new BorderLayout());
         panelInferior.setBorder(BorderFactory.createEmptyBorder(10, 15, 15, 15));
 
-        JLabel lblTotal = new JLabel("TOTAL ABONADO: $" + String.format("%.2f", venta.getTotal()));
+        JLabel lblTotal = new JLabel("TOTAL ABONADO: " + formatearMonedaUI(venta.getTotal()));
         lblTotal.setFont(new Font("Segoe UI", Font.BOLD, 16));
         lblTotal.setForeground(new Color(40, 167, 69));
 
@@ -348,12 +338,18 @@ public class VendedorUI extends JFrame {
         return JOptionPane.showConfirmDialog(this, mensaje, titulo, JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION;
     }
 
-    public File seleccionarArchivoCSVGuardar() {
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle("Guardar Reporte Excel (CSV)");
-        fileChooser.setSelectedFile(new File("Nexcell_Reporte_" + System.currentTimeMillis() + ".csv"));
-        if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
-            return fileChooser.getSelectedFile();
+    public File solicitarArchivoParaGuardar(String nombrePorDefecto) {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Guardar Reporte Excel (.xlsx)");
+        chooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("Archivos de Excel (*.xlsx)", "xlsx"));
+        chooser.setSelectedFile(new File(nombrePorDefecto + ".xlsx"));
+
+        if (chooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            File archivo = chooser.getSelectedFile();
+            if (!archivo.getName().toLowerCase().endsWith(".xlsx")) {
+                archivo = new File(archivo.getAbsolutePath() + ".xlsx");
+            }
+            return archivo;
         }
         return null;
     }
@@ -541,7 +537,12 @@ public class VendedorUI extends JFrame {
         cbAnioFin.setEnabled(false);
 
         btnGenerarReporte = crearBotonWeb("Generar Reporte");
-        btnExportarReporte = crearBotonWeb("Exportar a Excel");
+
+        btnExportarReporte = crearBotonWeb("Excel");
+        btnExportarReporte.setBackground(new Color(40, 167, 69));
+        btnExportarReporte.setForeground(Color.WHITE);
+        btnExportarReporte.setOpaque(true);
+        btnExportarReporte.setEnabled(false);
 
         JPanel panelFiltros = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         panelFiltros.add(new JLabel("Métrica:"));
@@ -561,7 +562,7 @@ public class VendedorUI extends JFrame {
         JScrollPane scroll = new JScrollPane(tablaReportes);
         scroll.setBorder(BorderFactory.createEmptyBorder());
 
-        lblTotalReporte = new JLabel("Total Periodo: $0.00");
+        lblTotalReporte = new JLabel("Total Periodo: $ 0,00");
         lblTotalReporte.setFont(new Font("Segoe UI", Font.BOLD, 18));
         lblTotalReporte.setForeground(new Color(40, 167, 69));
 
@@ -668,6 +669,7 @@ public class VendedorUI extends JFrame {
 
     // GETTERS PARA CONTROLADORES
 
+    public JTable getTablaReportes() { return tablaReportes; }
     public JComboBox<String> getComboCriterioProducto() { return comboCriterioProducto; }
     public JTextField getBuscarProductoField() { return buscarProductoField; }
     public JButton getBtnBuscarProducto() { return btnBuscarProducto; }
