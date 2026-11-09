@@ -14,7 +14,10 @@ public class RegistroVentaUI extends JDialog {
     private JButton btnVerificarCliente;
     private JLabel lblNombreCliente;
 
-    private JTextField buscarProductoField; // NUEVO: Barra de búsqueda rápida
+    // Nuevos componentes para la búsqueda
+    private JTextField buscarProductoField;
+    private List<modelo.Producto> listaProductosOriginal;
+
     private JComboBox<String> productoBox;
     private JTextField cantidadField;
     private JButton btnAgregarProducto;
@@ -24,12 +27,9 @@ public class RegistroVentaUI extends JDialog {
     private JButton btnConfirmarVenta;
     private JButton btnEliminarDelCarrito;
 
-    // Lista en memoria de la vista para filtrar en tiempo real sin consultar la BD de nuevo
-    private List<modelo.Producto> catalogoDisponible = new ArrayList<>();
-
     public RegistroVentaUI(JFrame parent) {
         super(parent, "Registrar Nueva Venta", true);
-        setSize(650, 650); // Un poco más alto para alojar el buscador cómodamente
+        setSize(650, 680); // Aumenté un poco el alto para que entre el nuevo campo cómodamente
         setLocationRelativeTo(parent);
         setResizable(false);
 
@@ -74,18 +74,24 @@ public class RegistroVentaUI extends JDialog {
         gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 3;
         panelForm.add(new JSeparator(), gbc);
 
-        // Fila 3: Buscador Rápido de Productos
+        // Fila 3: BUSCADOR DE PRODUCTO (NUEVO)
         gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 1;
-        JLabel lblBuscarProd = new JLabel("Buscar Producto:");
-        lblBuscarProd.setFont(fuenteLabel);
-        panelForm.add(lblBuscarProd, gbc);
+        JLabel lblBuscar = new JLabel("Buscar Producto:");
+        lblBuscar.setFont(fuenteLabel);
+        panelForm.add(lblBuscar, gbc);
 
         gbc.gridx = 1; gbc.gridwidth = 2;
         buscarProductoField = new JTextField(15);
-        buscarProductoField.setToolTipText("Escriba nombre, marca, categoría o ID para filtrar la lista...");
         panelForm.add(buscarProductoField, gbc);
 
-        // Fila 4: Selector de Producto
+        // Agregamos el listener para que filtre el ComboBox mientras se escribe
+        buscarProductoField.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) { filtrarComboProductos(); }
+            public void removeUpdate(DocumentEvent e) { filtrarComboProductos(); }
+            public void changedUpdate(DocumentEvent e) { filtrarComboProductos(); }
+        });
+
+        // Fila 4: Producto (ComboBox)
         gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 1;
         JLabel lblProd = new JLabel("Producto:");
         lblProd.setFont(fuenteLabel);
@@ -113,6 +119,7 @@ public class RegistroVentaUI extends JDialog {
         JPanel panelCentro = new JPanel(new BorderLayout(0, 15));
         panelCentro.add(panelForm, BorderLayout.NORTH);
 
+        // Tabla del Carrito
         String[] columnasCarrito = {"ID", "Producto", "Precio Unit.", "Cantidad", "Subtotal"};
         DefaultTableModel modeloCarrito = new DefaultTableModel(null, columnasCarrito) {
             @Override
@@ -128,6 +135,7 @@ public class RegistroVentaUI extends JDialog {
 
         panelPrincipal.add(panelCentro, BorderLayout.CENTER);
 
+        // Panel Inferior (Totales y Botón de Confirmar)
         JPanel panelBoton = new JPanel(new BorderLayout());
 
         JPanel panelIzquierdoInferior = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -153,59 +161,50 @@ public class RegistroVentaUI extends JDialog {
 
         add(panelPrincipal);
 
-        // Eventos puramente visuales de la interfaz
+        // Evento para mostrar el botón de eliminar al seleccionar una fila
         tablaCarrito.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 btnEliminarDelCarrito.setVisible(tablaCarrito.getSelectedRow() != -1);
             }
         });
-
-        configurarBuscadorEnTiempoReal();
     }
 
-    private void configurarBuscadorEnTiempoReal() {
-        buscarProductoField.getDocument().addDocumentListener(new DocumentListener() {
-            @Override public void insertUpdate(DocumentEvent e) { filtrarComboProductos(); }
-            @Override public void removeUpdate(DocumentEvent e) { filtrarComboProductos(); }
-            @Override public void changedUpdate(DocumentEvent e) { filtrarComboProductos(); }
-        });
+    // --- NUEVO MÉTODO PARA CARGAR Y FILTRAR PRODUCTOS ---
+    public void cargarProductosDisponibles(List<modelo.Producto> productos) {
+        this.listaProductosOriginal = productos;
+        filtrarComboProductos(); // Inicializa el ComboBox completo la primera vez
     }
 
     private void filtrarComboProductos() {
-        String filtro = buscarProductoField.getText().trim().toLowerCase();
+        if (listaProductosOriginal == null) return;
+
+        String textoBusqueda = buscarProductoField.getText().trim().toLowerCase();
+
         productoBox.removeAllItems();
+        productoBox.addItem("Seleccionar...");
 
-        int coincidencias = 0;
-        for (modelo.Producto p : catalogoDisponible) {
-            String textoBusqueda = (p.getId() + " " + p.getNombre() + " " + p.getMarca() + " " + p.getCategoria()).toLowerCase();
-            if (filtro.isEmpty() || textoBusqueda.contains(filtro)) {
-                if (coincidencias == 0) {
-                    productoBox.addItem("Seleccionar...");
-                }
-                productoBox.addItem(p.getId() + " - " + p.getNombre() + " (Stock: " + p.getStock() + ")");
-                coincidencias++;
-            }
-        }
+        int cantidadMostrada = 0; // Iniciamos el contador
 
-        if (coincidencias == 0) {
-            productoBox.addItem("Sin coincidencias...");
-        } else if (!filtro.isEmpty() && coincidencias == 1) {
-            // Si el vendedor escribió algo y solo queda 1 producto que coincide, se autoselecciona
-            productoBox.setSelectedIndex(1);
-        } else {
-            productoBox.setSelectedIndex(0);
-        }
-    }
-
-    public void cargarProductosDisponibles(List<modelo.Producto> productos) {
-        catalogoDisponible.clear();
-        for (modelo.Producto p : productos) {
+        for (modelo.Producto p : listaProductosOriginal) {
             if (p.isEstado() && p.getStock() > 0) {
-                catalogoDisponible.add(p);
+
+                // Usamos startsWith para búsqueda estricta al inicio
+                if (textoBusqueda.isEmpty() ||
+                    p.getNombre().toLowerCase().startsWith(textoBusqueda) ||
+                    String.valueOf(p.getId()).startsWith(textoBusqueda)) {
+
+                    productoBox.addItem(p.getId() + " - " + p.getNombre() + " (Stock: " + p.getStock() + ")");
+                    cantidadMostrada++; // Sumamos 1 por cada producto agregado
+
+                    // Si ya llegamos a 8 productos, cortamos la búsqueda
+                    if (cantidadMostrada >= 8) {
+                        break;
+                    }
+                }
             }
         }
-        filtrarComboProductos();
     }
+    // -----------------------------------------------------
 
     public void mostrarClienteValidado(String dni, String nombreCompleto, boolean esNuevo) {
         dniClienteField.setText(dni);
@@ -218,7 +217,8 @@ public class RegistroVentaUI extends JDialog {
         if (productoBox.getSelectedIndex() <= 0) return null;
         String item = (String) productoBox.getSelectedItem();
         if (item == null || !item.contains(" - ")) return null;
-        return Long.parseLong(item.split(" - ")[0]);
+        // Se corrige el split para asegurar que corte justo en el guion
+        return Long.parseLong(item.split(" - ")[0].trim());
     }
 
     public int obtenerCantidadEnCarritoParaProducto(Long idProducto) {
@@ -236,7 +236,9 @@ public class RegistroVentaUI extends JDialog {
         DefaultTableModel mod = (DefaultTableModel) tablaCarrito.getModel();
         mod.addRow(new Object[]{id, nombre, precio, cantidad, subtotal});
         recalcularYMostrarTotal();
-        buscarProductoField.setText(""); // Limpia el filtro y restaura el combo automáticamente
+
+        // Limpiamos el buscador y cantidad tras agregar
+        buscarProductoField.setText("");
         productoBox.setSelectedIndex(0);
         cantidadField.setText("");
     }
@@ -269,11 +271,11 @@ public class RegistroVentaUI extends JDialog {
         List<Object[]> items = new ArrayList<>();
         for (int i = 0; i < tablaCarrito.getRowCount(); i++) {
             items.add(new Object[]{
-                tablaCarrito.getValueAt(i, 0), // ID
-                tablaCarrito.getValueAt(i, 1), // Nombre
-                tablaCarrito.getValueAt(i, 2), // Precio
-                tablaCarrito.getValueAt(i, 3), // Cantidad
-                tablaCarrito.getValueAt(i, 4)  // Subtotal
+                tablaCarrito.getValueAt(i, 0),
+                tablaCarrito.getValueAt(i, 1),
+                tablaCarrito.getValueAt(i, 2),
+                tablaCarrito.getValueAt(i, 3),
+                tablaCarrito.getValueAt(i, 4)
             });
         }
         return items;

@@ -9,7 +9,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.ParameterMode;
 import jakarta.persistence.StoredProcedureQuery;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -37,7 +36,6 @@ public class VendedorController {
         }
 
         // vinculacion de eventos de la vista principal
-        // Se extraen los botones de la vista mediante getters y se les asigna la logica del controlador
         this.vistaPrincipal.getBtnAbrirFormularioCliente().addActionListener(e -> abrirFormularioRegistro(""));
         this.vistaPrincipal.getBtnCerrarSesion().addActionListener(e -> cerrarSesion());
         this.vistaPrincipal.getBtnAbrirFormularioVenta().addActionListener(e -> abrirFormularioVenta());
@@ -47,7 +45,13 @@ public class VendedorController {
         this.vistaPrincipal.getBtnGenerarReporte().addActionListener(e -> generarReporte());
         this.vistaPrincipal.getBtnExportarReporte().addActionListener(e -> exportarReporteCSV());
 
-        // Se pasa la referencia del metodo abrirDetalleVenta a la vista para que esta lo ejecute al hacer doble clic
+        // Busqueda en vivo de productos estilo Gerente
+        this.vistaPrincipal.inicializarAutocompletadoProductos(texto ->
+            buscarSugerenciasProductos(texto, vistaPrincipal.getComboCriterioProducto().getSelectedItem().toString())
+        );
+        this.vistaPrincipal.getBtnBuscarProducto().addActionListener(e -> filtrarTablaProductos());
+        this.vistaPrincipal.getBuscarProductoField().addActionListener(e -> filtrarTablaProductos());
+
         this.vistaPrincipal.alHacerDobleClicEnVenta(this::abrirDetalleVenta);
     }
 
@@ -68,7 +72,6 @@ public class VendedorController {
                 fechaFin = fechaInicio;
             }
 
-            // Validaciones de negocio sobre las fechas antes de consultar a la base de datos
             if (fechaInicio.isAfter(fechaFin)) {
                 vistaPrincipal.mostrarAlerta("La fecha de inicio no puede ser mayor a la fecha de fin.", "Fechas Inválidas");
                 return;
@@ -82,7 +85,6 @@ public class VendedorController {
             LocalDateTime inicioLDT = fechaInicio.atStartOfDay();
             LocalDateTime finLDT = fechaFin.atTime(23, 59, 59);
 
-            // Segun el indice del ComboBox de la vista, se llama a un Stored Procedure distinto y se envian los datos a la vista
             if (tipoReporte == 0) {
                 List<Object[]> datos = consultarProcedimiento("reporte_resumen_diario", inicioLDT, finLDT);
                 vistaPrincipal.mostrarReporteResumenDiario(datos);
@@ -106,7 +108,6 @@ public class VendedorController {
     }
 
     private List<Object[]> consultarProcedimiento(String nombreSp, LocalDateTime inicio, LocalDateTime fin) {
-        // Se utiliza StoredProcedureQuery de JPA para ejecutar procedimientos almacenados en MySQL
         StoredProcedureQuery query = em.createStoredProcedureQuery(nombreSp);
         query.registerStoredProcedureParameter(1, Long.class, ParameterMode.IN);
         query.registerStoredProcedureParameter(2, LocalDateTime.class, ParameterMode.IN);
@@ -135,7 +136,6 @@ public class VendedorController {
     }
 
     private void exportarReporteCSV() {
-        // Se obtienen los datos directamente desde la vista en formato de texto puro
         List<String[]> filas = vistaPrincipal.obtenerDatosTablaReportes();
         if (filas.isEmpty()) {
             vistaPrincipal.mostrarAlerta("No hay datos en la tabla para exportar.", "Aviso");
@@ -176,7 +176,6 @@ public class VendedorController {
 
             ventanaVenta.cargarProductosDisponibles(repoProd.listarTodos());
 
-            // Se utiliza un array de 1 posicion para poder modificar la referencia del cliente dentro de las expresiones lambda
             final modelo.Cliente[] clienteActual = {null};
 
             ventanaVenta.getBtnVerificarCliente().addActionListener(e -> {
@@ -213,7 +212,6 @@ public class VendedorController {
                     int pedida = Integer.parseInt(ventanaVenta.getCantidadField().getText().trim());
                     if (pedida <= 0) throw new NumberFormatException();
 
-                    // Control de stock en tiempo real calculando lo que ya esta en el carrito visual
                     int cantEnCarro = ventanaVenta.obtenerCantidadEnCarritoParaProducto(idProducto);
                     int totalRequerido = pedida + cantEnCarro;
 
@@ -257,7 +255,6 @@ public class VendedorController {
                     return;
                 }
 
-                // Se envian los objetos limpios a procesarCheckout para impactar en BD
                 boolean exito = procesarCheckout(clienteActual[0], totResumen, itemsCarrito);
 
                 if (exito) {
@@ -279,7 +276,6 @@ public class VendedorController {
 
     public boolean procesarCheckout(modelo.Cliente cliente, double totalVenta, List<Object[]> itemsCarrito) {
         try {
-            // Arma el JSON: [{"id":1,"cantidad":2,"precio":1500.0}, ...]
             StringBuilder json = new StringBuilder("[");
             for (int i = 0; i < itemsCarrito.size(); i++) {
                 Object[] fila = itemsCarrito.get(i);
@@ -290,7 +286,6 @@ public class VendedorController {
             }
             json.append("]");
 
-            // Orden de parámetros = orden del SP: usuario_id, cliente_dni, total, items_json
             StoredProcedureQuery query = em.createStoredProcedureQuery("procesar_registro_venta");
             query.registerStoredProcedureParameter(1, Long.class, ParameterMode.IN);
             query.registerStoredProcedureParameter(2, String.class, ParameterMode.IN);
@@ -304,7 +299,6 @@ public class VendedorController {
 
             query.execute();
 
-            // El SP tocó el stock por fuera de JPA: limpiamos la caché para no ver datos viejos
             em.clear();
 
             utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "VENTAS",
@@ -317,6 +311,41 @@ public class VendedorController {
                 "Fallo en la transacción de venta del Vendedor '" + vendedorLogueado.getUsername()
                     + "'. Motivo: " + e.getMessage());
             return false;
+        }
+    }
+
+    // filtrado de productos estilo gerente
+
+    private void filtrarTablaProductos() {
+        String textoBusqueda = vistaPrincipal.getBuscarProductoField().getText().trim();
+        javax.swing.table.TableRowSorter<?> sorter = (javax.swing.table.TableRowSorter<?>) vistaPrincipal.getTablaProductos().getRowSorter();
+
+        if (sorter != null) {
+            if (textoBusqueda.isEmpty()) {
+                sorter.setRowFilter(null);
+            } else {
+                int columnaFiltro = vistaPrincipal.getComboCriterioProducto().getSelectedItem().toString().equals("Modelo") ? 2 : 1;
+                sorter.setRowFilter(javax.swing.RowFilter.regexFilter("(?i)" + java.util.regex.Pattern.quote(textoBusqueda), columnaFiltro));
+            }
+        }
+    }
+
+    private List<Object[]> buscarSugerenciasProductos(String parteTexto, String criterio) {
+        try {
+            String formatoBusqueda = "%" + parteTexto + "%";
+            if (criterio.equals("Modelo")) {
+                return em.createQuery(
+                    "SELECT p.id, p.nombre, p.categoria, p.stock FROM Producto p WHERE LOWER(p.nombre) LIKE LOWER(:texto)",
+                    Object[].class
+                ).setParameter("texto", formatoBusqueda).setMaxResults(8).getResultList();
+            } else {
+                return em.createQuery(
+                    "SELECT p.id, p.nombre, p.categoria, p.stock FROM Producto p WHERE LOWER(p.categoria) LIKE LOWER(:texto)",
+                    Object[].class
+                ).setParameter("texto", formatoBusqueda).setMaxResults(8).getResultList();
+            }
+        } catch (Exception e) {
+            return java.util.Collections.emptyList();
         }
     }
 
@@ -365,7 +394,6 @@ public class VendedorController {
 
                 modelo.Direccion dir = new modelo.Direccion(calle, altura, ciudad, ven.getCbProvincia().getSelectedItem().toString());
 
-                // Transaccion explicita de JPA para alta de entidad
                 em.getTransaction().begin();
                 repo.guardar(new modelo.Cliente(dni, nombre, apellido, tel, email, fechaNac, dir));
                 em.getTransaction().commit();
@@ -409,7 +437,6 @@ public class VendedorController {
             try {
                 em.getTransaction().begin();
 
-                // Logica de persistencia: se modifica el objeto asociado y el EntityManager lo detecta al hacer merge
                 if (cliente.getDireccion() == null) {
                     cliente.setDireccion(new modelo.Direccion(calle, altura, ciudad, provincia));
                 } else {
@@ -449,7 +476,6 @@ public class VendedorController {
                 modelo.Cliente cliente = repo.buscarPorDni(dniCliente);
 
                 if (cliente != null) {
-                    // Baja o alta logica: solo cambia un flag booleano sin eliminar fisicamente el registro
                     em.getTransaction().begin();
                     cliente.setActivo(act);
                     repo.actualizar(cliente);
@@ -487,7 +513,6 @@ public class VendedorController {
     }
 
     private void abrirDetalleVenta(Long idVenta) {
-        // Al hacer doble clic en la vista, este metodo recibe el ID y busca el objeto entero en la BD
         modelo.Venta venta = em.find(modelo.Venta.class, idVenta);
         if (venta != null) {
             vistaPrincipal.mostrarDialogoDetalleVenta(venta, this::generarComprobantePDF);
@@ -496,7 +521,6 @@ public class VendedorController {
 
     private void generarComprobantePDF(modelo.Venta venta) {
         try {
-            // Se utiliza iTextPDF. Los datos viajan desde el objeto Venta (traido de la BD) hacia un Documento en el disco duro.
             String nombreArchivo = "Nexcell_Comprobante_Venta_" + venta.getId() + ".pdf";
 
             com.itextpdf.text.Document documento = new com.itextpdf.text.Document();

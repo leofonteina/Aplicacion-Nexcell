@@ -24,11 +24,13 @@ public class VendedorUI extends JFrame {
     private JButton btnEditarCliente;
 
     // Componentes de Productos
+    private JComboBox<String> comboCriterioProducto;
     private JTextField buscarProductoField;
     private JButton btnBuscarProducto;
+    private JPopupMenu menuSugerenciasProductos;
     private JTable tablaProductos;
 
-    // Botón general
+    // Boton general
     private JButton btnCerrarSesion;
 
     // Componentes de Ventas
@@ -88,7 +90,6 @@ public class VendedorUI extends JFrame {
         tablaReportes.setAutoCreateRowSorter(true);
 
         configurarFiltroBusqueda(buscarClienteField, btnBuscarCliente, tablaClientes);
-        configurarFiltroBusqueda(buscarProductoField, btnBuscarProducto, tablaProductos);
         configurarFiltroBusqueda(buscarVentaField, btnBuscarVenta, tablaVentas);
 
         java.awt.event.MouseAdapter deseleccionador = new java.awt.event.MouseAdapter() {
@@ -123,7 +124,6 @@ public class VendedorUI extends JFrame {
 
     // EVENTOS DELEGADOS Y RENDERIZADO DE DATOS
 
-    // Delega el doble clic a VendedorController enviandole el idVenta mediante un Consumer
     public void alHacerDobleClicEnVenta(Consumer<Long> accion) {
         tablaVentas.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
@@ -138,7 +138,6 @@ public class VendedorUI extends JFrame {
         });
     }
 
-    // VendedorController consulta la bd, devuelve la List<Cliente> y esta funcion extrae los datos para volcarlos en DefaultTableModel
     public void mostrarClientes(List<modelo.Cliente> clientes) {
         DefaultTableModel mod = (DefaultTableModel) tablaClientes.getModel();
         mod.setRowCount(0);
@@ -189,7 +188,6 @@ public class VendedorUI extends JFrame {
 
     // RENDERIZADO DE REPORTES
 
-    // VendedorController consulta el stored procedure, devuelve un List<Object[]> y esta funcion le da formato para mostrarlo
     public void mostrarReporteResumenDiario(List<Object[]> resultados) {
         DefaultTableModel modelo = (DefaultTableModel) tablaReportes.getModel();
         modelo.setColumnIdentifiers(new String[]{"Fecha de Operación", "Tickets Emitidos", "Monto Facturado"});
@@ -257,7 +255,6 @@ public class VendedorUI extends JFrame {
 
     // EXPORTACION A CSV
 
-    // Genera un List<String[]> extrayendo headers y filas, asi VendedorController lo convierte en txt separado por comas o punto y comas
     public List<String[]> obtenerDatosTablaReportes() {
         List<String[]> datos = new ArrayList<>();
         int cols = tablaReportes.getColumnCount();
@@ -333,7 +330,7 @@ public class VendedorUI extends JFrame {
         dialogo.setVisible(true);
     }
 
-    // UTILIDADES DE INTERACCIÓN CON EL USUARIO
+    // UTILIDADES DE INTERACCION CON EL USUARIO
 
     public void mostrarExito(String mensaje, String titulo) {
         JOptionPane.showMessageDialog(this, mensaje, titulo, JOptionPane.INFORMATION_MESSAGE);
@@ -387,9 +384,8 @@ public class VendedorUI extends JFrame {
         return comboCategoriasReporte.getSelectedItem().toString();
     }
 
-    // CONSTRUCCIÓN DE PANELES INTERNOS Y FILTROS VISUALES
+    // CONSTRUCCION DE PANELES INTERNOS Y FILTROS VISUALES
 
-    // Utiliza expresiones regulares (regex) en TableRowSorter para realizar busquedas in-memory instantaneas, sin saturar MySQL
     private void configurarFiltroBusqueda(JTextField campo, JButton boton, JTable tabla) {
         Runnable accionFiltrar = () -> {
             String texto = campo.getText().trim();
@@ -442,9 +438,20 @@ public class VendedorUI extends JFrame {
 
     private JPanel crearPanelProductos() {
         JPanel panel = crearPanelBase();
+
+        comboCriterioProducto = new JComboBox<>(new String[]{"Modelo", "Categoría"});
         buscarProductoField = new JTextField(20);
         btnBuscarProducto = crearBotonWeb("Buscar");
-        JPanel panelBusqueda = crearBarraBusqueda("Filtrar modelo:", buscarProductoField, btnBuscarProducto);
+        menuSugerenciasProductos = new JPopupMenu();
+        menuSugerenciasProductos.setFocusable(false);
+
+        JPanel panelBusqueda = new JPanel(new FlowLayout(FlowLayout.LEFT, GAP_HORIZONTAL, 0));
+        JLabel lbl = new JLabel("Filtrar por:");
+        lbl.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        panelBusqueda.add(lbl);
+        panelBusqueda.add(comboCriterioProducto);
+        panelBusqueda.add(buscarProductoField);
+        panelBusqueda.add(btnBuscarProducto);
 
         String[] columnas = {"ID", "Categoría", "Modelo", "Stock", "Precio"};
         tablaProductos = new JTable(new DefaultTableModel(new Object[][]{}, columnas) {
@@ -628,8 +635,43 @@ public class VendedorUI extends JFrame {
         return null;
     }
 
+    public void inicializarAutocompletadoProductos(java.util.function.Function<String, List<Object[]>> buscadorSugerencias) {
+        buscarProductoField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            private void actualizar() {
+                String texto = buscarProductoField.getText().trim();
+                menuSugerenciasProductos.setVisible(false);
+                menuSugerenciasProductos.removeAll();
+                if (texto.isEmpty()) return;
+
+                List<Object[]> resultados = buscadorSugerencias.apply(texto);
+                if (resultados == null || resultados.isEmpty()) return;
+
+                String criterio = comboCriterioProducto.getSelectedItem().toString();
+                for (Object[] fila : resultados) {
+                    String valorPrincipal = criterio.equals("Modelo") ? fila[1].toString() : fila[2].toString();
+                    String etiqueta = fila[1] + " | " + fila[2] + " (Stock: " + fila[3] + ")";
+                    JMenuItem item = new JMenuItem(etiqueta);
+                    item.addActionListener(e -> {
+                        buscarProductoField.setText(valorPrincipal);
+                        menuSugerenciasProductos.setVisible(false);
+                        btnBuscarProducto.doClick();
+                    });
+                    menuSugerenciasProductos.add(item);
+                }
+                menuSugerenciasProductos.show(buscarProductoField, 0, buscarProductoField.getHeight());
+            }
+            @Override public void insertUpdate(javax.swing.event.DocumentEvent e) { actualizar(); }
+            @Override public void removeUpdate(javax.swing.event.DocumentEvent e) { actualizar(); }
+            @Override public void changedUpdate(javax.swing.event.DocumentEvent e) { actualizar(); }
+        });
+    }
+
     // GETTERS PARA CONTROLADORES
 
+    public JComboBox<String> getComboCriterioProducto() { return comboCriterioProducto; }
+    public JTextField getBuscarProductoField() { return buscarProductoField; }
+    public JButton getBtnBuscarProducto() { return btnBuscarProducto; }
+    public JTable getTablaProductos() { return tablaProductos; }
     public JButton getBtnAbrirFormularioCliente() { return btnAbrirFormularioCliente; }
     public JButton getBtnBajaCliente() { return btnBajaCliente; }
     public JButton getBtnAltaCliente() { return btnAltaCliente; }
