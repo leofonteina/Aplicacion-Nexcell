@@ -284,3 +284,20 @@
 >>>>>>> Stashed changes
 [10/11/2026 11:46:48] [INFO] [SEGURIDAD] - El usuario 'juan' (Admin) inició sesión exitosamente.
 [10/11/2026 11:49:54] [INFO] [SEGURIDAD] - El usuario 'juan' (Admin) inició sesión exitosamente.
+[10/11/2026 13:23:23] [INFO] [SEGURIDAD] - El usuario 'juan' (Admin) inició sesión exitosamente.
+[10/11/2026 13:23:27] [ALERTA] [PRODUCTOS] - El Administrador cambió el estado del producto ID: 1 a Inactivo
+[10/11/2026 13:23:30] [ALERTA] [PRODUCTOS] - El Administrador cambió el estado del producto ID: 2 a Inactivo
+[10/11/2026 13:23:32] [ALERTA] [PRODUCTOS] - El Administrador cambió el estado del producto ID: 11 a Inactivo
+[10/11/2026 13:23:34] [ALERTA] [PRODUCTOS] - El Administrador cambió el estado del producto ID: 3 a Inactivo
+[10/11/2026 13:23:38] [INFO] [SEGURIDAD] - El Administrador cerró sesión.
+[10/11/2026 13:23:42] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[10/11/2026 13:23:54] [INFO] [SEGURIDAD] - El Vendedor 'pedro' cerró sesión.
+[10/11/2026 13:23:59] [INFO] [SEGURIDAD] - El usuario 'juan' (Admin) inició sesión exitosamente.
+[10/11/2026 13:24:05] [ALERTA] [PRODUCTOS] - El Administrador cambió el estado del producto ID: 2 a Activo
+[10/11/2026 13:24:08] [ALERTA] [PRODUCTOS] - El Administrador cambió el estado del producto ID: 1 a Activo
+[10/11/2026 13:24:10] [ALERTA] [PRODUCTOS] - El Administrador cambió el estado del producto ID: 3 a Activo
+[10/11/2026 13:24:14] [ALERTA] [PRODUCTOS] - El Administrador cambió el estado del producto ID: 7 a Inactivo
+[10/11/2026 13:24:17] [ALERTA] [PRODUCTOS] - El Administrador cambió el estado del producto ID: 8 a Inactivo
+[10/11/2026 13:24:20] [ALERTA] [PRODUCTOS] - El Administrador cambió el estado del producto ID: 9 a Inactivo
+[10/11/2026 13:24:23] [INFO] [SEGURIDAD] - El Administrador cerró sesión.
+[10/11/2026 13:24:28] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.

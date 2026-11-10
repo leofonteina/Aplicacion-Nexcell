@@ -18,6 +18,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 public class VendedorController {
 
@@ -256,7 +257,13 @@ public class VendedorController {
             repositorio.ProductoRepository repoProd = new repositorio.ProductoRepository(this.em);
             repositorio.ClienteRepository repoCli = new repositorio.ClienteRepository(this.em);
 
-            ventanaVenta.cargarProductosDisponibles(repoProd.listarTodos());
+            // Filtrado: solo productos activos para el formulario de venta
+            List<modelo.Producto> productosActivos = repoProd.listarTodos()
+                .stream()
+                .filter(modelo.Producto::isEstado)
+                .collect(Collectors.toList());
+
+            ventanaVenta.cargarProductosDisponibles(productosActivos);
 
             final modelo.Cliente[] clienteActual = {null};
 
@@ -417,12 +424,12 @@ public class VendedorController {
             String formatoBusqueda = "%" + parteTexto + "%";
             if (criterio.equals("Modelo")) {
                 return em.createQuery(
-                    "SELECT p.id, p.nombre, p.categoria, p.stock FROM Producto p WHERE LOWER(p.nombre) LIKE LOWER(:texto)",
+                    "SELECT p.id, p.nombre, p.categoria, p.stock FROM Producto p WHERE p.estado = true AND LOWER(p.nombre) LIKE LOWER(:texto)",
                     Object[].class
                 ).setParameter("texto", formatoBusqueda).setMaxResults(8).getResultList();
             } else {
                 return em.createQuery(
-                    "SELECT p.id, p.nombre, p.categoria, p.stock FROM Producto p WHERE LOWER(p.categoria) LIKE LOWER(:texto)",
+                    "SELECT p.id, p.nombre, p.categoria, p.stock FROM Producto p WHERE p.estado = true AND LOWER(p.categoria) LIKE LOWER(:texto)",
                     Object[].class
                 ).setParameter("texto", formatoBusqueda).setMaxResults(8).getResultList();
             }
@@ -587,7 +594,11 @@ public class VendedorController {
     }
 
     private void cargarTablaProductos() {
-        List<modelo.Producto> prs = new repositorio.ProductoRepository(this.em).listarTodos();
+        // Se filtran unicamente los productos activos (donde estado == true)
+        List<modelo.Producto> prs = new repositorio.ProductoRepository(this.em).listarTodos()
+            .stream()
+            .filter(modelo.Producto::isEstado)
+            .collect(Collectors.toList());
         vistaPrincipal.mostrarProductos(prs);
     }
 
