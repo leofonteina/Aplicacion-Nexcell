@@ -69,7 +69,7 @@ public class BackupUI extends JDialog {
         panelHora.add(cbHora); panelHora.add(new JLabel(":"));
         panelHora.add(cbMinutos);
 
-        // CORREGIDO: Pre-seleccionar fecha y hora actual (+5 min) por defecto
+        // Pre-seleccionar fecha y hora actual (+5 min) por defecto
         LocalDateTime sugerido = ahora.plusMinutes(5);
         cbDia.setSelectedItem(sugerido.getDayOfMonth());
         cbMes.setSelectedItem(sugerido.getMonthValue());

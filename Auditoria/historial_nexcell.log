@@ -282,28 +282,5 @@
 [09/11/2026 19:20:03] [ALERTA] [CLIENTES] - El Vendedor 'pedro' cambió el estado del cliente DNI 29876543 a Inactivo
 [09/11/2026 19:20:11] [ALERTA] [CLIENTES] - El Vendedor 'pedro' cambió el estado del cliente DNI 29876543 a Activo
 >>>>>>> Stashed changes
-[09/11/2026 19:23:00] [INFO] [SEGURIDAD] - El usuario 'juan' (Admin) inició sesión exitosamente.
-[09/11/2026 19:23:26] [ALERTA] [USUARIOS] - El Administrador cambió el estado del usuario martin a Inactivo
-[09/11/2026 19:23:30] [INFO] [SEGURIDAD] - El Administrador cerró sesión.
-[09/11/2026 19:23:33] [ALERTA] [SEGURIDAD] - Intento de acceso bloqueado: Usuario inactivo (martin)
-[09/11/2026 19:23:41] [INFO] [SEGURIDAD] - El usuario 'juan' (Admin) inició sesión exitosamente.
-[09/11/2026 19:23:48] [ALERTA] [USUARIOS] - El Administrador cambió el estado del usuario martin a Activo
-[09/11/2026 19:23:50] [INFO] [SEGURIDAD] - El Administrador cerró sesión.
-[09/11/2026 19:23:54] [INFO] [SEGURIDAD] - El usuario 'martin' (Vendedor) inició sesión exitosamente.
-[09/11/2026 19:26:16] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
-[09/11/2026 19:30:37] [INFO] [SEGURIDAD] - El Vendedor 'pedro' cerró sesión.
-[09/11/2026 19:31:03] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
-[09/11/2026 20:28:58] [INFO] [VENTAS] - El Vendedor 'pedro' registró exitosamente una venta por $ 11.023.700,00 al DNI: 34567890
-[09/11/2026 20:42:05] [INFO] [SEGURIDAD] - El Vendedor 'pedro' cerró sesión.
-[09/11/2026 20:42:43] [ALERTA] [SEGURIDAD] - Intento de acceso fallido para el usuario: jorge
-[09/11/2026 20:43:17] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
-[09/11/2026 20:43:20] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 09/10/2026
-[09/11/2026 20:45:04] [INFO] [SEGURIDAD] - El Gerente cerró sesión.
-[09/11/2026 20:45:07] [INFO] [SEGURIDAD] - El usuario 'juan' (Admin) inició sesión exitosamente.
-[09/11/2026 20:46:01] [INFO] [SEGURIDAD] - El Administrador cerró sesión.
-[09/11/2026 20:46:04] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
-[09/11/2026 20:46:06] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 09/10/2026
-[09/11/2026 20:47:16] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 09/10/2026
-[09/11/2026 20:48:40] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 09/10/2026
-[09/11/2026 22:24:02] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
-[09/11/2026 22:24:23] [INFO] [VENTAS] - El Vendedor 'pedro' registró exitosamente una venta por $ 4.353.800,00 al DNI: 41234567
+[10/11/2026 11:46:48] [INFO] [SEGURIDAD] - El usuario 'juan' (Admin) inició sesión exitosamente.
+[10/11/2026 11:49:54] [INFO] [SEGURIDAD] - El usuario 'juan' (Admin) inició sesión exitosamente.

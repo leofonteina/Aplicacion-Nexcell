@@ -249,7 +249,7 @@ public class BackupController {
 
             Process proceso = pb.start();
 
-            // CORRECCIÓN: Cierre automático del flujo con try-with-resources para prevenir fugas de memoria
+            // Cierre automático del flujo con try-with-resources para prevenir fugas de memoria
             StringBuilder errorReal = new StringBuilder();
             try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(proceso.getInputStream()))) {
                 String linea;
