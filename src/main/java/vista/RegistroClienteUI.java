@@ -121,6 +121,7 @@ public class RegistroClienteUI extends JDialog {
         cbMes.setEnabled(false);
         cbAnio.setEnabled(false);
 
+
         if (cliente.getDireccion() != null) {
             txtCalle.setText(cliente.getDireccion().getCalle());
             txtAltura.setText(cliente.getDireccion().getAltura());

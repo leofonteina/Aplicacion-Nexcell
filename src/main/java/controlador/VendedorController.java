@@ -97,11 +97,6 @@ public class VendedorController {
                 return;
             }
 
-            if (fechaInicio.plusMonths(6).isBefore(fechaFin)) {
-                vistaPrincipal.mostrarAlerta("El rango seleccionado supera los 6 meses. Por favor, seleccione un periodo más corto.", "Rango Excedido");
-                return;
-            }
-
             LocalDateTime inicioLDT = fechaInicio.atStartOfDay();
             LocalDateTime finLDT = fechaFin.atTime(23, 59, 59);
 
