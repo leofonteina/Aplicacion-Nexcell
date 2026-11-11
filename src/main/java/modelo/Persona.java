@@ -16,7 +16,7 @@ public abstract class Persona {
     private java.time.LocalDate fechaRegistro;
 
     @Embedded
-    private Direccion direccion; // Reemplazamos el String por el objeto compuesto
+    private Direccion direccion;
 
     @Column(name = "fecha_nacimiento")
     private LocalDate fechaNacimiento;

@@ -92,6 +92,18 @@ public class VendedorController {
             if (apellido.isEmpty()) { ven.getLblErrorApellido().setText("Requerido."); hayErrores = true; }
             if (dni.isEmpty()) { ven.getLblErrorDni().setText("Requerido."); hayErrores = true; }
 
+            // Validaciones Obligatorias
+            if (tel.isEmpty()) { ven.getLblErrorTelefono().setText("Requerido."); hayErrores = true; }
+            if (email.isEmpty() || !email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+                ven.getLblErrorEmail().setText("Requerido y válido."); hayErrores = true;
+            }
+            if (calle.isEmpty()) { ven.getLblErrorCalle().setText("Requerido."); hayErrores = true; }
+            if (altura.isEmpty() || !altura.matches("\\d+")) {
+                ven.getLblErrorAltura().setText("Número requerido."); hayErrores = true;
+            }
+            if (ciudad.isEmpty()) { ven.getLblErrorCiudad().setText("Requerido."); hayErrores = true; }
+
+
             LocalDate fechaNac = null;
             try {
                 int d = (int) ven.getCbDia().getSelectedItem();
@@ -152,6 +164,12 @@ public class VendedorController {
             String altura = ven.getTxtAltura().getText().trim();
             String ciudad = ven.getTxtCiudad().getText().trim();
             String provincia = ven.getCbProvincia().getSelectedItem().toString();
+
+            // Validación para evitar que dejen la dirección en blanco al editar
+            if (calle.isEmpty() || altura.isEmpty() || ciudad.isEmpty()) {
+                vistaPrincipal.mostrarError("La calle, altura y ciudad son obligatorias para mantener la dirección válida.", "Faltan datos");
+                return;
+            }
 
             try {
                 em.getTransaction().begin();

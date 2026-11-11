@@ -17,13 +17,12 @@ public class Cliente {
     @Column(nullable = false)
     private String apellido;
 
-    @Column(length = 20)
+    @Column(length = 20, nullable = false)
     private String telefono;
 
-    @Column(length = 100)
+    @Column(length = 100, nullable = false)
     private String email;
 
-    // --- NUEVOS CAMPOS HOMOLOGADOS CON USUARIO ---
     @Column(name = "fecha_nacimiento")
     private LocalDate fechaNacimiento;
 

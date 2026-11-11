@@ -199,9 +199,16 @@ public class RegistroClienteUI extends JDialog {
     public JComboBox<Integer> getCbAnio() { return cbAnio; }
     public JButton getBtnGuardarCliente() { return btnGuardarCliente; }
     public JButton getBtnCancelar() { return btnCancelar; }
+    public JLabel getLblErrorTelefono() { return lblErrorTelefono; }
+    public JLabel getLblErrorEmail() { return lblErrorEmail; }
+    public JLabel getLblErrorCalle() { return lblErrorCalle; }
+    public JLabel getLblErrorAltura() { return lblErrorAltura; }
+    public JLabel getLblErrorCiudad() { return lblErrorCiudad; }
 
     public JLabel getLblErrorNombre() { return lblErrorNombre; }
     public JLabel getLblErrorApellido() { return lblErrorApellido; }
     public JLabel getLblErrorDni() { return lblErrorDni; }
     public JLabel getLblErrorFecha() { return lblErrorFecha; }
+
+
 }

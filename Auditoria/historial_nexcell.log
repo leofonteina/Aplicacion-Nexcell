@@ -350,3 +350,23 @@
 [10/11/2026 21:32:02] [INFO] [SEGURIDAD] - El Gerente cerró sesión.
 [10/11/2026 23:11:16] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
 [10/11/2026 23:11:33] [INFO] [VENTAS] - El Vendedor 'pedro' registró exitosamente una venta por $ 9.054.300,00 al DNI: 41234567
+[11/11/2026 10:43:23] [INFO] [SEGURIDAD] - El usuario 'juan' (Admin) inició sesión exitosamente.
+[11/11/2026 11:35:27] [INFO] [SEGURIDAD] - El Administrador cerró sesión.
+[11/11/2026 11:35:30] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[11/11/2026 11:35:34] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 11/10/2026
+[11/11/2026 11:45:16] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 11/10/2026
+[11/11/2026 11:58:06] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 11/10/2026
+[11/11/2026 11:58:42] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 11/10/2026
+[11/11/2026 12:01:25] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 11/10/2026
+[11/11/2026 12:04:52] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 11/04/2026
+[11/11/2026 12:05:02] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 11/08/2026
+[11/11/2026 12:05:19] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 11/09/2026
+[11/11/2026 12:05:19] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 11/09/2026
+[11/11/2026 12:05:19] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 11/09/2026
+[11/11/2026 12:05:19] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 11/09/2026
+[11/11/2026 12:05:27] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 11/10/2026
+[11/11/2026 12:06:28] [INFO] [REPORTES] - El Gerente generó el reporte de rendimiento de vendedores
+[11/11/2026 12:13:39] [INFO] [SEGURIDAD] - El Gerente cerró sesión.
+[11/11/2026 12:13:42] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[11/11/2026 14:34:47] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[11/11/2026 14:35:22] [INFO] [CLIENTES] - El Vendedor 'pedro' registró al cliente DNI: 235235325
