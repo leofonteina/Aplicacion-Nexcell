@@ -22,7 +22,7 @@ public class BackupController {
     private ScheduledExecutorService planificador;
 
     private final String DB_USER = "root";
-    private final String DB_PASS = "MessiElMasMejor123";
+    private final String DB_PASS = "Amir11022013";
     private final String DB_NAME = "nexcell_db";
 
     private final String CMD_MYSQLDUMP = "C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysqldump.exe";
@@ -162,9 +162,9 @@ public class BackupController {
             comando.add("-r");
             comando.add(ruta);
 
-            ProcessBuilder pb = new ProcessBuilder(comando);
+            ProcessBuilder pb = new ProcessBuilder(comando); //Se encarga de escribir los datos para el backup
             pb.redirectErrorStream(true);
-            Process proceso = pb.start();
+            Process proceso = pb.start();//Se encarga de iniciar el proceso de backup
 
             // Cierre automático del flujo con try-with-resources para prevenir fugas de memoria
             StringBuilder errorReal = new StringBuilder();

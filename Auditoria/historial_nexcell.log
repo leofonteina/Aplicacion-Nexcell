@@ -301,3 +301,52 @@
 [10/11/2026 13:24:20] [ALERTA] [PRODUCTOS] - El Administrador cambió el estado del producto ID: 9 a Inactivo
 [10/11/2026 13:24:23] [INFO] [SEGURIDAD] - El Administrador cerró sesión.
 [10/11/2026 13:24:28] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[10/11/2026 14:17:54] [INFO] [SEGURIDAD] - El Vendedor 'pedro' cerró sesión.
+[10/11/2026 14:18:13] [INFO] [SEGURIDAD] - El usuario 'juan' (Admin) inició sesión exitosamente.
+[10/11/2026 14:19:01] [INFO] [SEGURIDAD] - El Administrador cerró sesión.
+[10/11/2026 14:19:04] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[10/11/2026 14:20:07] [INFO] [SEGURIDAD] - El Vendedor 'pedro' cerró sesión.
+[10/11/2026 14:20:11] [INFO] [SEGURIDAD] - El usuario 'juan' (Admin) inició sesión exitosamente.
+[10/11/2026 14:21:22] [INFO] [SEGURIDAD] - El usuario 'juan' (Admin) inició sesión exitosamente.
+[10/11/2026 14:23:25] [ERROR] [PRODUCTOS] - Error al modificar producto ID: 3. Formato numérico inválido.
+[10/11/2026 14:37:24] [INFO] [USUARIOS] - El Administrador modificó los datos del usuario: carlos
+[10/11/2026 14:37:41] [INFO] [USUARIOS] - El Administrador modificó los datos del usuario: maria
+[10/11/2026 14:37:52] [INFO] [USUARIOS] - El Administrador modificó los datos del usuario: maria
+[10/11/2026 14:38:04] [INFO] [USUARIOS] - El Administrador modificó los datos del usuario: pedro
+[10/11/2026 14:43:28] [ALERTA] [USUARIOS] - El Administrador cambió el estado del usuario pedro a Inactivo
+[10/11/2026 14:48:42] [ALERTA] [USUARIOS] - El Administrador cambió el estado del usuario pedro a Activo
+[10/11/2026 15:31:04] [ALERTA] [SEGURIDAD] - Intento fallido de restauración de base de datos. Credenciales de doble factor incorrectas.
+[10/11/2026 16:08:28] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[10/11/2026 16:10:08] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 10/10/2026
+[10/11/2026 16:10:11] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 10/04/2026
+[10/11/2026 16:10:14] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 10/07/2026
+[10/11/2026 16:10:16] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 10/09/2026
+[10/11/2026 16:10:18] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 10/11/2026
+[10/11/2026 16:10:20] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 10/10/2026
+[10/11/2026 16:10:28] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 10/10/2026
+[10/11/2026 16:10:31] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 10/10/2026
+[10/11/2026 16:10:31] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 10/10/2026
+[10/11/2026 16:10:31] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 10/10/2026
+[10/11/2026 16:10:32] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 10/10/2026
+[10/11/2026 16:11:48] [INFO] [REPORTES] - El Gerente generó el reporte de rendimiento de vendedores
+[10/11/2026 16:15:49] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos
+[10/11/2026 16:15:51] [INFO] [REPORTES] - El Gerente generó el reporte de rendimiento de vendedores
+[10/11/2026 16:15:52] [INFO] [REPORTES] - El Gerente generó el reporte de rendimiento de vendedores
+[10/11/2026 16:18:37] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[10/11/2026 16:18:44] [INFO] [REPORTES] - El Gerente generó el reporte de rendimiento de vendedores
+[10/11/2026 16:26:29] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[10/11/2026 16:30:40] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[10/11/2026 16:30:42] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 10/10/2026
+[10/11/2026 16:34:22] [INFO] [SEGURIDAD] - El Gerente cerró sesión.
+[10/11/2026 19:43:03] [INFO] [SEGURIDAD] - El usuario 'ana' (Gerente) inició sesión exitosamente.
+[10/11/2026 19:43:54] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 10/10/2026
+[10/11/2026 21:24:38] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos
+[10/11/2026 21:24:40] [INFO] [REPORTES] - El Gerente generó el reporte de ventas desde 10/10/2026
+[10/11/2026 21:24:43] [INFO] [REPORTES] - El Gerente generó el reporte de rendimiento de vendedores
+[10/11/2026 21:24:46] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos
+[10/11/2026 21:24:47] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos
+[10/11/2026 21:24:47] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos
+[10/11/2026 21:24:48] [INFO] [REPORTES] - El Gerente generó el reporte de productos más vendidos
+[10/11/2026 21:32:02] [INFO] [SEGURIDAD] - El Gerente cerró sesión.
+[10/11/2026 23:11:16] [INFO] [SEGURIDAD] - El usuario 'pedro' (Vendedor) inició sesión exitosamente.
+[10/11/2026 23:11:33] [INFO] [VENTAS] - El Vendedor 'pedro' registró exitosamente una venta por $ 9.054.300,00 al DNI: 41234567
