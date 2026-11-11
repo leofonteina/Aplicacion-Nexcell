@@ -132,11 +132,21 @@ public class AdminController {
         DefaultTableModel modelo = (DefaultTableModel) vistaPrincipal.getTablaProductos().getModel();
         modelo.setRowCount(0);
 
+        // 1. Configuramos el formato de moneda para Argentina (Punto para miles, coma para decimales)
+        java.text.DecimalFormatSymbols simbolos = new java.text.DecimalFormatSymbols(new java.util.Locale("es", "AR"));
+        simbolos.setGroupingSeparator('.');
+        simbolos.setDecimalSeparator(',');
+        java.text.DecimalFormat df = new java.text.DecimalFormat("$ #,##0.00", simbolos);
+
         List<Producto> listaProductos = productoRepo.listarTodos();
         for (Producto p : listaProductos) {
             String estadoStr = p.isEstado() ? "Activo" : "Inactivo";
+
+            // 2. Aplicamos el formato al precio
+            String precioFormateado = df.format(p.getPrecio());
+
             modelo.addRow(new Object[]{
-                    p.getId(), p.getNombre(), p.getCategoria(), p.getStock(), "$" + p.getPrecio(), estadoStr
+                    p.getId(), p.getNombre(), p.getCategoria(), p.getStock(), precioFormateado, estadoStr
             });
         }
     }
@@ -401,6 +411,9 @@ public class AdminController {
         ventanaModificacion.getTxtDni().setEditable(false);
         ventanaModificacion.getTxtEmail().setText(usuario.getEmail());
 
+        // Opcional: si querés que el selector de rol aparezca bloqueado/desactivado al modificar
+        ventanaModificacion.getCbPerfil().setEnabled(false);
+
         if (usuario.getDireccion() != null) {
             ventanaModificacion.getTxtCalle().setText(usuario.getDireccion().getCalle());
             ventanaModificacion.getTxtAltura().setText(usuario.getDireccion().getAltura());
@@ -428,7 +441,9 @@ public class AdminController {
                 usuario.getDireccion().setProvincia(ventanaModificacion.getCbProvincia().getSelectedItem().toString());
 
                 try {
+                    // Actualizamos mediante el repositorio de forma limpia y directa
                     repo.actualizar(usuario);
+
                     utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.INFO, "USUARIOS",
                             "El Administrador modificó los datos del usuario: " + usuario.getUsername());
                     JOptionPane.showMessageDialog(ventanaModificacion, "Datos actualizados correctamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
@@ -437,13 +452,12 @@ public class AdminController {
                 } catch (Exception ex) {
                     utilidades.GestorLogs.registrar(utilidades.GestorLogs.Nivel.ERROR, "USUARIOS",
                             "Error al modificar usuario " + usuario.getUsername() + ": " + ex.getMessage());
-                    JOptionPane.showMessageDialog(ventanaModificacion, "Error al actualizar la base de datos.", "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(ventanaModificacion, "Error al actualizar la base de datos: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                 }
             }
         });
         ventanaModificacion.setVisible(true);
     }
-
     private boolean validarFormularioUsuario(RegistroUsuarioUI v, UsuarioRepository repo, boolean esNuevo, String dniActual) {
         boolean hayErrores = false;
         String nombre = v.getTxtNombre().getText().trim();

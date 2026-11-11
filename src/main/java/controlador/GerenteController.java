@@ -106,7 +106,7 @@ public class GerenteController {
             ventasAgrupadas.put(fechaClave, ventasAgrupadas.getOrDefault(fechaClave, 0.0) + totalItem);
         }
 
-        // Formatea las fechas que van a aparecer en el grafico con sus nombres en español
+        // Formatea los nombres de los meses que van a aparecer en el grafico con sus nombres en español
         java.util.Locale localeEspanol = new java.util.Locale("es", "AR");
         DateTimeFormatter fmtEjeXDia = DateTimeFormatter.ofPattern("dd/MM");
         DateTimeFormatter fmtEjeXMes = DateTimeFormatter.ofPattern("MMM-yyyy", localeEspanol);
@@ -370,7 +370,7 @@ public class GerenteController {
         for (int i = 0; i < tabla.getRowCount(); i++) {
             Object valor = tabla.getValueAt(i, indiceColumna);
             if (valor != null) {
-                // parsearMoneda permite que el numero aparezca de una manera mas legible
+                // parsearMoneda permite que el numero se pase de String a Double
                 total += parsearMoneda(valor.toString());
             }
         }
